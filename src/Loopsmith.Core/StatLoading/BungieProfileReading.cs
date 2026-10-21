@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.StatLoading;
 

@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.StatLoading;
 

@@ -1,6 +1,6 @@
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Phrasing;
 using CoreWeaponSlot = Loopsmith.Core.Domain.WeaponSlot;
 

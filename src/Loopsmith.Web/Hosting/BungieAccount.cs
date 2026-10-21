@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 
 namespace Loopsmith.Web.Hosting;

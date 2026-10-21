@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RuleParsing.ParseError>;
 
 namespace Loopsmith.Core.RuleParsing;

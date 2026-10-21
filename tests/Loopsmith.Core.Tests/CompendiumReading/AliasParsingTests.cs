@@ -1,6 +1,6 @@
 using Loopsmith.Core.CompendiumReading;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.SourceFetching;
 using Loopsmith.Core.Tests.Support;
 

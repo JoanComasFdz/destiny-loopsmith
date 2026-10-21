@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.RuleViewer.Core;
 

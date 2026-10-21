@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using static Loopsmith.Core.ManifestJoining.ManifestEntryReading;
 
 namespace Loopsmith.Core.ManifestJoining;

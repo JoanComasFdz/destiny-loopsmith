@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.RuleParsing;
 using Loopsmith.Core.Tests.Support;
 using Xunit.Sdk;

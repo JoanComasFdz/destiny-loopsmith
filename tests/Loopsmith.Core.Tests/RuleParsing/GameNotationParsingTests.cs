@@ -1,5 +1,5 @@
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.RuleParsing;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
 

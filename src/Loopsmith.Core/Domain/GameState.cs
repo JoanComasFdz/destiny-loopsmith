@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Dunet;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.Domain;
 

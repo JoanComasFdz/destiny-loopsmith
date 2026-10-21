@@ -1,6 +1,6 @@
 using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Phrasing;
 using static Loopsmith.Core.Tests.Support.TestCatalog;
 

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.CompendiumReading;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.CompendiumReading;

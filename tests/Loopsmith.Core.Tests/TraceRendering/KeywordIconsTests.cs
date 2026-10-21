@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 using Loopsmith.Core.SourceFetching;

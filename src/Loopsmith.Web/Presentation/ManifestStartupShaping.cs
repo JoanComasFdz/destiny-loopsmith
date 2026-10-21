@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Dunet;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Web.Presentation;
 

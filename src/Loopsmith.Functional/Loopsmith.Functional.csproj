@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The coding building blocks (docs/CODING_RULES.md): Optional, Result and Unit, as Dunet unions. Depends on nothing
+       but .NET and Dunet, so a developer tool under tools/ can use them without building Loopsmith.Core. -->
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.Functional</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+</Project>

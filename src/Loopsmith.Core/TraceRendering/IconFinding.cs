@@ -1,6 +1,6 @@
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.TraceRendering;
 

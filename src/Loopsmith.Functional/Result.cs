@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Dunet;
 
-namespace Loopsmith.Core.Functional;
+namespace Loopsmith.Functional;
 
 /// <summary>Success or failure track of a railway. Construct with <c>new Result&lt;T, F&gt;.Ok(x)</c>.</summary>
 [Union]

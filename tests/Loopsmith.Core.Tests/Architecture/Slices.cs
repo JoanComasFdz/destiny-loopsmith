@@ -7,13 +7,14 @@ namespace Loopsmith.Core.Tests.Architecture;
 /// Every rule iterates these lists, so a slice with no types yet passes trivially and starts being
 /// checked the moment its first type appears. A new top-level namespace must be added here
 /// (<see cref="SliceBoundaryTests.Every_core_type_lives_in_a_known_slice"/> fails until it is).
+/// Optional, Result and Unit are not a slice: they live in their own project, <c>Loopsmith.Functional</c>, outside
+/// Core's namespace, so every slice may use them (<see cref="FunctionalProjectTests"/> guards that project).
 /// </summary>
 internal static class Slices
 {
     public const string Root = "Loopsmith.Core";
 
     public const string Domain = "Domain";
-    public const string Functional = "Functional";
     public const string Phrasing = "Phrasing";
     public const string Causality = "Causality";
 
@@ -34,7 +35,7 @@ internal static class Slices
     public const string Orchestration = "Orchestration";
 
     /// <summary>Shared kernel: every slice may depend on it; it depends on no slice.</summary>
-    public static readonly ImmutableArray<string> Kernel = [Domain, Functional, Phrasing, Causality];
+    public static readonly ImmutableArray<string> Kernel = [Domain, Phrasing, Causality];
 
     /// <summary>Pure feature slices.</summary>
     public static readonly ImmutableArray<string> Features =
@@ -57,17 +58,16 @@ internal static class Slices
     public static readonly ImmutableArray<string> YamlWriters = [LoopFiles];
 
     /// <summary>
-    /// What each slice may depend on besides itself. Inside the kernel: Functional depends on nothing,
-    /// Domain on Functional, Phrasing and Causality on Domain + Functional (not on each other).
+    /// What each slice may depend on besides itself (and Loopsmith.Functional, which every slice may use). Inside the
+    /// kernel: Domain depends on no slice, Phrasing and Causality on Domain (not on each other).
     /// Orchestration may depend on every slice — the only exception.
     /// </summary>
     public static readonly ImmutableDictionary<string, ImmutableArray<string>> AllowedDependencies =
         ImmutableDictionary.CreateRange<string, ImmutableArray<string>>(
         [
-            new(Functional, []),
-            new(Domain, [Functional]),
-            new(Phrasing, [Domain, Functional]),
-            new(Causality, [Domain, Functional]),
+            new(Domain, []),
+            new(Phrasing, [Domain]),
+            new(Causality, [Domain]),
             .. KernelOnly.Select(slice => new KeyValuePair<string, ImmutableArray<string>>(slice, Kernel)),
             new(Orchestration, All),
         ]);

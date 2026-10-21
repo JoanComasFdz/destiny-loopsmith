@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Vogen;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;

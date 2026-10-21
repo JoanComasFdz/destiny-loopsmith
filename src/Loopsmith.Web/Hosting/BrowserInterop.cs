@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.ManifestJoining;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;

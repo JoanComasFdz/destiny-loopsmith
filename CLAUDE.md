@@ -48,7 +48,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
 (`python3-yaml`) and `ffmpeg` (turns the e2e recordings into GIFs and MP4s) when they are missing.
 
 ## Where things live
-- `src/Loopsmith.Core/` — kernel (`Domain`, `Functional`, `Phrasing`, `Causality`) and
+- `src/Loopsmith.Functional/` — `Optional`, `Result`, `Unit` (namespace `Loopsmith.Functional`; Dunet unions,
+  nothing else): the coding building blocks, a project of its own so a tool can use them without Core.
+  **Core is the main app's domain and business logic**: a tool under `tools/` references Core only when it uses that
+  (the rule viewer does); a development tool that doesn't references only `Loopsmith.Functional`, or nothing, and still
+  follows [docs/CODING_RULES.md](docs/CODING_RULES.md) ("The host owns no logic").
+- `src/Loopsmith.Core/` — kernel (`Domain`, `Phrasing`, `Causality`) and
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `StepPlaying` (plays steps, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop by its
   order of triggers), `BuildExplanation`, `TraceRendering`,

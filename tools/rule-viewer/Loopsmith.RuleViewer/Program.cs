@@ -1,5 +1,5 @@
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.RuleViewer.Core;
 using Loopsmith.RuleViewer;
 using Loopsmith.RuleViewer.Hosting;

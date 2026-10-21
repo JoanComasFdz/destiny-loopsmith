@@ -3,7 +3,7 @@ using Dunet;
 using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.RuleViewer.Page;
 
 namespace Loopsmith.RuleViewer.Hosting;

@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
 

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Dunet;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using YamlDotNet.RepresentationModel;
 using static Loopsmith.Core.RuleParsing.ResultAccumulation;
 using static Loopsmith.Core.RuleParsing.ValueReading;

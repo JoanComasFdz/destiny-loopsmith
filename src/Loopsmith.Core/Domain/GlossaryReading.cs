@@ -1,5 +1,5 @@
 using System.Collections.Immutable;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.Domain;
 
