@@ -10,8 +10,8 @@ public static class TabWriting
     public static string WriteMarkdown(string name, ImmutableArray<ImmutableArray<string>> rows) => $"## {name}\n\n{WriteMarkdownTable(rows)}";
 
     /// <summary>
-    /// The tab's CSV as Python's <c>csv.writer</c> wrote it: a field quoted only when it holds a comma, a quote or a line
-    /// break, quotes doubled, each row ended by <c>\r\n</c>.
+    /// The tab's CSV (RFC 4180): a field quoted only when it holds a comma, a quote or a line break, quotes
+    /// doubled, each row ended by <c>\r\n</c>.
     /// </summary>
     public static string WriteCsv(ImmutableArray<ImmutableArray<string>> rows)
     {
@@ -24,7 +24,7 @@ public static class TabWriting
         return csv.ToString();
     }
 
-    /// <summary>How many rows a CSV holds, as Python's <c>csv.reader</c> counts them (a blank line is a row; a quoted line break isn't a new one).</summary>
+    /// <summary>How many rows a CSV holds (a blank line is a row; a quoted line break isn't a new one).</summary>
     public static int CountCsvRows(string csv)
     {
         var rows = 0;

@@ -123,7 +123,7 @@ public static class ImageDownloading
             var unreachable = ImageListing.IsHostUnreachable(error);   // pure
             if (unreachable)
             {
-                var shown = PythonText.TakeCharacters(error, 100);   // pure
+                var shown = TextTrimming.TakeCharacters(error, 100);   // pure
                 fetching.Log.Say($"Images: {host} not usable ({shown}); keeping remote links for it");   // impure
                 left = ImageListing.DropHost(left, host);   // pure
             }
@@ -210,7 +210,7 @@ internal static class ImageFetching
         }
 
         var body = ImageListing.ReadFailedBody(mediaType, answer.Text);   // pure
-        var quotedBody = PythonText.QuoteForConsole(body);   // pure
+        var quotedBody = $"\"{body}\"";   // pure
         fetching.Log.LogWarning($"img FAIL try{attempt} {described} | body={quotedBody} | {url}");   // impure
         var retry = ImageListing.DecideAfterAnswer(answer.Status, attempt, answer.RetryAfter);   // pure
         var failure = ImageListing.DescribeFailedAnswer(answer.Status, mediaType);   // pure
@@ -222,7 +222,7 @@ internal static class ImageFetching
     {
         fetching.Log.LogWarning($"img EXC  try{attempt} {error} | {url}");   // impure
         var retry = ImageListing.DecideAfterError(attempt);   // pure
-        var shown = PythonText.TakeCharacters(error, 150);   // pure
+        var shown = TextTrimming.TakeCharacters(error, 150);   // pure
         return new ImageAttempt(Optional.None<string>(), shown, retry, false);
     }
 

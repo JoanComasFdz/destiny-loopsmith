@@ -37,7 +37,7 @@ public sealed class ReadmeWritingTests
         var readme = ReadmeWriting.WriteReadme(meta, tabs, "compendium-2026-10-21");
 
         Assert.StartsWith("# Compendium — offline copy (2026-10-21 09:07)\n\nSnapshot of the public Google Sheet https://docs.google.com/spreadsheets/d/abc/edit, taken 2026-10-21 09:07.\nIt has 3 tabs.", readme);
-        Assert.Contains("(~2k tokens in total)", readme);
+        Assert.Contains("(~3k tokens in total)", readme);
         Assert.Contains("- Current tabs: 01–02.\n- Archived tabs (name starts with OLD, outdated values): 03.\n", readme);
         Assert.Contains("-- --rebuild <path to compendium-2026-10-21> --no-images`", readme);
         Assert.EndsWith("-- \"https://docs.google.com/spreadsheets/d/abc/edit\"`\n", readme);

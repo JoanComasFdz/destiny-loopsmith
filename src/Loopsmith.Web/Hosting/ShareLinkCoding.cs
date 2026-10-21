@@ -19,7 +19,7 @@ public static class ShareLinkCoding
 
     private static readonly UTF8Encoding StrictUtf8 = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
 
-    /// <summary>Produced by Python's <c>zlib.compressobj(9, DEFLATED, -15)</c>: proves we read other encoders' payloads.</summary>
+    /// <summary>A raw-DEFLATE payload written by another encoder (zlib, level 9, no header), not by .NET: proves a link compressed elsewhere opens.</summary>
     private const string KnownPayload = "y8nPL7BSCM7IzMtPKn3UMLNYISy_XOFRwxSFw9PNFB5N28BVXJJaUGylEB3LBQA";
     private const string KnownText = "loop: Shinobu’s Vow — ×6 ▰\nsteps: []\n";
 

@@ -3,7 +3,7 @@ using Loopsmith.CompendiumDownload.Core;
 
 namespace Loopsmith.CompendiumDownload.Tests;
 
-/// <summary>A tab's grid → its Markdown and CSV, as the Python version wrote them.</summary>
+/// <summary>A tab's grid → its Markdown and CSV.</summary>
 public sealed class TabWritingTests
 {
     private static readonly ImmutableArray<ImmutableArray<string>> Rows =
@@ -34,7 +34,7 @@ public sealed class TabWritingTests
     [InlineData("a,b\r\n", 1)]
     [InlineData("a\r\n\"x\ny\",z\r\nlast", 3)]
     [InlineData("a\n\nb\n", 3)]
-    public void A_csvs_rows_are_counted_as_Pythons_reader_counts_them(string csv, int rows) =>
+    public void A_csvs_rows_are_counted(string csv, int rows) =>
         Assert.Equal(rows, TabWriting.CountCsvRows(csv));
 
     [Fact]

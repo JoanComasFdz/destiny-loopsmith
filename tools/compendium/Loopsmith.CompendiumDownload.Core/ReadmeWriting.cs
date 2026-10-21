@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Loopsmith.Functional;
 
@@ -12,7 +13,7 @@ public static partial class ReadmeWriting
         var archived = tabs.Where(tab => IsArchived(tab.Tab.Name)).Select(tab => tab.Place).ToImmutableArray();
         var current = tabs.Select(tab => tab.Place).Where(place => !archived.Contains(place)).ToImmutableArray();
         var bytes = tabs.Sum(tab => tab.MarkdownBytes is Optional<long>.Some size ? size.Value : 0);
-        var tokens = PythonText.FormatThousandsToWhole(bytes);
+        var tokens = (bytes / 4.0 / 1000.0).ToString("0", CultureInfo.InvariantCulture);
         return $$"""
             # {{meta.Title}} — offline copy ({{meta.ExtractedAt}})
 

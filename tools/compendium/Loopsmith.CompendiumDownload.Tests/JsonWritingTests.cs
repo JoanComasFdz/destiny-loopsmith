@@ -2,7 +2,7 @@ using Loopsmith.CompendiumDownload.Core;
 
 namespace Loopsmith.CompendiumDownload.Tests;
 
-/// <summary>JSON as Python's json.dumps wrote it, so tabs.json, meta.json and map.json come out the same.</summary>
+/// <summary>JSON as tabs.json, meta.json and map.json hold it.</summary>
 public sealed class JsonWritingTests
 {
     [Fact]

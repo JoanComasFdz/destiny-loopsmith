@@ -54,13 +54,10 @@ writes `<folder>.zip`, holding the folder. Three projects, like the e2e tools' (
 
 Neither project references `Loopsmith.Core`, only `Loopsmith.Functional` (an architecture test holds it).
 
-It replaced `sheet_dump.py` (Python, requests + BeautifulSoup) and writes the same files: a snapshot's tab files,
-`tabs.json`, `meta.json`, `INDEX.md` and `gviz/` are byte for byte the Python version's, read where Python and .NET
-differ the way Python did (BeautifulSoup's text, which turns a run of spaces between tags into one; `csv.writer`'s
-quoting and `\r\n`; `json.dumps`' spacing and escapes; `round`). The log is `download.log` (it was `sheet_dump.log`),
-`README.md`'s rebuild lines name this tool, and `viewer.html` holds the same tables written out by AngleSharp instead of
-BeautifulSoup (the same cells, styles, images and links). Google's own pages (`raw/`, `htmlview_raw.html`) and its
-image links change with every request, so two downloads, by either version, differ there.
+It replaced `sheet_dump.py`, a Python script, and was checked against it when it was ported (#194): it writes the same
+files, and a snapshot's tab files (`NN_<Tab>.csv` and `.md`, what `CompendiumReading` and the rule-author agent read)
+came out the same. Google's own pages (`raw/`, `htmlview_raw.html`) and its image links change with every request, so
+two downloads differ there.
 
 ## Windows (PowerShell)
 
