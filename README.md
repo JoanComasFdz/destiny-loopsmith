@@ -66,7 +66,8 @@ Coding rules (binding): [docs/CODING_RULES.md](docs/CODING_RULES.md) · decision
 ## Repository layout
 
 ```
-src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Functional, Phrasing, Causality)
+src/Loopsmith.Functional/ Optional, Result, Unit (depends only on .NET and Dunet; tools use it without Core)
+src/Loopsmith.Core/      one project, slices = folders (kernel: Domain, Phrasing, Causality)
 src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)

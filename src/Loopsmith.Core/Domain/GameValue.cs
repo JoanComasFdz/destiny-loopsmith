@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Dunet;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.Domain;
 
@@ -14,7 +15,7 @@ public partial record GameValue
 }
 
 /// <summary>"300% [20%]" — PvE value with an optional PvP value.</summary>
-public sealed record PveAndPvp(GameValue Pve, Functional.Optional<GameValue> Pvp);
+public sealed record PveAndPvp(GameValue Pve, Optional<GameValue> Pvp);
 
 /// <summary>Where a number or rule came from — shown in the trace.</summary>
 [Union]
