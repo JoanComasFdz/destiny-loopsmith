@@ -126,39 +126,39 @@ public static class OutcomeExplaining
     /// <summary>The headings an outcome lands under, each with its role: spending stacks for energy is under both.</summary>
     private static ImmutableArray<(OutcomeKey Key, OutcomeWayRole Role)> ListOutcomeTargets(KeywordGlossary glossary, Optional<DamageType> superType, Outcome outcome) =>
         outcome.Match<ImmutableArray<(OutcomeKey, OutcomeWayRole)>>(
-            grant => [(EnergyOf(grant.To), OutcomeWayRole.GivenBy)],
-            convert => [(EnergyOf(convert.To), OutcomeWayRole.GivenBy), (StatusOf(glossary, convert.Consumed), OutcomeWayRole.EndedOrUsedUpBy)],
-            apply => [(StatusOf(glossary, apply.Status), OutcomeWayRole.GivenBy)],
-            remove => [(StatusOf(glossary, remove.Status), OutcomeWayRole.EndedOrUsedUpBy)],
-            debuff => [(StatusOf(glossary, debuff.Status), OutcomeWayRole.GivenBy)],
-            spawn => [(PickupOf(glossary, spawn.Pickup), OutcomeWayRole.GivenBy)],
-            summon => [(SummonOf(glossary, summon.Summon), OutcomeWayRole.GivenBy)],
+            grant => [(ToEnergyKey(grant.To), OutcomeWayRole.GivenBy)],
+            convert => [(ToEnergyKey(convert.To), OutcomeWayRole.GivenBy), (ToStatusKey(glossary, convert.Consumed), OutcomeWayRole.EndedOrUsedUpBy)],
+            apply => [(ToStatusKey(glossary, apply.Status), OutcomeWayRole.GivenBy)],
+            remove => [(ToStatusKey(glossary, remove.Status), OutcomeWayRole.EndedOrUsedUpBy)],
+            debuff => [(ToStatusKey(glossary, debuff.Status), OutcomeWayRole.GivenBy)],
+            spawn => [(ToPickupKey(glossary, spawn.Pickup), OutcomeWayRole.GivenBy)],
+            summon => [(ToSummonKey(glossary, summon.Summon), OutcomeWayRole.GivenBy)],
             strike => [(new OutcomeKey(OutcomeGroup.Strike, $"{glossary.DescribeStatus(strike.Via)} strike", Optional.Some("Strike")), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.DamageBonus, "Damage bonus"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.Health, "Health"), OutcomeWayRole.GivenBy)],
-            reset => [(EnergyOf(reset.Which), OutcomeWayRole.GivenBy)],
-            collect => [(PickupOf(glossary, collect.Pickup), OutcomeWayRole.PickedUpBy)],
-            _ => [(Plain(OutcomeGroup.Energy, "Least-charged ability energy"), OutcomeWayRole.GivenBy)],
-            spend => [(StatusOf(glossary, spend.Status), OutcomeWayRole.EndedOrUsedUpBy)],
+            _ => [(ToPlainKey(OutcomeGroup.DamageBonus, "Damage bonus"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Health, "Health"), OutcomeWayRole.GivenBy)],
+            reset => [(ToEnergyKey(reset.Which), OutcomeWayRole.GivenBy)],
+            collect => [(ToPickupKey(glossary, collect.Pickup), OutcomeWayRole.PickedUpBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Energy, "Least-charged ability energy"), OutcomeWayRole.GivenBy)],
+            spend => [(ToStatusKey(glossary, spend.Status), OutcomeWayRole.EndedOrUsedUpBy)],
             weapon => [(new OutcomeKey(OutcomeGroup.Strike, $"{DomainPhrasing.Capitalize(glossary.DescribeDamageSource(weapon.Weapon, superType))} strike", Optional.Some("Strike")), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.Weapons, "Reload"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.Weapons, "Magazine refill"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.Weapons, "Ammo progress"), OutcomeWayRole.GivenBy)]);
+            _ => [(ToPlainKey(OutcomeGroup.Weapons, "Reload"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Weapons, "Magazine refill"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Weapons, "Ammo progress"), OutcomeWayRole.GivenBy)]);
 
     /// <summary>The headings a passive lands under: a status it changes (extra stacks, a higher cap), else what it gives.</summary>
     private static ImmutableArray<(OutcomeKey Key, OutcomeWayRole Role)> ListPassiveTargets(KeywordGlossary glossary, Passive passive) =>
         passive.Match<ImmutableArray<(OutcomeKey, OutcomeWayRole)>>(
-            extra => [(StatusOf(glossary, extra.Status), OutcomeWayRole.ChangedBy)],
-            charges => [(EnergyOf(charges.Ability), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.DamageBonus, "Damage bonus"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.DamageResistance, "Damage resistance"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.Weapons, "Weapon stats"), OutcomeWayRole.GivenBy)],
-            raise => [(StatusOf(glossary, raise.Status), OutcomeWayRole.ChangedBy)],
-            _ => [(Plain(OutcomeGroup.Stats, "Stats"), OutcomeWayRole.GivenBy)],
-            _ => [(Plain(OutcomeGroup.DamageResistance, "Damage resistance"), OutcomeWayRole.GivenBy)],
-            regeneration => [.. regeneration.Abilities.Select(ability => (EnergyOf(ability), OutcomeWayRole.GivenBy))]);
+            extra => [(ToStatusKey(glossary, extra.Status), OutcomeWayRole.ChangedBy)],
+            charges => [(ToEnergyKey(charges.Ability), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.DamageBonus, "Damage bonus"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.DamageResistance, "Damage resistance"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Weapons, "Weapon stats"), OutcomeWayRole.GivenBy)],
+            raise => [(ToStatusKey(glossary, raise.Status), OutcomeWayRole.ChangedBy)],
+            _ => [(ToPlainKey(OutcomeGroup.Stats, "Stats"), OutcomeWayRole.GivenBy)],
+            _ => [(ToPlainKey(OutcomeGroup.DamageResistance, "Damage resistance"), OutcomeWayRole.GivenBy)],
+            regeneration => [.. regeneration.Abilities.Select(ability => (ToEnergyKey(ability), OutcomeWayRole.GivenBy))]);
 
-    private static OutcomeKey StatusOf(KeywordGlossary glossary, StatusId status) =>
+    private static OutcomeKey ToStatusKey(KeywordGlossary glossary, StatusId status) =>
         new(ReadStatusGroup(glossary, status), glossary.DescribeStatus(status), Optional.Some(glossary.DescribeKeywordKind(new KeywordRef.Status(status))));
 
     private static OutcomeGroup ReadStatusGroup(KeywordGlossary glossary, StatusId status) =>
@@ -171,17 +171,17 @@ public static class OutcomeExplaining
             }
             : OutcomeGroup.Buff;
 
-    private static OutcomeKey PickupOf(KeywordGlossary glossary, PickupId pickup) =>
+    private static OutcomeKey ToPickupKey(KeywordGlossary glossary, PickupId pickup) =>
         new(OutcomeGroup.Pickup, glossary.DescribePickup(pickup), Optional.Some(glossary.DescribeKeywordKind(new KeywordRef.Pickup(pickup))));
 
-    private static OutcomeKey SummonOf(KeywordGlossary glossary, SummonId summon) =>
+    private static OutcomeKey ToSummonKey(KeywordGlossary glossary, SummonId summon) =>
         new(OutcomeGroup.Summon, glossary.DescribeSummon(summon), Optional.Some(glossary.DescribeKeywordKind(new KeywordRef.Summon(summon))));
 
     /// <summary>"Grenade energy", "Class ability energy": one heading per ability, what gives its energy, charges or regeneration.</summary>
-    private static OutcomeKey EnergyOf(AbilityKind ability) =>
-        Plain(OutcomeGroup.Energy, DomainPhrasing.Capitalize($"{ability.DescribeAbility()} energy"));
+    private static OutcomeKey ToEnergyKey(AbilityKind ability) =>
+        ToPlainKey(OutcomeGroup.Energy, DomainPhrasing.Capitalize($"{ability.DescribeAbility()} energy"));
 
-    private static OutcomeKey Plain(OutcomeGroup group, string name) =>
+    private static OutcomeKey ToPlainKey(OutcomeGroup group, string name) =>
         new(group, name, Optional.None<string>());
 
     /// <summary>What a way lands under: its group, its name, and what it is when it is a keyword or a strike.</summary>

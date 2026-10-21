@@ -117,8 +117,8 @@ public sealed class OutcomesTabTests : BaseE2E
         await Frontend.Designer.ExplainPanel.WaitUntilOutcomesShownAsync();
 
         // Then
-        var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         // Buffs on you, then debuffs on the target, then strikes, then damage resistance; by name within each group.
+        var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
             .HasOutcomesInOrder(
                 "Amplified · Arc buff", "Lethal Current · Arc buff", "Blind · Arc debuff", "Jolt · Arc debuff",

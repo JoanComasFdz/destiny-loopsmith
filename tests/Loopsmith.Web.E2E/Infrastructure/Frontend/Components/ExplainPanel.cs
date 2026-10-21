@@ -35,7 +35,7 @@ public sealed class ExplainPanel(IPage page)
 
     /// <summary>Waits until the panel's "Outcomes" tab is selected.</summary>
     public Task WaitUntilOutcomesShownAsync() =>
-        Box.Locator("[data-action=build-explanation-outcomes][aria-selected=true]").WaitForAsync(new() { State = WaitForSelectorState.Visible });
+        Box.GetByRole(AriaRole.Tab, new() { Name = "Outcomes", Selected = true }).WaitForAsync(new() { State = WaitForSelectorState.Visible });
 
     /// <summary>Waits until the panel is closed: its lines are hidden.</summary>
     public Task WaitUntilClosedAsync() => Lines.First.WaitForAsync(new() { State = WaitForSelectorState.Hidden });
