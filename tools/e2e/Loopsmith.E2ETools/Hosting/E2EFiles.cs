@@ -27,11 +27,18 @@ public static class E2EFiles
         }
     }
 
-    /// <summary>The text a session gave push-gifs.sh <c>--message</c>, trimmed; empty when it gave none.</summary>
-    public static string ReadWhatChanged(string outFolder)
+    /// <summary>The text a session gave push-gifs.sh <c>--message</c>, as it is; empty when it gave none.</summary>
+    public static Result<string, string> ReadWhatChanged(string outFolder)
     {
         var path = Path.Combine(outFolder, "what-changed.md");
-        return File.Exists(path) ? File.ReadAllText(path).Trim() : "";
+        try
+        {
+            return new Result<string, string>.Ok(File.Exists(path) ? File.ReadAllText(path) : "");
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<string, string>.Error($"Cannot read {path}: {exception.Message}");
+        }
     }
 
     /// <summary>Which of each run's GIF, MP4 and flow PNG are on disk.</summary>
@@ -45,15 +52,22 @@ public static class E2EFiles
     /// A new folder holding each file under its asset name (gh uploads a file by its name); the caller deletes it with
     /// <see cref="DeleteStaging"/>.
     /// </summary>
-    public static ImmutableArray<string> StageUpload(string outFolder, string staging, ImmutableArray<UploadFile> files)
+    public static Result<ImmutableArray<string>, string> StageUpload(string outFolder, string staging, ImmutableArray<UploadFile> files)
     {
-        Directory.CreateDirectory(staging);
-        return [.. files.Select(file =>
+        try
         {
-            var target = Path.Combine(staging, file.Asset);
-            File.Copy(Path.Combine(outFolder, file.Path), target, overwrite: true);
-            return target;
-        })];
+            Directory.CreateDirectory(staging);
+            return new Result<ImmutableArray<string>, string>.Ok([.. files.Select(file =>
+            {
+                var target = Path.Combine(staging, file.Asset);
+                File.Copy(Path.Combine(outFolder, file.Path), target, overwrite: true);
+                return target;
+            })]);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<ImmutableArray<string>, string>.Error($"Cannot stage the upload in {staging}: {exception.Message}");
+        }
     }
 
     public static string CreateStagingPath() => Path.Combine(Path.GetTempPath(), $"e2e-upload-{Guid.NewGuid():N}");

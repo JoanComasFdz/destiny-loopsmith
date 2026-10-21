@@ -11,7 +11,7 @@ public sealed class PostWritingTests
     public void Both_kinds_show_the_PRs_own_first_then_the_rerecorded_with_their_fixtures()
     {
         var post = PostWriting.WritePost(Repo, 2, [
-            RunOf("EnemyCountTests", "Counts", "desktop", selection: Fixtures("Scenarios/Loop/Weapons/a.build.yaml", "Scenarios/Loop/Weapons/b.build.yaml")),
+            RunOf("EnemyCountTests", "Counts", "desktop", Fixtures("Scenarios/Loop/Weapons/a.build.yaml", "Scenarios/Loop/Weapons/b.build.yaml")),
             RunOf("BuildImportTests", "Imports", "desktop"),
             RunOf("BuildImportTests", "Imports", "mobile"),
         ], "Text.");
@@ -31,7 +31,7 @@ public sealed class PostWritingTests
     [Fact]
     public void Each_scenario_is_a_closed_details_holding_its_Gherkin_and_screens_and_the_sections_stay_outside()
     {
-        var post = WritePost(RunOf("EnemyCountTests", "Counts", "desktop", selection: Fixtures("f.yaml")), RunOf("BuildImportTests", "Imports", "desktop"));
+        var post = WritePost(RunOf("EnemyCountTests", "Counts", "desktop", Fixtures("f.yaml")), RunOf("BuildImportTests", "Imports", "desktop"));
 
         var imports = post[post.IndexOf("<b>Imports title</b>", StringComparison.Ordinal)..post.IndexOf("### Re-recorded", StringComparison.Ordinal)];
         Assert.Equal(2, CountOf(post, "<details><summary>"));
@@ -57,7 +57,7 @@ public sealed class PostWritingTests
     [Fact]
     public void Only_rerecorded_scenarios_leave_out_the_PRs_own_heading()
     {
-        var post = WritePost(RunOf("CodeLensTests", "Lens", "desktop", selection: Fixtures("Workspace/x.cs")));
+        var post = WritePost(RunOf("CodeLensTests", "Lens", "desktop", Fixtures("Workspace/x.cs")));
 
         Assert.DoesNotContain("Added or changed by this PR", post);
         Assert.Contains("### Re-recorded: their fixtures changed", post);
@@ -91,7 +91,7 @@ public sealed class PostWritingTests
     {
         var post = WritePost(
             RunOf("BuildImportTests", "Imports", "desktop", passed: false),
-            RunOf("ReloadTests", "Reloads", "desktop", passed: false, selection: Fixtures("f.yaml")));
+            RunOf("ReloadTests", "Reloads", "desktop", Fixtures("f.yaml"), passed: false));
 
         Assert.Contains("<details><summary><b>❌ Imports title</b></summary>", post);
         Assert.Contains("<details><summary><b>❌ Reloads title</b></summary>", post);

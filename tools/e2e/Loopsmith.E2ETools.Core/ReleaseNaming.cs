@@ -24,29 +24,29 @@ public static partial class ReleaseNaming
     public const int MaxName = 200;
 
     [GeneratedRegex(@"^rules-[a-z0-9]+(?:-[a-z0-9]+)*-resources$")]
-    private static partial Regex RuleReleasePattern();
+    private static partial Regex CreateRuleReleasePattern();
 
     [GeneratedRegex(@"^pr-([0-9]+)-v([0-9]+)-(.+)$")]
-    private static partial Regex AssetPattern();
+    private static partial Regex CreateAssetPattern();
 
     [GeneratedRegex(@"-([0-9a-f]{8})(\.[a-z0-9]+)$")]
-    private static partial Regex HashedPattern();
+    private static partial Regex CreateHashedPattern();
 
     [GeneratedRegex(@"([A-Z]+)([A-Z][a-z])")]
-    private static partial Regex CapitalRunPattern();
+    private static partial Regex CreateCapitalRunPattern();
 
     [GeneratedRegex(@"([a-z\d])([A-Z])")]
-    private static partial Regex WordStartPattern();
+    private static partial Regex CreateWordStartPattern();
 
     [GeneratedRegex(@"[-\s]")]
-    private static partial Regex SeparatorPattern();
+    private static partial Regex CreateSeparatorPattern();
 
     /// <summary>"AllClasses" → "all-classes": Humanizer's Kebaberize, as ScenarioNaming.ToGifName and the extension's toKebabCase.</summary>
     public static string ToKebabCase(string name)
     {
-        var split = CapitalRunPattern().Replace(name, "$1_$2");
-        var words = WordStartPattern().Replace(split, "$1_$2");
-        return SeparatorPattern().Replace(words, "_").ToLowerInvariant().Replace('_', '-');
+        var split = CreateCapitalRunPattern().Replace(name, "$1_$2");
+        var words = CreateWordStartPattern().Replace(split, "$1_$2");
+        return CreateSeparatorPattern().Replace(words, "_").ToLowerInvariant().Replace('_', '-');
     }
 
     /// <summary>A run's release, from its GIF's path (<c>&lt;domain folder&gt;/&lt;GIF name&gt;.gif</c>).</summary>
@@ -58,7 +58,7 @@ public static partial class ReleaseNaming
             : $"rules-{string.Join('-', folders[1..].Select(ToKebabCase))}-resources";
     }
 
-    public static bool IsRuleRelease(string tag) => RuleReleasePattern().IsMatch(tag);
+    public static bool IsRuleRelease(string tag) => CreateRuleReleasePattern().IsMatch(tag);
 
     /// <summary>
     /// <c>pr-&lt;n&gt;-v&lt;version&gt;-&lt;GIF name&gt;&lt;extension&gt;</c>; past 200 characters, its start plus a hash of the GIF's path (a
@@ -91,15 +91,17 @@ public static partial class ReleaseNaming
     /// </summary>
     public static Optional<AssetName> ReadAsset(string name)
     {
-        var found = AssetPattern().Match(name);
+        var found = CreateAssetPattern().Match(name);
         if (!found.Success)
         {
             return Optional.None<AssetName>();
         }
 
-        var hashed = name.Length == MaxName ? HashedPattern().Match(name) : Match.Empty;
+        var hashed = name.Length == MaxName ? CreateHashedPattern().Match(name) : Match.Empty;
         var run = hashed.Success ? $"#{hashed.Groups[1].Value}{hashed.Groups[2].Value}" : found.Groups[3].Value;
-        return Optional.Some(new AssetName(int.Parse(found.Groups[1].Value), int.Parse(found.Groups[2].Value), run));
+        return int.TryParse(found.Groups[1].Value, out var pr) && int.TryParse(found.Groups[2].Value, out var version)
+            ? Optional.Some(new AssetName(pr, version, run))
+            : Optional.None<AssetName>();
     }
 
     /// <summary>A file name without its last extension ("hits-desktop.gif" → "hits-desktop"); a leading dot is no extension.</summary>

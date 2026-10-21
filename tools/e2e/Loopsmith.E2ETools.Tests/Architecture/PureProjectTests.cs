@@ -1,4 +1,5 @@
 using Loopsmith.E2ETools.Core;
+using System.Text.RegularExpressions;
 using NetArchTest.Rules;
 
 namespace Loopsmith.E2ETools.Tests.Architecture;
@@ -16,16 +17,17 @@ public sealed class PureProjectTests
             "Loopsmith.E2ETools.Core must not use System.IO, System.Diagnostics.Process, System.Net or System.Console");
 
     [Fact]
-    public void Neither_project_references_Core()
+    public void The_pure_project_does_not_reference_Core() =>
+        Assert.DoesNotContain("Loopsmith.Core", typeof(PostWriting).Assembly.GetReferencedAssemblies().Select(reference => reference.Name));
+
+    [Fact]
+    public void The_host_references_only_Functional_and_the_pure_project()
     {
-        string[] projects = [typeof(PostWriting).Assembly.GetName().Name!, typeof(E2EToolsOptions).Assembly.GetName().Name!];
+        var project = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Loopsmith.E2ETools", "Loopsmith.E2ETools.csproj"));   // impure
 
-        var references = new[] { typeof(PostWriting).Assembly, typeof(E2EToolsOptions).Assembly }
-            .SelectMany(assembly => assembly.GetReferencedAssemblies())
-            .Select(reference => reference.Name);
+        var references = Regex.Matches(project, "ProjectReference Include=\"([^\"]+)\"").Select(found => Path.GetFileName(found.Groups[1].Value.Replace('\\', '/')));   // pure
 
-        Assert.DoesNotContain("Loopsmith.Core", references);
-        Assert.Equal(["Loopsmith.E2ETools.Core", "Loopsmith.E2ETools"], projects);
+        Assert.Equal(["Loopsmith.Functional.csproj", "Loopsmith.E2ETools.Core.csproj"], references);
     }
 
     private static void AssertNone(NetArchTest.Rules.TestResult result, string rule) =>

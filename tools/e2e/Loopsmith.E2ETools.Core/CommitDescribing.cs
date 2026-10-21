@@ -9,15 +9,15 @@ namespace Loopsmith.E2ETools.Core;
 public static partial class CommitDescribing
 {
     [GeneratedRegex(@"\n[ \t]*\n")]
-    private static partial Regex ParagraphBreakPattern();
+    private static partial Regex CreateParagraphBreakPattern();
 
     [GeneratedRegex(@"^[A-Za-z][A-Za-z0-9-]*: \S")]
-    private static partial Regex TrailerPattern();
+    private static partial Regex CreateTrailerPattern();
 
     /// <summary>The message's body without its trailers (Co-Authored-By: …), or its subject when there is no body.</summary>
     public static string DescribeCommit(string message)
     {
-        var paragraphs = ParagraphBreakPattern().Split(message.Trim())
+        var paragraphs = CreateParagraphBreakPattern().Split(message.Trim())
             .Where(paragraph => paragraph.Trim().Length > 0)
             .Select(paragraph => paragraph.Trim('\n'))
             .ToList();
@@ -27,7 +27,7 @@ public static partial class CommitDescribing
         }
 
         var body = paragraphs.Skip(1).ToList();
-        var trailers = body.Count > 0 && body[^1].Split('\n').All(line => TrailerPattern().IsMatch(line));
+        var trailers = body.Count > 0 && body[^1].Split('\n').All(line => CreateTrailerPattern().IsMatch(line));
         var kept = trailers ? body[..^1] : body;
         return kept.Count > 0 ? string.Join("\n\n", kept) : paragraphs[0];
     }

@@ -10,12 +10,15 @@ internal static class Posts
     public const string Repo = "Owner/repo";
 
     /// <summary>A run of PR 1's V1 with its GIF on disk, no MP4 and no rule, in prs-resources.</summary>
-    public static PlannedRun RunOf(string cls, string method, string screen, bool passed = true, RunSelection? selection = null) =>
+    public static PlannedRun RunOf(string cls, string method, string screen, bool passed = true) =>
+        RunOf(cls, method, screen, new RunSelection.Changed(), passed);
+
+    public static PlannedRun RunOf(string cls, string method, string screen, RunSelection selection, bool passed = true) =>
         new(
             new ScenarioEntry(
                 cls, method, $"{method} title", Optional.Some($"Scenario: {method}"), Optional.Some(screen),
                 $"Loop/{method}-{screen}.gif", Optional.Some($"Loop/{method}-{screen}.mp4"), Optional.None<string>(),
-                Optional.None<string>(), Optional.None<string>(), passed, selection ?? new RunSelection.Changed()),
+                Optional.None<string>(), Optional.None<string>(), passed, selection),
             new RecordedFiles(HasGif: true, HasMp4: false, HasFlow: false),
             ReleaseNaming.PrsRelease,
             $"pr-1-v1-{method}-{screen}.gif",

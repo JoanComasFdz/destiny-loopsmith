@@ -16,13 +16,13 @@ on pull requests").
 
   It uses the `gh` CLI (`GH_TOKEN`) on `--repo` or `GITHUB_REPOSITORY`; `--dry-run` prints what it would upload, post,
   edit, hide or delete instead of doing it (it still reads from GitHub). Three projects, like the rule viewer's:
-  - `Loopsmith.E2ETools`: the host. It reads the options, `scenarios.json` and the recordings, and calls `gh`
+  - `Loopsmith.E2ETools`: the host. It reads `scenarios.json` and the recordings, and calls `gh`
     (`Hosting/`): posting (`ScenarioPosting`) and closing (`PrClosing`).
   - `Loopsmith.E2ETools.Core`: its logic, pure, following [CODING_RULES](../../docs/CODING_RULES.md): the post
     (`PostWriting`), its versions and what becomes of the earlier ones (`PostVersioning`: collapsed, hidden, shrunk), the
     releases and the names of their assets (`ReleaseNaming`, mirrored by the VS Code extension), what each release keeps
     when a PR closes (`ReleaseCleaning`), what to upload (`UploadPlanning`), "What changed" (`CommitDescribing`) and the
-    JSON it reads and sends (`JsonReading`).
+    JSON it reads and sends (`JsonReading`), and the command line (`OptionsReading`).
   - `Loopsmith.E2ETools.Tests`: their tests, which `dotnet test` runs with the rest, in CI too.
 
   Neither project references `Loopsmith.Core`, only `Loopsmith.Functional` (an architecture test holds it): the

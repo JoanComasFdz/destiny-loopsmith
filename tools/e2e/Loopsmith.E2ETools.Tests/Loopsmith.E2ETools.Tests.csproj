@@ -13,8 +13,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
     <ProjectReference Include="..\Loopsmith.E2ETools.Core\Loopsmith.E2ETools.Core.csproj" />
-    <!-- The host, for its options (E2EToolsOptionsTests). -->
-    <ProjectReference Include="..\Loopsmith.E2ETools\Loopsmith.E2ETools.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

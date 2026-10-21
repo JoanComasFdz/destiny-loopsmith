@@ -21,29 +21,30 @@ public static partial class PostVersioning
     public const string Footer = "_Recorded by the e2e workflow · Claude Code_";
     public const string Bot = "github-actions[bot]";
     private const string Collapsed = "<details>";
+    private const int MaxHiddenReads = 100;
 
     [GeneratedRegex(@"^## Scenarios \(V([0-9]+)\)[ \t]*$", RegexOptions.Multiline)]
-    private static partial Regex HeadingPattern();
+    private static partial Regex CreateHeadingPattern();
 
     /// <summary>A shrunk post has no heading left: its version is in its one line.</summary>
     [GeneratedRegex(@"\A\*\*Scenarios \(V([0-9]+)\)\*\*")]
-    private static partial Regex ShrunkPattern();
+    private static partial Regex CreateShrunkPattern();
 
     /// <summary>
     /// A scenario is a closed &lt;details&gt; whose summary is its bold title; an earlier version's collapse is one too, around
     /// the whole post, told apart by its summary. A post from before them had a heading per title (CountScenarios).
     /// </summary>
     [GeneratedRegex(@"^<details><summary><b>(?!Scenarios \(V[0-9]+\)</b>)", RegexOptions.Multiline)]
-    private static partial Regex ScenarioPattern();
+    private static partial Regex CreateScenarioPattern();
 
     [GeneratedRegex(@"^### (Added or changed by this PR|Re-recorded: their fixtures changed)[ \t]*$", RegexOptions.Multiline)]
-    private static partial Regex SectionsPattern();
+    private static partial Regex CreateSectionsPattern();
 
     [GeneratedRegex(@"^### ", RegexOptions.Multiline)]
-    private static partial Regex TitlePattern();
+    private static partial Regex CreateTitlePattern();
 
     [GeneratedRegex(@"^#### ", RegexOptions.Multiline)]
-    private static partial Regex SectionTitlePattern();
+    private static partial Regex CreateSectionTitlePattern();
 
     /// <summary>The workflow's own comments: written by its bot and ending with its footer.</summary>
     public static ImmutableArray<PrComment> PickWorkflowComments(ImmutableArray<PrComment> comments) =>
@@ -55,15 +56,15 @@ public static partial class PostVersioning
     /// </summary>
     public static Optional<int> ReadVersion(PrComment comment)
     {
-        var heading = HeadingPattern().Match(comment.Body);
-        var found = heading.Success ? heading : ShrunkPattern().Match(comment.Body);
-        return found.Success ? Optional.Some(int.Parse(found.Groups[1].Value)) : Optional.None<int>();
+        var heading = CreateHeadingPattern().Match(comment.Body);
+        var found = heading.Success ? heading : CreateShrunkPattern().Match(comment.Body);
+        return found.Success && int.TryParse(found.Groups[1].Value, out var version) ? Optional.Some(version) : Optional.None<int>();
     }
 
     public static int FindLastVersion(IEnumerable<PrComment> comments) =>
         ReadVersions(comments).DefaultIfEmpty(0).Max();
 
-    public static bool IsShrunk(PrComment comment) => ShrunkPattern().IsMatch(comment.Body);
+    public static bool IsShrunk(PrComment comment) => CreateShrunkPattern().IsMatch(comment.Body);
 
     public static bool IsCollapsed(PrComment comment) => comment.Body.StartsWith(Collapsed, StringComparison.Ordinal);
 
@@ -73,13 +74,13 @@ public static partial class PostVersioning
     /// </summary>
     public static int CountScenarios(string body)
     {
-        var collapsed = ScenarioPattern().Count(body);
+        var collapsed = CreateScenarioPattern().Count(body);
         if (collapsed > 0)
         {
             return collapsed;
         }
 
-        return SectionsPattern().IsMatch(body) ? SectionTitlePattern().Count(body) : TitlePattern().Count(body);
+        return CreateSectionsPattern().IsMatch(body) ? CreateSectionTitlePattern().Count(body) : CreateTitlePattern().Count(body);
     }
 
     public static string DescribeVersion(int version, int count, int replacedBy) =>
@@ -132,13 +133,19 @@ public static partial class PostVersioning
         return new CommentEdit(comment, $"{line}\n\n<!-- {Footer} -->\n");
     }
 
+    /// <summary>The node ids whose hidden state to read: GraphQL's nodes takes at most 100.</summary>
+    public static ImmutableArray<string> PlanHiddenReads(ImmutableArray<PrComment> comments) =>
+        [.. comments.Select(comment => comment.NodeId).Take(MaxHiddenReads)];
+
     /// <summary>A body's first line, which names its version in the log.</summary>
     public static string ReadFirstLine(string body) => body.Split('\n')[0].TrimEnd('\r');
 
     private static IEnumerable<int> ReadVersions(IEnumerable<PrComment> comments) =>
         comments.Select(ReadVersion).OfType<Optional<int>.Some>().Select(some => some.Value);
 
-    private static int FindNextVersion(int version, ImmutableArray<int> versions) => versions.Where(next => next > version).Min();
+    /// <summary>The next version after this one; the one after it when there is none yet (never, for an earlier post).</summary>
+    private static int FindNextVersion(int version, ImmutableArray<int> versions) =>
+        versions.Where(next => next > version).DefaultIfEmpty(version + 1).Min();
 
     private static string DescribeCount(int count) => $"{count} scenario{(count == 1 ? "" : "s")}";
 

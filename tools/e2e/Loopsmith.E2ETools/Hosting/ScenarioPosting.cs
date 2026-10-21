@@ -11,8 +11,6 @@ namespace Loopsmith.E2ETools.Hosting;
 /// </summary>
 public static class ScenarioPosting
 {
-    private const int MaxHiddenRead = 100;
-
     public static Result<Unit, string> PostScenarios(E2EToolsOptions options, E2ECommand.PostScenarios command)
     {
         var json = E2EFiles.ReadScenariosJson(command.Out);   // impure
@@ -86,26 +84,34 @@ public static class ScenarioPosting
         E2EFiles.ReportAll(plan.Notes);   // impure
         foreach (var upload in plan.Uploads)
         {
-            var ensured = upload.RuleGif.Match(
-                gif => EnsureRuleRelease(options, upload.Release, gif.Value),
-                _ => new Result<Unit, string>.Ok(new Unit.Value()));   // impure
-            if (ensured is Result<Unit, string>.Error notEnsured)
+            if (upload.RuleGif is Optional<string>.Some gif)
             {
-                return notEnsured;
+                var ensured = EnsureRuleRelease(options, upload.Release, gif.Value);   // impure
+                if (ensured is Result<Unit, string>.Error notEnsured)
+                {
+                    return notEnsured;
+                }
             }
 
             var staging = E2EFiles.CreateStagingPath();   // impure
             try
             {
-                var targets = E2EFiles.StageUpload(outFolder, staging, upload.Files);   // impure
+                var staged = E2EFiles.StageUpload(outFolder, staging, upload.Files);   // impure
+                if (staged is Result<ImmutableArray<string>, string>.Error notStaged)
+                {
+                    return new Result<Unit, string>.Error(notStaged.Failure);
+                }
+
+                var targets = ((Result<ImmutableArray<string>, string>.Ok)staged).Value;
                 var uploading = upload.Files.Select(file => $"Uploading {file.Asset} to {upload.Release}").ToImmutableArray();   // pure
                 E2EFiles.ReportAll(uploading);   // impure
-                var sent = options.DryRun
-                    ? new Result<string, string>.Ok("")
-                    : GitHubCli.CallGh(["release", "upload", upload.Release, .. targets, "--clobber", "--repo", options.Repo], Optional.None<string>());   // impure
-                if (sent is Result<string, string>.Error notSent)
+                if (!options.DryRun)
                 {
-                    return new Result<Unit, string>.Error(notSent.Failure);
+                    var sent = GitHubCli.CallGh(["release", "upload", upload.Release, .. targets, "--clobber", "--repo", options.Repo], Optional.None<string>());   // impure
+                    if (sent is Result<string, string>.Error notSent)
+                    {
+                        return new Result<Unit, string>.Error(notSent.Failure);
+                    }
                 }
             }
             finally
@@ -123,7 +129,8 @@ public static class ScenarioPosting
     /// </summary>
     private static Result<Unit, string> EnsureRuleRelease(E2EToolsOptions options, string release, string gif)
     {
-        if (HasRelease(options, release))   // impure
+        var exists = HasRelease(options, release);   // impure
+        if (exists)
         {
             return new Result<Unit, string>.Ok(new Unit.Value());
         }
@@ -136,7 +143,14 @@ public static class ScenarioPosting
 
         var notes = UploadPlanning.DescribeRuleRelease(gif);   // pure
         var made = GitHubCli.RunGh(["release", "create", release, "--prerelease", "--title", release, "--notes", notes, "--repo", options.Repo], Optional.None<string>());   // impure
-        if (made.ExitCode == 0 || HasRelease(options, release))   // impure
+        var created = made.ExitCode == 0;   // pure
+        if (created)
+        {
+            return new Result<Unit, string>.Ok(new Unit.Value());
+        }
+
+        var madeElsewhere = HasRelease(options, release);   // impure
+        if (madeElsewhere)
         {
             return new Result<Unit, string>.Ok(new Unit.Value());
         }
@@ -144,15 +158,19 @@ public static class ScenarioPosting
         return new Result<Unit, string>.Error($"Couldn't create the release {release}:\n{made.Errors.Trim()}");
     }
 
-    private static bool HasRelease(E2EToolsOptions options, string release) =>
-        GitHubCli.RunGh(["release", "view", release, "--repo", options.Repo, "--json", "tagName"], Optional.None<string>()).ExitCode == 0;
+    private static bool HasRelease(E2EToolsOptions options, string release)
+    {
+        var answer = GitHubCli.RunGh(["release", "view", release, "--repo", options.Repo, "--json", "tagName"], Optional.None<string>());   // impure
+        return answer.ExitCode == 0;
+    }
 
     private static Result<string, string> DescribeChanges(E2ECommand.PostScenarios command)
     {
-        var given = E2EFiles.ReadWhatChanged(command.Out);   // impure
-        if (given.Length > 0)
+        var read = E2EFiles.ReadWhatChanged(command.Out);   // impure
+        var given = read.Map(text => text.Trim());   // pure
+        if (given is not Result<string, string>.Ok { Value.Length: 0 })
         {
-            return new Result<string, string>.Ok(given);
+            return given;
         }
 
         var message = GitHubCli.ReadCommitMessage(command.Commit);   // impure
@@ -182,7 +200,7 @@ public static class ScenarioPosting
     /// </summary>
     private static Result<ImmutableHashSet<string>, string> ReadHidden(E2EToolsOptions options, ImmutableArray<PrComment> comments)
     {
-        var ids = comments.Select(comment => comment.NodeId).Take(MaxHiddenRead).ToImmutableArray();   // pure
+        var ids = PostVersioning.PlanHiddenReads(comments);   // pure
         if (ids.IsEmpty)
         {
             return new Result<ImmutableHashSet<string>, string>.Ok(ImmutableHashSet<string>.Empty);

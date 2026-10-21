@@ -54,6 +54,15 @@ public static class ReleaseCleaning
             .Select(asset => asset.Asset)];
     }
 
+    public static bool HasPrsRelease(ImmutableArray<Release> releases) => releases.Any(release => release.Tag == ReleaseNaming.PrsRelease);
+
+    /// <summary>
+    /// Whether the cleanup deleted rule recordings of a PR closed without merging, so its newest post, whose rule GIFs are
+    /// gone, shrinks too.
+    /// </summary>
+    public static bool HasDeletedUnmergedRules(ImmutableArray<(string Tag, ImmutableArray<ReleaseAsset> Deleted)> deletedByRelease, bool merged) =>
+        !merged && deletedByRelease.Any(release => release.Tag != ReleaseNaming.PrsRelease && !release.Deleted.IsEmpty);
+
     /// <summary>A release's lines once cleaned: how many of the PR's assets it kept, how many it holds, and a warning near its limit.</summary>
     public static ImmutableArray<string> DescribeCleaned(string tag, ImmutableArray<ReleaseAsset> assets, ImmutableArray<ReleaseAsset> deleted, int pr)
     {

@@ -45,7 +45,7 @@ public sealed class JsonReadingTests
     {
         var read = JsonReading.ReadScenarios("""[{"class": "ReloadTests"}]""");
 
-        Assert.Contains("scenarios.json lacks a field it needs", Assert.IsType<Result<System.Collections.Immutable.ImmutableArray<ScenarioEntry>, string>.Error>(read).Failure);
+        Assert.Equal("scenarios.json: an entry lacks its class, method, title, gif or passed", Assert.IsType<Result<System.Collections.Immutable.ImmutableArray<ScenarioEntry>, string>.Error>(read).Failure);
     }
 
     [Fact]

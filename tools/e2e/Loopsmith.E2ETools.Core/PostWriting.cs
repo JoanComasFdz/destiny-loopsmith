@@ -121,8 +121,7 @@ public static class PostWriting
     private static string DescribeScreen(Optional<string> screen)
     {
         var name = screen.UnwrapOr("");
-        var known = Screens.Where(entry => entry.Screen == name).Select(entry => entry.Label).FirstOrDefault();
-        return known ?? name;
+        return Screens.Where(entry => entry.Screen == name).Select(entry => entry.Label).DefaultIfEmpty(name).First();
     }
 
     /// <summary>
