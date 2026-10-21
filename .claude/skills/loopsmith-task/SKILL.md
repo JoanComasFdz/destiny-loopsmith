@@ -81,14 +81,32 @@ round. So each question and each suggestion stands on its own:
    Compendium's Arc tab says *Amplitude*"). Say what a term means the first time you use it (an ADR, a slice, a
    file, an option named earlier in the session): "D12, the decision that the Compendium is joined by name".
 3. **The choices**, as a short list or a small table: for each, what changes for the owner or the app and what it
-   costs. Mark the one you'd pick as **(my default)** and say why. Leave out a choice that can't work, or name it
-   in one line with the reason it can't.
+   costs. Leave out a choice that can't work, or name it in one line with the reason it can't.
+   - **Rate every choice** with a short label in brackets after it, saying what it is best or worst at:
+     **(fewest changes)**, **(most correct)**, **(consistent with <what it matches>)**, **(quick fix, leaves <what>
+     as it is)**. The owner sees at a glance which choice is small and which is proper, without weighing each one's
+     text.
+   - **Mark the one you'd pick as (my default) and justify it** by what makes it right for the app or the player:
+     it behaves like the screens next to it, it holds the rules, it fixes the cause rather than one symptom.
+     Sessions lean to the choice that needs the fewest changes; a smaller change is a cost, not a reason. Pick it
+     only when the proper choice's cost is out of proportion to what it gives, and then say what that cost is (a
+     new rule format, another slice, a second PR) and what the smaller one leaves wrong.
+
+   For example, where a step card shows Ionic Overclock's weapon stats:
+   - (a) only in the Amplified popup's "Right then" card, as today **(fewest changes, leaves the chip without
+     them)**: no app change.
+   - (b) also in a "Right then" card on the Ionic Overclock WEAPONS chip **(most correct, consistent with Stats
+     for All's chip)** **(my default)**: every chip that changes a weapon stat shows it the same way; a web
+     change and a scenario more.
+
+   Not "(a) (my default): no app change"; that picks it for being small.
 4. **For a suggestion:** what it adds, what it costs (a bigger PR, another round), and what happens if they say
    no (a follow-up, or nothing lost).
 
 End the message with what you need back, as a numbered list matching the headings ("1. Is the default fine?
 2. Artifact Perks in this PR, yes or no?"), so the owner can answer "1 ok, 2 yes". When a question goes through
-`AskUserQuestion`, its question and each option's description carry the same context: the owner sees only them.
+`AskUserQuestion`, its question and each option's description carry the same context, each option's rating label
+included, and the default's justification: the owner sees only them.
 
 Then wait for their answer. Change the criteria as often as they want.
 
