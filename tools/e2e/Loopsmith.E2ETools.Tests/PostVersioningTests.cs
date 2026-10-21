@@ -41,6 +41,20 @@ public sealed class PostVersioningTests
     }
 
     [Fact]
+    public void A_post_with_counts_in_its_heading_reads_its_version_and_collapses_with_its_count()
+    {
+        var v1 = CommentOf(1, PostWriting.WritePost(Repo, 1, [RunOf("BuildImportTests", "Imports", "desktop", passed: false), RunOf("ReloadTests", "Reloads", "desktop")], "Text."));
+
+        var edit = Assert.Single(PostVersioning.PlanCollapses([v1], 2));
+
+        Assert.Equal(1, PostVersioning.FindLastVersion([v1]));
+        Assert.Equal(2, PostVersioning.CountScenarios(v1.Body));
+        Assert.StartsWith("<details><summary><b>Scenarios (V1)</b> · 2 scenarios · replaced by V2</summary>\n", edit.Body);
+        Assert.Equal(2, PostVersioning.CountScenarios(edit.Body));
+        Assert.Equal(1, PostVersioning.FindLastVersion([CommentOf(1, edit.Body)]));
+    }
+
+    [Fact]
     public void Another_comment_of_the_workflow_is_never_edited()
     {
         var other = CommentOf(9, $"Something else\n\n---\n{PostVersioning.Footer}\n");
