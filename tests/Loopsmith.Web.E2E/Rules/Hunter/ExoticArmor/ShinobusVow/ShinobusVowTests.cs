@@ -124,7 +124,7 @@ public sealed class ShinobusVowTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Shinobu's Vow's New Tricks is spent by the next grenade thrown
-          # Rule hunter-exotic-armor-shinobus-vow-4: Grenade cast ➜ Shinobu's Vow equipped and New Tricks on you ➜ ends New Tricks
+          # Rule hunter-exotic-armor-shinobus-vow-4: Grenade thrown ➜ Shinobu's Vow equipped and New Tricks on you ➜ ends New Tricks
           Given the build "shinobus-vow-skip-grenade" is imported, with no steps
           When I tap "Skip Grenade" in the trigger panel
           And I tap "🥊 hit"

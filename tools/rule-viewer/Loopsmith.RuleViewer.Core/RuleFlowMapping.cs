@@ -85,12 +85,12 @@ internal static class RuleFlowMapping
             "Always on");
 
     /// <summary>
-    /// What sets a rule off, as the player says it: an ability cast ("Grenade cast", "Class ability"), a hit or kill by each source
+    /// What sets a rule off, as the player says it: an ability cast ("Grenade thrown", "Class ability"), a hit or kill by each source
     /// it names ("Melee hit", "Sliding melee hit", "Arc weapon 3+ kills"), a pickup, a buff gained or maxed, a finisher…
     /// </summary>
     private static ImmutableArray<TriggerPart> ListTriggerParts(GraphContext context, Trigger trigger) =>
         trigger.Match(
-            abilityCast: cast => ListCastParts(context, trigger, cast.Kind),
+            abilityCast: cast => ListCastParts(context, trigger, cast.Kind, AbilityInput.Press),
             killAny: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
             killOfTier: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"kill ({DomainPhrasing.DescribeTierNeed(kill.Tier)})")),
             killDebuffed: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, "kill")),
@@ -102,7 +102,7 @@ internal static class RuleFlowMapping
             buffGained: _ => ListActionParts(context, trigger, name => $"{name} gained"),
             stacksMaxed: _ => ListActionParts(context, trigger, name => $"{name} at max"),
             finisher: _ => ListActionParts(context, trigger, name => name),
-            abilityCastAs: cast => ListCastParts(context, trigger, cast.Kind),
+            abilityCastAs: cast => ListCastParts(context, trigger, cast.Kind, cast.Input),
             killFewer: kill => ListHitParts(context, kill.Via, DependencyMapping.DescribeKillLabel(kill.Needs, $"fewer than {FormatCount(kill.FewerThan)} kills")),
             criticalHealth: _ => ListActionParts(context, trigger, name => name),
             shieldBroken: _ => ListActionParts(context, trigger, name => name),
@@ -114,9 +114,9 @@ internal static class RuleFlowMapping
             pickUpAmmo: _ => ListActionParts(context, trigger, name => name),
             readyWeapon: _ => ListActionParts(context, trigger, name => name));
 
-    /// <summary>A cast: "Grenade cast", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>
-    private static ImmutableArray<TriggerPart> ListCastParts(GraphContext context, Trigger trigger, AbilityKind kind) =>
-        ListActionParts(context, trigger, name => kind == AbilityKind.ClassAbility ? name : $"{name} cast");
+    /// <summary>A cast in the designer's words: "Grenade thrown", "Grenade held", "Super cast"; the class ability is the cast itself ("Class ability", "Air class ability").</summary>
+    private static ImmutableArray<TriggerPart> ListCastParts(GraphContext context, Trigger trigger, AbilityKind kind, AbilityInput input) =>
+        ListActionParts(context, trigger, name => kind == AbilityKind.ClassAbility ? name : DomainPhrasing.DescribeCast(kind, input));
 
     private static ImmutableArray<TriggerPart> ListActionParts(GraphContext context, Trigger trigger, Func<string, string> describe) =>
         [.. DependencyMapping.ListActionNodes(context, trigger).Select(node => new TriggerPart(Optional.Some(node), describe(node.Name), node.Name))];

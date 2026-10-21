@@ -52,8 +52,19 @@ public sealed class RuleFlowTests
 
         Assert.Equal(["spark#0", "spark#1", "spark#p0"], ListFlows(rules).Select(flow => flow.Id).Order(StringComparer.Ordinal));
         Assert.Equal("Always", FindFlow(rules, "spark#p0").Trigger.Name);
-        Assert.Equal("Grenade cast", FindFlow(rules, "spark#0").Trigger.Name);
+        Assert.Equal("Grenade thrown", FindFlow(rules, "spark#0").Trigger.Name);
         Assert.Equal("Finisher", FindFlow(rules, "spark#1").Trigger.Name);
+    }
+
+    [Theory]
+    [InlineData(AbilityKind.Grenade, AbilityInput.Press, "Grenade thrown")]
+    [InlineData(AbilityKind.Grenade, AbilityInput.Hold, "Grenade held")]
+    [InlineData(AbilityKind.Super, AbilityInput.Press, "Super cast")]
+    public void A_cast_trigger_is_named_in_the_designers_words(AbilityKind kind, AbilityInput input, string name)
+    {
+        var flow = FindFlow(Draw(Fragment("spark", On(new Trigger.AbilityCastAs(kind, input), Buff("amplified")))), "spark#0");
+
+        Assert.Equal(name, flow.Trigger.Name);
     }
 
     [Fact]
@@ -286,7 +297,7 @@ public sealed class RuleFlowTests
         var json = RuleViewing.RenderRulesJson(Draw(Fragment("spark", OnGrenadeCast(Buff("amplified")))));
 
         Assert.StartsWith("""{"title":"Arc Hunter","scopes":[{"id":"subclass","name":"Arc subclass","groups":[{"key":"trigger:grenade","name":"Grenade",""", json);
-        Assert.Contains(""""flows":[{"id":"spark#0","element":"spark","rule":"test-rule-1","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade cast","""", json);
+        Assert.Contains(""""flows":[{"id":"spark#0","element":"spark","rule":"test-rule-1","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade thrown","""", json);
         Assert.Contains(""""tone":"fragment","role":"condition","icon":{"kind":"blank"}"""", json);
     }
 }
