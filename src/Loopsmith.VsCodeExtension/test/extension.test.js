@@ -161,7 +161,7 @@ test('names a run past 200 characters like the workflow: its start, then the has
   const method = 'AScenarioWhoseNameGoesOnAndOn'.repeat(5) + 'PastTwoHundredCharacters';
   const gif = extension.toGifName(method, 'desktop');
   const hash = await extension.digestText(extension.toGifPath('Recordings', gif));
-  // Written by tools/e2e/post-scenarios.py's name_asset for the same GIF.
+  // Written by tools/e2e's ReleaseNaming.NameAsset for the same GIF.
   const expected = 'pr-112-v3-' + 'a-scenario-whose-name-goes-on-and-on-'.repeat(4) + 'a-scenario-whose-name-goes-on-860a961a';
   assert.equal(extension.nameAsset(112, 3, gif, '.gif', hash), `${expected}.gif`);
   assert.equal(extension.nameAsset(112, 3, gif, '.mp4', hash), `${expected}.mp4`);

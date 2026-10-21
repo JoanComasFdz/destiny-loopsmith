@@ -245,7 +245,7 @@ posted; check-ins; a conflict merge or a CI fix nobody asked for; waiting on rev
 or closed is one line with no links.
 
 A PR with no preview (every changed path a Markdown file or under `docs/`, `.github/`, `.claude/`,
-`.devcontainer/`, `tools/e2e/`, `tools/compendium/`, `tools/manifest/` or `tests/`; CLAUDE.md, "Agent
+`.devcontainer/`, `tools/compendium/`, `tools/manifest/` or `tests/`, or a script directly in `tools/e2e/`; CLAUDE.md, "Agent
 workflow", step 4) gets none, so those two messages end with the PR bullet only,
 and its description has no "how to check it on the preview".
 

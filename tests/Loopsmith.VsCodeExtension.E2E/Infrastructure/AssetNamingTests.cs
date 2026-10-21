@@ -11,7 +11,7 @@ public sealed class AssetNamingTests
 
     [Fact]
     public void ANamePastTwoHundredCharacters_KeepsItsStartAndAHashOfItsGifPath() =>
-        // Written by tools/e2e/post-scenarios.py's name_asset for the same GIF.
+        // Written by tools/e2e's ReleaseNaming.NameAsset for the same GIF.
         Assert.Equal(
             "pr-112-v3-a-scenario-whose-title-goes-on-and-on-past-two-hundred-characters-still-finds-its-recording-because-the-workflow-shortens-its-asset-names-with-a-hash-and-the-extension-shortens-1732f032.mp4",
             AssetNaming.NameAsset(

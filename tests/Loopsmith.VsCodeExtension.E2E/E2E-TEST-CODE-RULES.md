@@ -101,7 +101,7 @@ As the web rules' rule d: one `<Type>Assertions` class next to each snapshot, in
 `Workspace/`: its path, its scenario's method, domain folder and screens, the only place they live) and `Recording`
 (`new Recording(109, 1)`: "PR #109 · V1", GIFs and MP4s; `HasMp4s: false` for GIFs only). An asset's name is never
 written by hand in the fake: `FakeRelease` names each run as the workflow does (`AssetNaming`; `AssetNamingTests` checks it against names
-`tools/e2e/post-scenarios.py`'s `name_asset` wrote). A Gherkin's quoted asset name or URL is the quoted string itself.
+`tools/e2e`'s `ReleaseNaming.NameAsset` wrote). A Gherkin's quoted asset name or URL is the quoted string itself.
 
 ## f. The workspace
 

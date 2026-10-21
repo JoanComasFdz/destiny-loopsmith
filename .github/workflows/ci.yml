@@ -12,8 +12,9 @@ jobs:
   # What a pull request changes (a rename counts its old path too; a PR with no changed files
   # changes nothing):
   # - code: a file that dotnet build or test reads, i.e. anything but Markdown, docs/, .github/,
-  #   .claude/, .devcontainer/ and the Python and shell tools in tools/e2e/, tools/compendium/ and
-  #   tools/manifest/. If not, `build` is skipped, and a skipped required check counts as passed.
+  #   .claude/, .devcontainer/, the scripts directly in tools/e2e/ (its .NET projects, in folders, are built and
+  #   tested) and the Python and shell tools in tools/compendium/ and tools/manifest/. If not, `build` is skipped, and a
+  #   skipped required check counts as passed.
   # - site: a file the published site is built from, i.e. anything on that list but tests/ too
   #   (test files, e2e fixtures among them, are built and tested but never published). If so,
   #   `build` publishes the web app and `preview` deploys what it published (pr-preview.yml).
@@ -34,7 +35,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" != pull_request ]; then printf 'code=true\nsite=false\n' >> "$GITHUB_OUTPUT"; exit 0; fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/(e2e|compendium|manifest)/'
+          unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/e2e/[^/]+$|^tools/(compendium|manifest)/'
           code=$(printf '%s' "$files" | grep -cvE "$unread" || true)
           site=$(printf '%s' "$files" | grep -cvE "$unread|^tests/" || true)
           echo "code=$([ "$code" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
