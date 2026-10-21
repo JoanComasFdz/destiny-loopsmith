@@ -62,7 +62,7 @@ that doesn't exist yet reads as "No recording yet"), as [E2E videos on pull requ
 A GitHub Codespace or desktop VS Code's Dev Containers needs neither: VS Code runs a server in the container, which
 installs a `.vsix`. The repository's dev container (`.devcontainer/`) packs the extension from its folder, as the
 `PublishVsCodeExtension` target packs the site's, and installs it with VS Code's CLI each time VS Code attaches
-(`7-install-e2e-recordings-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
+(`6-install-e2e-recordings-extension.sh`), so a branch's Codespace has that branch's extension and nothing comes from the Marketplace.
 The dev container also holds everything the repository builds, tests and records with
 ([.devcontainer/README.md](../.devcontainer/README.md)).
 
@@ -379,7 +379,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
 ```bash
 dotnet run --project src/Loopsmith.Web        # dev server, http://localhost:5000 (dotnet watch for hot reload)
 # or the published static files, served at the root:
-dotnet publish src/Loopsmith.Web -c Release -o publish && python3 -m http.server -d publish/wwwroot 8080
+dotnet publish src/Loopsmith.Web -c Release -o publish && dotnet run --project tools/e2e/Loopsmith.StaticServer -- publish/wwwroot --port 8080
 # at a sub-path, as Pages serves it: tools/web/prepare-pages.sh publish/wwwroot /destiny-loopsmith/ --root,
 # then serve the parent of a destiny-loopsmith/ copy of publish/wwwroot
 ```

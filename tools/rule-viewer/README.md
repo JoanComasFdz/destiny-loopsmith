@@ -64,4 +64,4 @@ It exits with 1 and the error text when the rules don't parse, when no rule has 
 The icons load from bungie.net. `ArcHunterRulesGoldenTests` keeps the flows as text, so a rules change shows its flows
 in the PR diff.
 
-`prototype/` is the page the owner designed, kept as the reference this tool reproduces (its README rebuilds it).
+The page the owner designed, which this tool reproduces, was `tools/rule-viewer/prototype/` until commit `3237e89`.

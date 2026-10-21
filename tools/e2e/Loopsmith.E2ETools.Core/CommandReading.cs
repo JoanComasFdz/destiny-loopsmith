@@ -6,7 +6,7 @@ namespace Loopsmith.E2ETools.Core;
 
 /// <summary>
 /// What the tool is asked to do: <c>post</c> (the E2E videos workflow) or one of the steps the e2e scripts call
-/// (tools/e2e/record.sh, tools/e2e/push-gifs.sh, .devcontainer/7-install-e2e-recordings-extension.sh).
+/// (tools/e2e/record.sh, tools/e2e/push-gifs.sh, .devcontainer/6-install-e2e-recordings-extension.sh).
 /// </summary>
 [Union]
 public partial record ToolCommand
