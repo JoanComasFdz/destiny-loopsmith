@@ -86,7 +86,7 @@
     {
         if (span.Opens is Optional<ElementId>.Some element)
         {
-            <span class="outcome-name-wrap"><button type="button" class="outcome-keyword @ToneStyling.ToToneClass(span.Tone)" data-element="@element.Value.Value"
+            <span class="outcome-name-wrap"><button type="button" class="outcome-keyword @ToneStyling.ToToneClass(span.Tone)" data-action="explanation-open-details" data-element="@element.Value.Value"
                     @onclick="() => ShowDetails(element.Value)"
                     @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@span.Text</button>@RenderPreview(element.Value, key)</span>
         }

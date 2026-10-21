@@ -88,14 +88,14 @@ public sealed class ExplainPanel(IPage page)
     private async Task<ItemPreviewLayout> ReadPreviewShownAsync() =>
         (await Preview.EvaluateAsync<JsonElement>(PreviewScript)).Deserialize<ItemPreviewLayout>(ShownJson.Options)!;
 
-    // The preview's title, its box and the box of the name it is for (the button before it), and the screen's size.
+    // The preview's title, its box and the box of the name it is for (the button beside it), and the screen's size.
     private const string PreviewScript = """
         preview => {
           const box = r => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
           return {
             title: preview.querySelector('[data-testid=item-preview-name]')?.innerText.trim() ?? '',
             box: box(preview.getBoundingClientRect()),
-            name: box(preview.previousElementSibling.getBoundingClientRect()),
+            name: box(preview.parentElement.querySelector('[data-action=explanation-open-details]').getBoundingClientRect()),
             screenWidth: window.innerWidth,
             screenHeight: window.innerHeight,
           };
@@ -191,6 +191,3 @@ public sealed record ExplainTabBox(string Name, ScreenBox Box);
 
 /// <summary>A line of the panel as shown, the box of its text, how many lines it is drawn on, and whether its end is on its last one.</summary>
 public sealed record ExplainLineBox(string Text, ScreenBox TextBox, int LineCount, bool EndsOnLastLine);
-
-/// <summary>A name's preview: its title, its box, the name's box, and the screen's size.</summary>
-public sealed record ItemPreviewLayout(string Title, ScreenBox Box, ScreenBox Name, double ScreenWidth, double ScreenHeight);
