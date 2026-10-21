@@ -15,8 +15,7 @@ public sealed partial class RuleTreePageTests
 
     private static readonly string Page = RulePage.RenderPage(Tree, new PageAssets("", ""));
 
-    private static int CountRules() =>
-        RuleTreeDrawing.ListFiles(Tree.Root).Sum(file => file.Elements.Sum(element => element.Rules.Length));
+    private static int CountRules() => RuleTreeDrawing.ListRules(Tree.Root).Count();
 
     [Fact]
     public void Every_tree_item_has_a_ticked_checkbox_and_a_name_and_all_but_a_rule_an_arrow()

@@ -59,8 +59,7 @@ public static class RuleTreeView
         + $"<button type=\"button\" class=\"tname\">{icon}<span>{RuleBoxView.Encode(name)}</span><small>{RulePage.FormatNumber(rules)}</small></button></div>"
         + $"<ul role=\"group\">{children}</ul></li>";
 
-    private static int CountRules(RuleFolder folder) =>
-        RuleTreeDrawing.ListFiles(folder).Sum(file => file.Elements.Sum(element => element.Rules.Length));
+    private static int CountRules(RuleFolder folder) => RuleTreeDrawing.ListRules(folder).Count();
 
     private static string ToFolderItem(string path) => $"folder:{path}";
 }

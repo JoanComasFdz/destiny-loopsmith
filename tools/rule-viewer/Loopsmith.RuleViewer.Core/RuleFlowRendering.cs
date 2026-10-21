@@ -13,10 +13,9 @@ public static class RuleFlowRendering
 {
     public static string RenderText(RuleTree tree)
     {
-        var files = RuleTreeDrawing.ListFiles(tree.Root).ToImmutableArray();
-        var rules = files.SelectMany(file => file.Elements).SelectMany(element => element.Rules).ToImmutableArray();
+        var rules = RuleTreeDrawing.ListRules(tree.Root).ToImmutableArray();
         return string.Join('\n', new[] { $"# {tree.Title}: {FormatNumber(rules.Length)} rules, {FormatNumber(rules.Sum(rule => rule.Flows.Length))} flows" }
-            .Concat(files.SelectMany(RenderFileText))) + "\n";
+            .Concat(RuleTreeDrawing.ListFiles(tree.Root).SelectMany(RenderFileText))) + "\n";
     }
 
     private static IEnumerable<string> RenderFileText(RuleFile file) =>

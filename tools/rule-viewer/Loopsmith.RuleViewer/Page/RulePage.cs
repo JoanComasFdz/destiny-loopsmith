@@ -26,8 +26,7 @@ public static class RulePage
 
     public static string RenderPage(RuleTree tree, PageAssets assets)
     {
-        var files = RuleTreeDrawing.ListFiles(tree.Root).ToList();
-        var rules = files.SelectMany(file => file.Elements).SelectMany(element => element.Rules).ToList();
+        var rules = RuleTreeDrawing.ListRules(tree.Root).ToList();
         return "<!doctype html>\n<html lang=\"en\">\n<meta charset=\"utf-8\">\n"
             + "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, viewport-fit=cover\">\n"
             + $"<title>{RuleBoxView.Encode(tree.Title)}</title>\n"
@@ -43,7 +42,7 @@ public static class RulePage
             + "  </header>\n"
             + "  <div class=\"rview\">\n"
             + RuleTreeView.RenderTree(tree)
-            + $"    <main class=\"rflows\">{string.Concat(files.Select(RuleFileView.RenderFile))}</main>\n"
+            + $"    <main class=\"rflows\">{string.Concat(RuleTreeDrawing.ListFiles(tree.Root).Select(RuleFileView.RenderFile))}</main>\n"
             + "  </div>\n"
             + "</div>\n"
             + $"<script>\n{assets.Script}</script>\n"

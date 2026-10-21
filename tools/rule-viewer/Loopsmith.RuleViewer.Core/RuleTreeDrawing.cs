@@ -46,9 +46,13 @@ public static class RuleTreeDrawing
     public static IEnumerable<RuleFile> ListFiles(RuleFolder folder) =>
         folder.Folders.SelectMany(ListFiles).Concat(folder.Files);
 
+    /// <summary>Every rule of a folder, in the tree's order.</summary>
+    public static IEnumerable<RuleEntry> ListRules(RuleFolder folder) =>
+        ListFiles(folder).SelectMany(file => file.Elements).SelectMany(element => element.Rules);
+
     /// <summary>Every flow of the tree, in its order.</summary>
     public static IEnumerable<RuleFlow> ListFlows(RuleTree tree) =>
-        ListFiles(tree.Root).SelectMany(file => file.Elements).SelectMany(element => element.Rules).SelectMany(rule => rule.Flows);
+        ListRules(tree.Root).SelectMany(rule => rule.Flows);
 
     /// <summary>The line an element starts on in its file; an element no file holds (a test's) comes first.</summary>
     private static int FindLine(BuildElement element) =>

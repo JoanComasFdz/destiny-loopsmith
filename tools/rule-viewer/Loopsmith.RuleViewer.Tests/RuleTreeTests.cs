@@ -14,8 +14,7 @@ public sealed class RuleTreeTests
 {
     private static readonly RuleTree Tree = RuleViewing.DrawTree(RepoCatalog.Catalog);
 
-    private static ImmutableArray<RuleEntry> ListRules(RuleTree tree) =>
-        [.. RuleTreeDrawing.ListFiles(tree.Root).SelectMany(file => file.Elements).SelectMany(element => element.Rules)];
+    private static ImmutableArray<RuleEntry> ListRules(RuleTree tree) => [.. RuleTreeDrawing.ListRules(tree.Root)];
 
     private static RuleFile FindFile(string path) => RuleTreeDrawing.ListFiles(Tree.Root).Single(file => file.Path == path);
 
