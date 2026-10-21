@@ -10,3 +10,4 @@
 - { hash: 1435557120, name: "Grenade Mod", why: "a stat mod on the player's armor (stat loading)" }
 - { hash: 3122197216, name: "Balanced Tuning", why: "an armor tuning plug (stat loading)" }
 - { hash: 3325463374, name: "Thunderlord", why: "an exotic Arc heavy weapon with a catalyst (item details, perk picking, step state)" }
+- { hash: 4094657108, name: "Techeun Force", why: "an Arc Fusion Rifle (Ionic Overclock, the Luminopotent 2-piece)" }

@@ -3,7 +3,8 @@
    stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
    A status with effects says how many: its own element's (Stats for All's stats: one chip, not two; Spark of Recharge's
    regeneration) and the other elements' effects it switches on; its tooltip lists its own and what it switches on; its
-   details list the same first, as "Right then, after #N", for a phone (no hover). Every status opens its
+   details list the same first, as "Right then, after #N", for a phone (no hover); a weapon-stat change's chip (Ionic
+   Overclock's) lists its stats there too. Every status opens its
    details on a tap (Amplified, which has no element, its glossary facts); its facts ("up to x5 · 8s") show on hover.
    Below them, each counted buff's stacks (Armor Charge: "x1 · +1 (chance)"); tapping its row lists each step that gained
    or spent some, and how it decays (never applied, ADRs D33). Then the damage resistance right then: PvE and PvP for all
@@ -170,11 +171,14 @@
         }
     };
 
-    /// <summary>A change to the stats of some of the build's weapons right then (Ionic Overclock on a Fusion Rifle), with those weapons.</summary>
+    /// <summary>
+    /// A change to the stats of some of the build's weapons right then (Ionic Overclock on a Fusion Rifle), with those
+    /// weapons; a tap opens its details with those stats first, as "Right then, after #N".
+    /// </summary>
     private RenderFragment RenderWeaponEffect(WeaponEffect effect) => __builder =>
     {
         <button type="button" class="chip hud-chip @ToneStyling.ToAffinityClass(effect.Affinity)" data-testid="state-chip" data-effect="@effect.Source.Value" title="@effect.Text"
-                @onclick="() => ShowElementAsync(effect.Source)" @onclick:stopPropagation="true">
+                @onclick="() => ShowWeaponEffectAsync(effect)" @onclick:stopPropagation="true">
             <span data-testid="state-chip-name">@effect.SourceName</span>
             @RenderWeapons(StateHudShaping.ListWeapons(Build, effect.Weapons))
         </button>
@@ -257,6 +261,12 @@
     private async Task ShowElementAsync(ElementId element)
     {
         var details = new ItemDetails.OfElement(element);                                       // pure
+        await ShowDetailsAsync(details);                                                         // impure
+    }
+
+    private async Task ShowWeaponEffectAsync(WeaponEffect effect)
+    {
+        var details = StateHudShaping.FindWeaponEffectDetails(effect, Number);                  // pure
         await ShowDetailsAsync(details);                                                         // impure
     }
 

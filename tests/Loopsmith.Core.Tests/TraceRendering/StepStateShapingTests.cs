@@ -97,7 +97,7 @@ public sealed class StepStateShapingTests
         Assert.Empty(state.WeaponEffects);
         Assert.Equal(["Flow State", "Flow State", "Spark of Frequency", "Ionic Overclock"], details.Select(line => line.SourceName));
         Assert.Equal(
-            ("Linear Fusion Rifles, Fusion Rifles and Heat Weapons: +? Handling, +? Reload", Optional.Some("No weapon in this build is one of them, so it does nothing here.")),
+            ("Linear Fusion Rifles, Fusion Rifles and Heat Weapons: +? Handling, +? Reload Speed", Optional.Some("No weapon in this build is one of them, so it does nothing here.")),
             (details[3].Text, details[3].Note));
         Assert.Contains(played.Build.Issues, issue => issue.Severity == Severity.Info
             && issue.Message == "Ionic Overclock changes Linear Fusion Rifles, Fusion Rifles and Heat Weapons, and no weapon in this build is one, so it does nothing here.");

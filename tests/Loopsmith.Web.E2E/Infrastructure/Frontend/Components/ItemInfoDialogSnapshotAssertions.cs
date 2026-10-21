@@ -18,6 +18,10 @@ public static class ItemInfoDialogSnapshotAssertions
     public static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, WeaponPerk perk) =>
         that.IsTitled(perk.ToShownText());
 
+    /// <summary>The popup is titled with <paramref name="bonus"/>'s name.</summary>
+    public static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, ArmorSetBonus bonus) =>
+        that.IsTitled(bonus.ToShownText());
+
     /// <summary>The popup is titled with <paramref name="keyword"/>'s name.</summary>
     public static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, Keyword keyword) =>
         that.IsTitled(keyword.ToShownText());

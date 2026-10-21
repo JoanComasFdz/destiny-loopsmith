@@ -18,7 +18,7 @@ elements:
             archetypes: [linear-fusion-rifle, fusion-rifle, heat-weapon]
             changes:
               - { stat: handling, change: "?" }
-              - { stat: reload, change: "?" }
+              - { stat: reload-speed, change: "?" }
         when: [ { has: amplified } ]
         reason: "While you're Amplified, linear fusions, fusions and heat weapons handle and reload faster."
 
