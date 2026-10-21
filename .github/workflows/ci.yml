@@ -12,12 +12,14 @@ jobs:
   # What a pull request changes (a rename counts its old path too; a PR with no changed files
   # changes nothing):
   # - code: a file that dotnet build or test reads, i.e. anything but Markdown, docs/, .github/,
-  #   .claude/, .devcontainer/, the Python and shell tools in tools/compendium/ and the files directly in tools/e2e/
-  #   and tools/manifest/ (their .NET projects, in folders, are built and tested), but tools/manifest/test-items.yaml,
-  #   which a Core test reads. If not, `build` is skipped, and a skipped required check counts as passed.
-  # - site: a file the published site is built from, i.e. anything on that list but tests/ and
-  #   tools/manifest/test-items.yaml too (test files, e2e fixtures among them, are built and tested but never published). If so,
-  #   `build` publishes the web app and `preview` deploys what it published (pr-preview.yml).
+  #   .claude/, .devcontainer/, the scripts directly in tools/compendium/ and the files directly in tools/e2e/ and
+  #   tools/manifest/ (their .NET projects, in folders, are built and tested), but tools/manifest/test-items.yaml,
+  #   which a Core test reads (tools/compendium/aliases.yaml, which the tests read, isn't a script). If not, `build` is
+  #   skipped, and a skipped required check counts as passed.
+  # - site: a file the published site is built from, i.e. anything on that list but tests/, tools/e2e/,
+  #   tools/manifest/ and tools/compendium/ too (test files, e2e fixtures among them, and those tools are built and
+  #   tested but never published). If so, `build` publishes the web app and `preview` deploys what it published
+  #   (pr-preview.yml).
   # If this job fails, both run. Pushes to main always build and never preview (pages.yml deploys).
   changes:
     runs-on: ubuntu-latest
@@ -35,10 +37,10 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" != pull_request ]; then printf 'code=true\nsite=false\n' >> "$GITHUB_OUTPUT"; exit 0; fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
-          unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/compendium/|^tools/(e2e|manifest)/[^/]+$'
+          unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/compendium/[^/]+\.(sh|ps1)$|^tools/(e2e|manifest)/[^/]+$'
           tested='^tools/manifest/test-items\.yaml$'
           code=$(( $(printf '%s' "$files" | grep -cvE "$unread" || true) + $(printf '%s' "$files" | grep -cE "$tested" || true) ))
-          site=$(printf '%s' "$files" | grep -cvE "$unread|^tests/" || true)
+          site=$(printf '%s' "$files" | grep -cvE "$unread|^tests/|^tools/(e2e|manifest|compendium)/" || true)
           echo "code=$([ "$code" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "site=$([ "$site" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 

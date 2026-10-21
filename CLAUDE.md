@@ -162,13 +162,14 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   branch; when the PR closes, keeps its newest version's GIFs and MP4s in `prs-resources`,
   deletes the older ones, keeps each rule's latest recording in the rule releases (a merged PR's replace closed PRs'; one
   closed without merging loses its own) and shrinks the posts whose recordings went to one line; [docs/hosting.md](docs/hosting.md) "E2E videos on pull requests"); `tools/web/prepare-pages.sh` readies a published site for Pages.
-- `tools/compendium/` — Destiny Data Compendium download (`sheet_dump.py`; the owner runs it with
-  `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`; see its README). The
+- `tools/compendium/` — Destiny Data Compendium download (`Loopsmith.CompendiumDownload`, .NET: the host; its pure
+  logic `.Core`, AngleSharp reading Google's HTML, and `.Tests`; references only `Loopsmith.Functional`, like `tools/e2e/`;
+  the owner runs it with `get-compendium.ps1` / `get-compendium.sh` / `get-compendium-docker.sh`, in Docker's .NET 10
+  SDK image or with a local .NET 10 SDK; see its README). The
   snapshot lives in `snapshots/compendium/<date>/`: gitignored, so **a new session doesn't have it**.
-  A session downloads it itself (docs.google.com answers a session, 2026-10-13; the session-start hook
-  installs its Python packages): `python3 tools/compendium/sheet_dump.py <sheet URL from
-  get-compendium.sh> snapshots/compendium/<today> --no-images` (about a minute); if that fails, ask
-  the owner for the zip. Cite rows as
+  A session downloads it itself (docs.google.com answers a session, 2026-10-13):
+  `dotnet run --project tools/compendium/Loopsmith.CompendiumDownload -- <sheet URL from get-compendium.sh>
+  snapshots/compendium/<today> --no-images` (about half a minute); if that fails, ask the owner for the zip. Cite rows as
   `compendium/<date>/<Tab>#<row>` ([docs/rule-format.md](docs/rule-format.md), Provenance);
   paraphrase, never copy its text.
 
@@ -246,10 +247,10 @@ pull request:
    one line there, its title and test class, never its full text: the PR's e2e comment shows it in
    full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR gets
    **no build** when every path it changes (a rename's old path too) is a Markdown file or under
-   `docs/`, `.github/`, `.claude/`, `.devcontainer/` or `tools/compendium/`, or a file directly in `tools/e2e/` or
-   `tools/manifest/` but `tools/manifest/test-items.yaml` (not their .NET projects, which are built and tested, nor the test
-   items, which a Core test reads) (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
-   **no preview** when every path is on that list, is `tools/manifest/test-items.yaml` or is under `tests/` (nothing the published site is
+   `docs/`, `.github/`, `.claude/` or `.devcontainer/`, or a script directly in `tools/compendium/`, or a file directly in
+   `tools/e2e/` or `tools/manifest/` but `tools/manifest/test-items.yaml` (not their .NET projects, which are built and
+   tested, nor the test items or `tools/compendium/aliases.yaml`, which the tests read) (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
+   **no preview** when every path is on that list or under `tests/`, `tools/e2e/`, `tools/manifest/` or `tools/compendium/` (nothing the published site is
    built from: `ci.yml` neither publishes it nor calls `pr-preview.yml`; a test or e2e fixture change still builds and tests). A
    PR with no preview leaves the preview out of its description and messages. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →

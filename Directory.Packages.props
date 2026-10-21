@@ -7,6 +7,8 @@
     <PackageVersion Include="Dunet" Version="1.16.2" />
     <PackageVersion Include="Vogen" Version="8.0.7" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+    <!-- The Compendium download (tools/compendium/): reads Google Sheets' HTML pages -->
+    <PackageVersion Include="AngleSharp" Version="1.8.3" />
     <!-- Web host (Blazor WebAssembly) -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" />
