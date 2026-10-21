@@ -115,8 +115,8 @@ public sealed class ReloadTests : BaseE2E
   pixels: 1280×800, a phone's 780×1688 (`BrowserRun` starts the phone's browser drawing at the phone's density, so
   Playwright's recorder gets the phone's pixels, not its CSS pixels);
 - the Bungie routing (`BungieRouting`: no scenario reaches bungie.net except to fill the cache; README, "The manifest cache");
-- the recorded page: it opens Home and waits until it is shown (behind the manifest's startup screen), noting when, so
-  `tools/e2e/record.sh` trims the startup screen off the video;
+- the recorded page: it opens Home and waits until it is shown (behind the manifest's startup screen), noting when and
+  taking a screenshot of it, so `tools/e2e/record.sh` trims the startup screen off the video;
 - saving the video, also when the run fails, with its record next to it (title, Gherkin, screen, GIF name, domain
   folder, when Home was shown, whether it passed);
 - the `Frontend` property.

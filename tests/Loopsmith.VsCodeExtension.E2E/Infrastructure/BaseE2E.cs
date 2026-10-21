@@ -33,6 +33,7 @@ public abstract class BaseE2E : IAsyncLifetime
     private string? videoFolder;
     private readonly Stopwatch sinceOpened = new();
     private double? shownAt;
+    private byte[]? shownScreenshot;
     private Screen screen;
 
     /// <summary>VS Code for the web as the user sees it, opened on Workspace/ with the extension.</summary>
@@ -62,7 +63,8 @@ public abstract class BaseE2E : IAsyncLifetime
             await context.AddInitScriptAsync(RecordingOverlay.PointerScript + RecordingOverlay.TapRingScript);
         }
 
-        // Started before the page (and its video): the time the workbench is noted at is never earlier than in the video.
+        // Started before the page (and its video). The video's clock runs behind it, so record.sh trims the video at the
+        // first frame that looks like the screenshot taken when the workbench is noted (<name>.home.png; the e2e tool's find-home).
         sinceOpened.Start();
         page = await context.NewPageAsync();
         Workbench = new Workbench.Workbench(page);
@@ -83,6 +85,7 @@ public abstract class BaseE2E : IAsyncLifetime
         TestContext.Current.SendDiagnosticMessage($"{DescribeScenario()}: workbench shown {shownAt:0.0} s after the page opened");
         if (videoFolder is not null)
         {
+            shownScreenshot = await page.ScreenshotAsync();
             await Task.Delay(Hold);
         }
     }
@@ -140,6 +143,10 @@ public abstract class BaseE2E : IAsyncLifetime
             shownAt,
             passed);
         await File.WriteAllTextAsync(Path.Combine(folder, gifName + ".json"), JsonSerializer.Serialize(record, RecordingJson));
+        if (shownScreenshot is not null)
+        {
+            await File.WriteAllBytesAsync(Path.Combine(folder, gifName + ".home.png"), shownScreenshot);
+        }
     }
 
     private string DescribeScenario() => $"{GetType().Name}.{TestContext.Current.TestMethod?.MethodName} ({screen})";

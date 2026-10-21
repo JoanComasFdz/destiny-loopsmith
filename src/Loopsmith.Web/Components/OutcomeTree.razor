@@ -56,7 +56,7 @@
                                     @for (var l = 0; l < source.Outcomes.Length; l++)
                                     {
                                         var line = source.Outcomes[l];
-                                        <li class="outcome-line" data-testid="outcome-line">
+                                        <li class="outcome-line" data-testid="outcome-line" data-line="@(line.Chance ? $"{line.Text} (chance)" : line.Text)">
                                             @RenderParts(line.Parts, ToneStyling.ToToneClass(line.Tone), $"{sourceKey}l{l}")
                                             @if (line.Chance)
                                             {

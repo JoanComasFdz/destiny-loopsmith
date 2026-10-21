@@ -109,16 +109,6 @@ public static class KeywordResolution
             catalog.FindStatusElement(status),
         }.FindFirstSome();
 
-    /// <summary>
-    /// The element a keyword in an outcome shows: for a status, the element that fired the outcome when that is its own
-    /// (the enhanced Stats for All's "Stats for All (11s)": the enhanced trait), else the keyword's element.
-    /// </summary>
-    public static Optional<ElementId> FindFiredKeywordElement(this RuleCatalog catalog, KeywordRef keyword, Optional<ElementId> firedBy) =>
-        keyword.Match(
-            status => catalog.FindGivingElement(status.Id, firedBy),
-            _ => catalog.FindKeywordElement(keyword),
-            _ => catalog.FindKeywordElement(keyword));
-
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

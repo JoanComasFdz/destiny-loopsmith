@@ -98,7 +98,7 @@ public sealed class OneForAllTests : BaseE2E
           Then the item details popup opens, titled "One for All (enhanced)"
           And its "Right then, after #1" card reads only "11s"
           When I close the item details popup
-          And I tap "One for All" in "One for All (11s)", which "One for All (enhanced)" fires in card #1
+          And I tap "One for All" in card #1's "One for All (11s)"
           Then the item details popup opens, titled "One for All (enhanced)"
         """)]
     public async Task EnhancedOneForAlls3QuickHitsPowerUpItsWeapon(Screen screen)
@@ -135,7 +135,7 @@ public sealed class OneForAllTests : BaseE2E
         // When
         await Frontend.Designer.ItemDetails.ClickCloseAsync();
         await Frontend.Designer.ItemDetails.WaitUntilClosedAsync();
-        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.OneForAll(), "One for All (11s)", new WeaponPerk.OneForAllEnhanced());
+        await Frontend.Designer.Loop.Step(1).ClickKeywordAsync(new Keyword.OneForAll(), "One for All (11s)");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then

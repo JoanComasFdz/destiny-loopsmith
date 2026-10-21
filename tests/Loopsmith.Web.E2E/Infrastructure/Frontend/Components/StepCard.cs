@@ -52,12 +52,8 @@ public sealed class StepCard(IPage page, int number)
     /// </summary>
     public Task ClickStateChipAsync(StateGroup group, string chip) => OnScreen.PressAsync(State, FindStateChip(group, chip));
 
-    /// <summary>
-    /// Clicks <paramref name="keyword"/> ("Stats for All") in the line <paramref name="line"/> ("Stats for All (11s)") that
-    /// <paramref name="source"/> fired: its details open in the item details popup.
-    /// </summary>
-    public Task ClickFiredKeywordAsync(WeaponPerk keyword, string line, WeaponPerk source) =>
-        OnScreen.PressAsync(Card, FindFiredKeyword(keyword.ToShownText(), line, source.ToShownText()));
+    /// <summary>Taps <paramref name="keyword"/>'s name in the card's line <paramref name="line"/> ("Stats for All" in "Stats for All (11s)"): its details open.</summary>
+    public Task ClickKeywordAsync(Keyword keyword, string line) => OnScreen.PressAsync(Card, FindKeyword(keyword, line));
 
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
@@ -78,20 +74,16 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
 
+    // A keyword's name in the line that reads exactly as given (its data-line: the hover preview a name opens inside the line
+    // is not part of it).
+    private ILocator FindKeyword(Keyword keyword, string line) =>
+        Card.Locator($"[data-testid=outcome-line][data-line=\"{line}\"]")
+            .GetByRole(AriaRole.Button, new() { Name = keyword.ToShownText(), Exact = true });
+
     // A chip by its name, the part of its text before the first " · " (its effects and weapons come after).
     private ILocator FindStateChip(StateGroup group, string chip) =>
         State.Locator($"[data-testid=state-group][data-group={ToGroupKey(group)}] [data-testid=state-chip]")
             .Filter(new() { Has = page.Locator("[data-testid=state-chip-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(chip.Split(" · ")[0])}$") }) });
-
-    // A keyword by its name, in the line of that text under the element of that name. The line's text holds the white
-    // space between its parts as the page writes it (a line break and an indent), and the keyword's preview while the
-    // pointer is on it, so anything between the line's words matches a space.
-    private ILocator FindFiredKeyword(string keyword, string line, string source) =>
-        Card.Locator("[data-testid=outcome-source]")
-            .Filter(new() { Has = page.Locator("[data-testid=outcome-element-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(source)}$") }) })
-            .Locator("[data-testid=outcome-line]")
-            .Filter(new() { HasTextRegex = new Regex($@"^\s*{Regex.Escape(line).Replace("\\ ", @"[\s\S]+?", StringComparison.Ordinal)}\s*$") })
-            .GetByRole(AriaRole.Button, new() { Name = keyword, Exact = true });
 
     private static string ToGroupKey(StateGroup group) =>
         group.Match(

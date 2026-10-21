@@ -54,7 +54,7 @@ public sealed class AllStarTests : BaseE2E
           And "All-Star (enhanced)" fires "All-Star (7s)" and "+35% [PvP 15%] kinetic weapon damage"
           And its WEAPONS show only "All-Star · 1 effect · Battle Scar"
           # keeping step #1: its All-Star is what the line names
-          When I tap "All-Star" in "All-Star (7s)", which "All-Star (enhanced)" fires in card #1
+          When I tap "All-Star" in card #1's "All-Star (7s)"
           Then the item details popup opens, titled "All-Star (enhanced)"
         """)]
     public async Task EnhancedAllStarsAmmoBrickPickupGivesAllStarFor7S(Screen screen)
@@ -77,7 +77,7 @@ public sealed class AllStarTests : BaseE2E
             .Shows(new StateGroup.Weapons(), "All-Star · 1 effect · Battle Scar");
 
         // When
-        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.AllStar(), "All-Star (7s)", new WeaponPerk.AllStarEnhanced());
+        await Frontend.Designer.Loop.Step(1).ClickKeywordAsync(new Keyword.AllStar(), "All-Star (7s)");
         await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
 
         // Then

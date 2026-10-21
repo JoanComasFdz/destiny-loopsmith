@@ -236,6 +236,31 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     }
 
     [Theory]
+    [InlineData("stats-for-all", "stats-for-all")]
+    [InlineData("stats-for-all-enhanced", "stats-for-all")]
+    [InlineData("all-star", "all-star")]
+    [InlineData("all-star-enhanced", "all-star")]
+    public void A_perks_status_lists_nothing_of_the_perk_in_this_build_enhanced_or_not(string perk, string status) =>
+        Assert.Empty(LoopDesigning.ExplainInteractions(StartWithKineticPerk(perk).Build, new KeywordRef.Status(StatusId.From(status))));
+
+    [Theory]
+    [InlineData("stats-for-all", "", WeaponSlot.Kinetic, "stats-for-all")]
+    [InlineData("stats-for-all-enhanced", "", WeaponSlot.Kinetic, "stats-for-all-enhanced")]
+    [InlineData("stats-for-all", "stats-for-all-enhanced", WeaponSlot.Energy, "stats-for-all-enhanced")]
+    [InlineData("stats-for-all", "stats-for-all-enhanced", WeaponSlot.Kinetic, "stats-for-all")]
+    public void Stats_for_all_named_in_a_step_opens_the_copy_that_gave_it(string kinetic, string energy, WeaponSlot slot, string opened)
+    {
+        var session = LoopDesigning.AppendStep(StartWithPerks(kinetic, energy), new PlayerAction.FireWeapon(slot, HitOutcome.Damage, TargetCount.From(3)), Optional.None<string>());
+
+        var shaped = LoopDesigning.ShapeStepOutcomes(session, session.Resolutions[^1], new TraceOptions(false, false, false));
+
+        var named = shaped.Events.SelectMany(shown => shown.Sources).SelectMany(source => source.Outcomes).SelectMany(line => line.Parts)
+            .Where(part => part.Text == "Stats for All")
+            .Select(part => part.Keyword.Bind(keyword => keyword.Element));
+        Assert.Equal([Optional.Some(ElementId.From(opened))], named);
+    }
+
+    [Theory]
     [InlineData("unrelenting", 65)]
     [InlineData("unrelenting-enhanced", 70)]
     public void Unrelenting_heals_its_hp(string perk, int hp)

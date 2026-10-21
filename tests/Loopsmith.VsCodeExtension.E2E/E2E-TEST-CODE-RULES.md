@@ -67,8 +67,8 @@ As the web rules' rule a, except:
   an MP4) are answered from the releases the scenario fills: `prs-resources` (`GitHub.Release`) always exists and
   starts empty; a rule group's (`GitHub.ReleaseNamed("rules-…-resources")`) exists once the scenario names it, and
   any other answers 404;
-- it opens VS Code and waits until its workbench is shown, noting when, so `record.sh` trims VS Code's loading screen
-  off the video (the record's `homeShownSeconds`);
+- it opens VS Code and waits until its workbench is shown, noting when (the record's `homeShownSeconds`) and taking a
+  screenshot of it (`<gif name>.home.png`), so `record.sh` trims VS Code's loading screen off the video;
 - it gives the scenario its `Workbench` and its `GitHub`.
 
 ## c. Workbench

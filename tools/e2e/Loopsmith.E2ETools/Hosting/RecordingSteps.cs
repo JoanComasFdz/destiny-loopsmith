@@ -67,7 +67,15 @@ public static class RecordingSteps
         }
 
         var noted = record.Value.HomeShownSeconds.UnwrapOr(0);   // pure
-        var probe = HomeFinding.WriteProbeArguments(HomeFinding.FindVideo(command.Record), HomeFinding.FindProbeStart(noted));   // pure
+        var screenshot = HomeFinding.FindScreenshot(command.Record);   // pure
+        var screenshotTaken = File.Exists(screenshot);   // impure
+        if (!screenshotTaken)
+        {
+            var notedLine = HomeFinding.WriteHomeLine(record.Value, noted);   // pure
+            return Report(notedLine);   // impure
+        }
+
+        var probe = HomeFinding.WriteProbeArguments(HomeFinding.FindVideo(command.Record), screenshot);   // pure
         var answer = ChildProcesses.RunCommand("ffmpeg", probe, Optional.None<string>());   // impure
         if (answer.ExitCode != 0)
         {

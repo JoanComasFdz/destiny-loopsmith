@@ -24,7 +24,7 @@ on pull requests").
   | `free-port` | `record.sh` | prints a port free on 127.0.0.1, for VS Code for the web |
   | `vscode-commit <package.json>` | `record.sh` | prints the VS Code build the runner's `package.json` pins (`config.vscodeCommit`) |
   | `report-runs <.trx>...` | `record.sh --no-video` | prints each unrecorded run's result and time from the test results; fails when a file is missing or no run passed or failed ("No scenario ran.") |
-  | `find-home <record.json>` | `record.sh` | prints a recorded run's domain folder, GIF name, screen and the second its video shows Home (ffmpeg's scene scores around the time the test noted), where its GIF and MP4 start |
+  | `find-home <record.json>` | `record.sh` | prints a recorded run's domain folder, GIF name, screen and the second its video shows Home (the first frame that ffmpeg finds matches the screenshot the test took of Home, `<name>.home.png`; the time the test noted when there is none), where its GIF and MP4 start |
   | `list-flows <record.json>...` | `record.sh` | prints each rule the runs' Gherkins name (`# Rule <name>:`), `<domain folder> <rule>`, once per folder |
   | `write-scenarios <out> <selection.tsv> <record.json>...` | `record.sh` | writes `<out>/scenarios.json` (what `post` reads) and prints its summary |
   | `list-files <scenarios.json>` | `push-gifs.sh` | prints the GIFs, MP4s and flow PNGs it lists, each once |

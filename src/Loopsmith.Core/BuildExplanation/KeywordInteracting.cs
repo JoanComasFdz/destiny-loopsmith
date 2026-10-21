@@ -25,16 +25,16 @@ public sealed record InteractionGroup(InteractionRole Role, string Heading, Immu
 /// <summary>
 /// Pure: what in a build interacts with a keyword (Armor Charge: Elemental Charge gives it, Grenade Kickstart uses it
 /// up), role by role, each rule once — under the first role it has: reacts to it, uses it up, collects it, gives it,
-/// needs it, strikes with it. The keyword's own element (its own rules, in its details already) is left out, and so is a guard on
-/// the keyword itself in a rule's text ("while Armor Charge" under Armor Charge).
+/// needs it, strikes with it. The keyword's own element (its own rules, in its details already; a status's enhanced trait too:
+/// the enhanced Stats for All's) is left out, and so is a guard on the keyword itself in a rule's text ("while Armor Charge"
+/// under Armor Charge).
 /// </summary>
 public static class KeywordInteracting
 {
     public static ImmutableArray<InteractionGroup> ExplainInteractions(ValidatedBuild build, KeywordRef keyword)
     {
         var glossary = build.Catalog.Glossary;
-        var own = build.Catalog.FindKeywordElement(keyword);
-        var others = build.Equipped.Where(equipped => own != Optional.Some(equipped.Element.Id)).ToImmutableArray();
+        var others = build.Equipped.Where(equipped => !IsOwnElement(build.Catalog, keyword, equipped.Element.Id)).ToImmutableArray();
         var fromRules = others.SelectMany(equipped => equipped.Element.Rules
             .SelectMany(rule => FindRuleRole(keyword, rule).Select(role => (Role: role, Interaction: DescribeRule(build, keyword, equipped, rule)))));
         var fromPassives = others.SelectMany(equipped => equipped.Element.Passives
@@ -69,13 +69,19 @@ public static class KeywordInteracting
 
     /// <summary>
     /// Whether an element reads the keyword: a trigger or a guard of its rules names it, a rule uses it up, or a passive is
-    /// switched on by it.
+    /// switched on by it (not the status's own: the enhanced Stats for All's stats are Stats for All's own effects).
     /// </summary>
-    internal static bool IsReadBy(KeywordRef keyword, BuildElement element) =>
+    internal static bool IsReadBy(RuleCatalog catalog, KeywordRef keyword, BuildElement element) =>
         element.Rules.Any(rule => IsNamedBy(keyword, rule.On)
             || rule.When.Any(condition => IsNamedBy(keyword, condition))
             || rule.Then.Any(outcome => IsUsingUp(keyword, outcome)))
-        || element.Passives.Any(passive => keyword is KeywordRef.Status status && passive.IsSwitchedOnBy(status.Id));
+        || element.Passives.Any(passive => keyword is KeywordRef.Status status && !catalog.IsOwnElementOf(element.Id, status.Id) && passive.IsSwitchedOnBy(status.Id));
+
+    /// <summary>The keyword's own element: a status's (its element, or that perk's enhanced trait), else the element of its id.</summary>
+    private static bool IsOwnElement(RuleCatalog catalog, KeywordRef keyword, ElementId element) =>
+        keyword is KeywordRef.Status status
+            ? catalog.IsOwnElementOf(element, status.Id)
+            : catalog.FindKeywordElement(keyword) == Optional.Some(element);
 
     /// <summary>The first role a rule has toward the keyword: what fires it, what it needs, what it does.</summary>
     private static IEnumerable<InteractionRole> FindRuleRole(KeywordRef keyword, Rule rule) =>
