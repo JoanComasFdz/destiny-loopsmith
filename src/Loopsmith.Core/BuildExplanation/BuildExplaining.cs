@@ -57,7 +57,7 @@ public static class BuildExplaining
 
     private static bool IsKeywordUsed(RuleCatalog catalog, ImmutableArray<KeywordRef> keywords, ImmutableArray<BuildElement> listed, BuildElement keywordElement) =>
         catalog.FindElementKeyword(keywordElement.Id).Match(own => listed.Any(element => KeywordInteracting.IsNamedBy(own.Value, element)), _ => false)
-        || keywords.Any(keyword => KeywordInteracting.IsGivenBy(keyword, keywordElement) && listed.Any(element => KeywordInteracting.IsReadBy(keyword, element)));
+        || keywords.Any(keyword => KeywordInteracting.IsGivenBy(keyword, keywordElement) && listed.Any(element => KeywordInteracting.IsReadBy(catalog, keyword, element)));
 
     /// <summary>
     /// What one element sets off in this build (its copies counted), grouped by trigger: an item's details. An element

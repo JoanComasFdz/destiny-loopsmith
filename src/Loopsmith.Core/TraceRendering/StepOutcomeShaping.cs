@@ -77,7 +77,8 @@ public static class StepOutcomeShaping
         var text = build.Catalog.Glossary.DescribeFiredEvent(group, build.Build);
         var weapon = FindEventWeapon(first.Trigger);
         var pickup = first.Trigger is GameEvent.PickedUp picked ? Optional.Some(picked.Pickup) : Optional.None<PickupId>();
-        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), weapon,
+        var equipped = ListEquipped(build);
+        return new EventOutcomes(first.Depth, text, SplitText(catalog, equipped, Optional.None<ElementId>(), text), weapon,
             weapon.Bind(slot => IconFinding.FindWeaponIcon(catalog, build.Build, slot)), pickup, 1, [.. sources]);
     }
 
@@ -94,7 +95,8 @@ public static class StepOutcomeShaping
         var glossary = build.Catalog.Glossary;
         var copies = build.CountCopies(first.Source);
         var superType = build.ReadSuperType();
-        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, rule, copies, superType));
+        var equipped = ListEquipped(build);
+        var lines = rules.SelectMany(rule => ShapeOutcomeLines(glossary, catalog, equipped, rule, copies, superType));
         var reasons = options.ShowReasons ? rules.SelectMany(rule => ToSequence(rule.Reason)) : [];
         var caveats = options.ShowCaveats
             ? rules.SelectMany(rule => rule.Outcomes.SelectMany(outcome => ToSequence(outcome.Caveat).Select(caveat => $"{glossary.DescribeAppliedOutcome(outcome.Outcome, outcome.Spend, superType)}: {caveat}")))
@@ -103,15 +105,15 @@ public static class StepOutcomeShaping
     }
 
     private static IEnumerable<OutcomeLine> ShapeOutcomeLines(
-        KeywordGlossary glossary, RuleCatalog catalog, FiredRule rule, CopyCount copies, Optional<DamageType> superType)
+        KeywordGlossary glossary, RuleCatalog catalog, ImmutableArray<ElementId> equipped, FiredRule rule, CopyCount copies, Optional<DamageType> superType)
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(
-            partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
+            partner => [ToLine(catalog, equipped, rule.Source, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
-                ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
+                ? [ToLine(catalog, equipped, rule.Source, "(no effect)", Tone.Muted, chance)]
                 : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies, outcome.Spend)), superType)
-                    .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
+                    .Select(phrase => ToLine(catalog, equipped, rule.Source, phrase.Text, Tone.Plain, chance)));
     }
 
     /// <summary>
@@ -174,16 +176,23 @@ public static class StepOutcomeShaping
     private static string DescribeEventKey(ShapedEvent shaped) =>
         $"{shaped.Outcomes.Depth}|{shaped.Kind}";
 
-    private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
-        new(text, tone, SplitText(glossary, catalog, text), chance);
+    /// <summary>An outcome line of <paramref name="source"/>: a status it gives opens its own element when that is the source (the enhanced Stats for All's).</summary>
+    private static OutcomeLine ToLine(RuleCatalog catalog, ImmutableArray<ElementId> equipped, ElementId source, string text, Tone tone, bool chance) =>
+        new(text, tone, SplitText(catalog, equipped, Optional.Some(source), text), chance);
 
-    /// <summary>A text in parts, each keyword the glossary knows apart, with the element of its id when the catalog has one.</summary>
-    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, RuleCatalog catalog, string text) =>
+    /// <summary>
+    /// A text in parts, each keyword the glossary knows apart, with the element its name opens when the catalog has one
+    /// (a status's own element in this build: the one that gave it, else the one equipped, else the element of its id).
+    /// </summary>
+    private static ImmutableArray<TextPart> SplitText(RuleCatalog catalog, ImmutableArray<ElementId> equipped, Optional<ElementId> givenBy, string text) =>
     [
-        .. glossary.SplitKeywords(text).Select(part => new TextPart(
+        .. catalog.Glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword), catalog.FindKeywordIcon(keyword.Keyword))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindShownKeywordElement(keyword.Keyword, givenBy, equipped), catalog.FindKeywordIcon(keyword.Keyword))))),
     ];
+
+    private static ImmutableArray<ElementId> ListEquipped(ValidatedBuild build) =>
+        [.. build.Equipped.Select(equipped => equipped.Element.Id)];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>
         gameEvent.Match(

@@ -34,6 +34,8 @@ public sealed class RepoFileValidationTests
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/crux-celeritas-reapers-tithe-strand-siphon.build.yaml"] = [391069235],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/festival-flight-one-for-all-ogma-pr6.build.yaml"] = [2342054803],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-stats-for-all.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/KeywordDetails/ogma-pr6-stats-for-all-enhanced.build.yaml"] = [2342054803],
+        ["tests/Loopsmith.Web.E2E/Scenarios/Loop/KeywordDetails/festival-flight-stats-for-all-ogma-pr6-enhanced.build.yaml"] = [2342054803],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/ogma-pr6-unrelenting.build.yaml"] = [2342054803],
         ["tests/Loopsmith.Web.E2E/Scenarios/Loop/Weapons/EnemyCount/scathelocke-veterans-wisdom.build.yaml"] = [3332538050],
         ["tests/Loopsmith.Web.E2E/Rules/Weapons/Perks/VeteransWisdom/veterans-wisdom-scathelocke.build.yaml"] = [3332538050],

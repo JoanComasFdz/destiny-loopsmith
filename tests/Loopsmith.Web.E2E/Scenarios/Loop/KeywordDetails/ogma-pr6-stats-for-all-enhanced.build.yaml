@@ -1,0 +1,6 @@
+# Stats for All's enhanced trait on Ogma PR6, without the base perk: its name in a step opens the enhanced trait.
+name: "E2E - Ogma PR6 with Stats for All (enhanced)"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 2342054803, perks: [stats-for-all-enhanced] } # Ogma PR6

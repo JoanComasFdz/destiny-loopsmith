@@ -1,0 +1,7 @@
+# Both copies of Stats for All: the base perk on Festival Flight, the enhanced trait on Ogma PR6.
+name: "E2E - Festival Flight with Stats for All, Ogma PR6 with Stats for All (enhanced)"
+class: hunter
+subclass: arc
+weapons:
+  - { hash: 4019651319, perks: [stats-for-all] } # Festival Flight
+  - { hash: 2342054803, perks: [stats-for-all-enhanced] } # Ogma PR6
