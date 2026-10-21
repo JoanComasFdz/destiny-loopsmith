@@ -35,7 +35,7 @@ public sealed class ArmorModMechanicsTests
     // The build's explanation, one "<trigger> -> <outcome> [<source>]" line per row of its tree (the branch and the alignment left out).
     private static string DescribeExplanation(ValidatedBuild build) =>
         string.Join("\n", BuildExplaining.ExplainBuild(build).SelectMany(group =>
-            BuildExplaining.RenderExplanation(build.Catalog.Glossary, [group]).Skip(1)
+            BuildExplaining.RenderExplanation(build, [group]).Skip(1)
                 .Select(row => $"{group.Heading} -> {Regex.Replace(row.ToPlainText().Trim()[2..], " {2,}", " ")}")));
 
     private static BuildElement Mod(string id, ImmutableArray<Rule> rules, ImmutableArray<PassiveRule> passives = default) =>

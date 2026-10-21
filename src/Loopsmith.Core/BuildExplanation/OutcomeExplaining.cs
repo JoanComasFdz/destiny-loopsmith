@@ -15,7 +15,7 @@ public enum OutcomeGroup { Buff, WeaponBuff, Debuff, Strike, Pickup, Summon, Ene
 public enum OutcomeWayRole { GivenBy, PickedUpBy, EndedOrUsedUpBy, ChangedBy }
 
 /// <summary>One way to get (or end, or change) an outcome: "Class ability in the air → Jolt target (10s)" and its source.</summary>
-public sealed record OutcomeWay(string Text, string SourceName, Affinity Affinity);
+public sealed record OutcomeWay(string Text, string SourceName, ElementId Source, Affinity Affinity);
 
 /// <summary>The ways of one role under an outcome ("Is given by").</summary>
 public sealed record OutcomeWayBlock(OutcomeWayRole Role, ImmutableArray<OutcomeWay> Ways);
@@ -64,8 +64,8 @@ public static class OutcomeExplaining
     /// The build by outcome as lines: each outcome with what it is, then each block ("Is given by") and its ways as a tree, the
     /// sources aligned; every keyword in its affinity's tone.
     /// </summary>
-    public static ImmutableArray<StyledLine> RenderOutcomes(KeywordGlossary glossary, ImmutableArray<OutcomeHeading> headings) =>
-        [.. headings.SelectMany(heading => RenderHeading(glossary, heading))];
+    public static ImmutableArray<StyledLine> RenderOutcomes(ValidatedBuild build, ImmutableArray<OutcomeHeading> headings) =>
+        [.. headings.SelectMany(heading => RenderHeading(build, heading))];
 
     /// <summary>"Is given by", "Is picked up by", "Is ended or used up by", "Is changed by".</summary>
     public static string DescribeRole(this OutcomeWayRole role) =>
@@ -77,28 +77,26 @@ public static class OutcomeExplaining
             _ => "Is changed by",
         };
 
-    private static IEnumerable<StyledLine> RenderHeading(KeywordGlossary glossary, OutcomeHeading heading)
+    private static IEnumerable<StyledLine> RenderHeading(ValidatedBuild build, OutcomeHeading heading)
     {
         var title = new StyledLine(0,
         [
-            .. BuildExplaining.SplitKeywords(glossary, heading.Name, Tone.Strong),
+            .. BuildExplaining.SplitOpeningKeywords(build, heading.Name, Tone.Strong, Optional.None<ElementId>()),
             .. heading.Kind.Match(kind => [$" · {kind.Value}".ToSpan(Tone.Muted)], _ => ImmutableArray<StyledSpan>.Empty),
         ]);
-        return [title, .. heading.Blocks.SelectMany(block => RenderBlock(glossary, block))];
+        return [title, .. heading.Blocks.SelectMany(block => RenderBlock(build, block))];
     }
 
-    private static IEnumerable<StyledLine> RenderBlock(KeywordGlossary glossary, OutcomeWayBlock block)
+    private static IEnumerable<StyledLine> RenderBlock(ValidatedBuild build, OutcomeWayBlock block)
     {
         var width = block.Ways.Max(way => way.Text.Length);
         var label = StyledText.ToLine(1, block.Role.DescribeRole().ToSpan(Tone.Muted));
         var rows = block.Ways.Select((way, index) => new StyledLine(2,
         [
             (index == block.Ways.Length - 1 ? "└ " : "├ ").ToSpan(Tone.Muted),
-            .. BuildExplaining.SplitKeywords(glossary, way.Text, Tone.Plain),
+            .. BuildExplaining.SplitOpeningKeywords(build, way.Text, Tone.Plain, Optional.Some(way.Source)),
             new string(' ', width - way.Text.Length).ToSpan(Tone.Plain),
-            "  [".ToSpan(Tone.Muted),
-            way.SourceName.ToSpan(way.Affinity.ToTone()),
-            "]".ToSpan(Tone.Muted),
+            .. BuildExplaining.RenderSource(way.SourceName, way.Source, way.Affinity),
         ]));
         return [label, .. rows];
     }
@@ -111,7 +109,7 @@ public static class OutcomeExplaining
         var condition = BuildExplaining.DescribeRuleCondition(build, rule).Match(c => $" ({c.Value})", _ => "");
         var chance = rule.Likelihood == Likelihood.Chance ? " (chance)" : "";
         var trigger = BuildExplaining.DescribeHeading(build, rule.On);
-        return new OutcomeWay($"{trigger}{Arrow}{phrase}{condition}{chance}", equipped.Element.Name, equipped.Element.Affinity);
+        return new OutcomeWay($"{trigger}{Arrow}{phrase}{condition}{chance}", equipped.Element.Name, equipped.Element.Id, equipped.Element.Affinity);
     }
 
     /// <summary>"While Amplified → 25% damage resistance", "Always → +1 grenade charge": the passive's condition as the Triggers tab heads it.</summary>
@@ -120,7 +118,7 @@ public static class OutcomeExplaining
         var glossary = build.Catalog.Glossary;
         var phrase = glossary.DescribePassive(passive.Modifier, equipped.Count, build.ReadSuperType());
         var when = BuildExplaining.DescribePassiveHeading(glossary, passive);
-        return new OutcomeWay($"{when}{Arrow}{phrase}", equipped.Element.Name, equipped.Element.Affinity);
+        return new OutcomeWay($"{when}{Arrow}{phrase}", equipped.Element.Name, equipped.Element.Id, equipped.Element.Affinity);
     }
 
     /// <summary>The headings an outcome lands under, each with its role: spending stacks for energy is under both.</summary>

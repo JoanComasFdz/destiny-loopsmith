@@ -1,0 +1,5 @@
+# Ascension and Lethal Current alone: keywords and sources to tap in "What this build does".
+name: "E2E - What this build does keywords, Ascension and Lethal Current"
+class: hunter
+subclass: arc
+aspects: [ascension, lethal-current]

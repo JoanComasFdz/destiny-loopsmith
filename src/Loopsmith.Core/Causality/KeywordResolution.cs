@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Functional;
 
@@ -108,6 +109,21 @@ public static class KeywordResolution
             givenBy.Bind(giver => catalog.IsOwnElementOf(giver, status) ? Optional.Some(giver) : Optional.None<ElementId>()),
             catalog.FindStatusElement(status),
         }.FindFirstSome();
+
+    /// <summary>
+    /// The element a keyword's name opens: a status's that gave it when that is its own (the enhanced trait that fired),
+    /// else the only one of its own the build equips (the enhanced Stats for All without the base perk), else the element
+    /// of its id. A step card's names and "What this build does" open the same one.
+    /// </summary>
+    public static Optional<ElementId> FindShownElement(this RuleCatalog catalog, KeywordRef keyword, Optional<ElementId> givenBy, ImmutableArray<ElementId> equipped) =>
+        keyword is KeywordRef.Status status
+            ? catalog.FindGivingElement(status.Id, new[] { givenBy.Bind(giver => catalog.IsOwnElementOf(giver, status.Id) ? givenBy : Optional.None<ElementId>()), FindOnlyOwnElement(catalog, status.Id, equipped) }.FindFirstSome())
+            : catalog.FindKeywordElement(keyword);
+
+    private static Optional<ElementId> FindOnlyOwnElement(RuleCatalog catalog, StatusId status, ImmutableArray<ElementId> equipped) =>
+        equipped.Where(element => catalog.IsOwnElementOf(element, status)).Distinct().ToImmutableArray() is [var only]
+            ? Optional.Some(only)
+            : Optional.None<ElementId>();
 
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>

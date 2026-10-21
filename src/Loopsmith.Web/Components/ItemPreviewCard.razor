@@ -1,0 +1,24 @@
+@* The small card a name shows while the mouse is on it (a step card's, "What this build does"'s): its icon, name, type
+   and text, and that a tap opens its details. A phone has no hover: CSS hides it there. *@
+<span class="item-preview @ToneStyling.ToAffinityClass(Preview.Affinity)" role="tooltip" data-testid="item-preview">
+    <span class="item-preview-head">
+        @if (Preview.Icon is Optional<string>.Some icon)
+        {
+            <img class="item-preview-icon" src="@icon.Value" alt="" />
+        }
+        <span>
+            <span class="item-preview-name" data-testid="item-preview-name">@Preview.Name</span>
+            <span class="item-preview-type">@Preview.TypeLine</span>
+        </span>
+    </span>
+    @if (Preview.Text is Optional<string>.Some text)
+    {
+        <span class="item-preview-text">@text.Value</span>
+    }
+    <span class="item-preview-hint">Tap for details</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public ItemPreview Preview { get; set; } = null!;
+}

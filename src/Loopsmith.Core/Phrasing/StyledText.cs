@@ -7,7 +7,14 @@ namespace Loopsmith.Core.Phrasing;
 /// <summary>How a span should look. The host maps tones to colours (CSS classes); tests read the plain text.</summary>
 public enum Tone { Plain, Muted, Strong, Warning, Kinetic, Arc, Solar, Void, Stasis, Strand, Prismatic }
 
-public sealed record StyledSpan(string Text, Tone Tone);
+/// <summary>A piece of text in its tone; <see cref="Opens"/>: the element whose details its name opens (a keyword, a source), when it has one.</summary>
+public sealed record StyledSpan(string Text, Tone Tone, Optional<ElementId> Opens)
+{
+    public StyledSpan(string text, Tone tone)
+        : this(text, tone, Optional.None<ElementId>())
+    {
+    }
+}
 
 public sealed record StyledLine(int Indent, ImmutableArray<StyledSpan> Spans);
 
@@ -35,6 +42,9 @@ public sealed record PhrasePart(string Text, Optional<KeywordName> Keyword);
 public static class StyledText
 {
     public static StyledSpan ToSpan(this string text, Tone tone = Tone.Plain) => new(text, tone);
+
+    /// <summary>A name that opens <paramref name="element"/>'s details when tapped.</summary>
+    public static StyledSpan ToOpeningSpan(this string text, Tone tone, Optional<ElementId> element) => new(text, tone, element);
 
     public static StyledLine ToLine(int indent, params StyledSpan[] spans) => new(indent, [.. spans]);
 
