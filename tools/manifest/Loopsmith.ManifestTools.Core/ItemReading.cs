@@ -190,7 +190,7 @@ public static partial class ItemReading
     {
         var names = breakerTypes.Entries
             .GroupBy(pair => TextWriting.ToBreakerName(ReadName(pair.Value)))
-            .ToFrozenDictionary(group => group.Key, group => long.Parse(group.Last().Key, System.Globalization.CultureInfo.InvariantCulture));
+            .ToFrozenDictionary(group => group.Key, group => group.Last().Key);
         return ReadArray(plug, "perks")
             .Select(entry => ReadNumber(entry, "perkHash").Bind(perks.FindDefinition).Map(ReadName).UnwrapOr(""))
             .SelectMany(name => FindBracketedNames().Matches(name).Select(match => TextWriting.ToBreakerName(match.Groups[1].Value)))

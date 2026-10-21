@@ -66,7 +66,7 @@ public static class ExcerptWriting
     {
         var items = manifest.Items;
         var plugsByCategory = items.Entries
-            .Select(pair => (Hash: long.Parse(pair.Key, System.Globalization.CultureInfo.InvariantCulture), Category: ItemReading.ReadPlugCategory(pair.Value)))
+            .Select(pair => (Hash: pair.Key, Category: ItemReading.ReadPlugCategory(pair.Value)))
             .Where(plug => plug.Category.Length > 0)
             .OrderBy(plug => plug.Hash)
             .GroupBy(plug => plug.Category)
@@ -75,7 +75,7 @@ public static class ExcerptWriting
             .SelectMany(pair => ReadArray(pair.Value, "setPerks").Select(perk => (Perk: ReadNumber(perk, "sandboxPerkHash"), Set: pair.Key)))
             .Where(pair => pair.Perk.IsSome())
             .GroupBy(pair => ((Optional<long>.Some)pair.Perk).Value)
-            .ToFrozenDictionary(group => group.Key, group => ParseHash(group.Last().Set));
+            .ToFrozenDictionary(group => group.Key, group => group.Last().Set);
 
         var namedAll = named.RuleHashes.Union(named.TestItemHashes);
         var namedItems = namedAll.Where(items.HasDefinition).ToImmutableHashSet();
@@ -121,7 +121,7 @@ public static class ExcerptWriting
         var artifacts = items.Entries
             .Where(pair => ReadString(pair.Value, "itemTypeDisplayName").UnwrapOr("") == "Artifact"
                 && !ItemReading.ReadArtifactPerks(pair.Value, manifest.PlugSets, manifest.SocketTypes).IsEmpty)
-            .Select(pair => ParseHash(pair.Key))
+            .Select(pair => pair.Key)
             .ToImmutableHashSet();
         var artifactPerks = artifacts
             .SelectMany(hash => ItemReading.ReadArtifactPerks(FindItem(items, hash), manifest.PlugSets, manifest.SocketTypes))
@@ -144,7 +144,7 @@ public static class ExcerptWriting
         var enhancedTraits = items.Entries
             .Where(pair => ReadString(pair.Value, "itemTypeDisplayName").UnwrapOr("") is "Enhanced Trait" or "Enhanced Origin Trait"
                 && ReadString(ReadDisplay(pair.Value), "name") is Optional<string>.Some name && traitNames.Contains(name.Value))
-            .Select(pair => ParseHash(pair.Key))
+            .Select(pair => pair.Key)
             .ToImmutableHashSet();
         var context = new EntryContext(manifest, categories.Perks, intrinsics, weaponCatalysts, catalysts, subclassPlugs, weaponMods);
 
@@ -173,7 +173,7 @@ public static class ExcerptWriting
             .. wantedPerks.Select(hash => (hash, WritePerkEntry(hash, FindItem(manifest.Perks, hash)))),
         ];
         var statPlugs = items.Entries
-            .Select(pair => (Hash: ParseHash(pair.Key), Item: pair.Value, Kind: StatPlugReading.ClassifyStatPlug(pair.Value)))
+            .Select(pair => (Hash: pair.Key, Item: pair.Value, Kind: StatPlugReading.ClassifyStatPlug(pair.Value)))
             .Where(plug => plug.Kind.IsSome())
             .OrderBy(plug => plug.Hash)
             .Select(plug => StatPlugReading.WriteStatPlugEntry(plug.Hash, plug.Item, ((Optional<string>.Some)plug.Kind).Value))
@@ -318,12 +318,10 @@ public static class ExcerptWriting
     private static Result<long, string> FindCategory(ManifestTable categories, string name) =>
         categories.Entries
             .Where(pair => ReadName(pair.Value) == name)
-            .Select(pair => Optional.Some(ParseHash(pair.Key)))
+            .Select(pair => Optional.Some(pair.Key))
             .FirstOrDefault(Optional.None<long>())
             .ToResult(() => $"DestinySocketCategoryDefinition.json has no socket category named {name}.");
 
     /// <summary>A definition known to be there (its hash came from the same table).</summary>
     private static JsonElement FindItem(ManifestTable table, long hash) => table.FindDefinition(hash).UnwrapOr(EmptyObject);
-
-    private static long ParseHash(string key) => long.Parse(key, System.Globalization.CultureInfo.InvariantCulture);
 }

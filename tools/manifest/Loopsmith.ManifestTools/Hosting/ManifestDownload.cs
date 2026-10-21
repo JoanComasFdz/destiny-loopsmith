@@ -18,6 +18,7 @@ public static class ManifestDownload
         var versionName = Environment.GetEnvironmentVariable("MANIFEST_VERSION");   // impure
         var apiKey = Environment.GetEnvironmentVariable("BUNGIE_API_KEY");   // impure
         var given = ManifestDownloading.ReadGivenVersion(Optional.FromNullable(contentId), Optional.FromNullable(versionName));   // pure
+        var key = Optional.FromNullable(apiKey);   // pure
         var created = ManifestFiles.CreateFolder(command.Folder);   // impure
         if (created is Result<Unit, string>.Error)
         {
@@ -25,9 +26,13 @@ public static class ManifestDownload
         }
 
         using var client = new HttpClient(new HttpClientHandler { AutomaticDecompression = DecompressionMethods.All });   // impure
-        var version = given is Optional<ManifestVersion>.Some known
-            ? new Result<ManifestVersion, string>.Ok(known.Value)
-            : await ReadIndex(client, command.Folder, Optional.FromNullable(apiKey));   // impure
+        var version = given.ToResult(() => "");   // pure
+        if (given is Optional<ManifestVersion>.None)
+        {
+            var indexText = await ReadIndex(client, command.Folder, key);   // impure
+            version = indexText.Bind(ManifestDownloading.ReadIndex);   // pure
+        }
+
         if (version is not Result<ManifestVersion, string>.Ok found)
         {
             return version.Map(Unit (_) => new Unit.Value());
@@ -36,7 +41,8 @@ public static class ManifestDownload
         var downloads = ManifestDownloading.ListDownloads(found.Value.ContentId);   // pure
         foreach (var download in downloads)
         {
-            var saved = await DownloadFile(client, download.Url, Path.Combine(command.Folder, download.File));   // impure
+            var path = Path.Combine(command.Folder, download.File);   // pure
+            var saved = await DownloadFile(client, download.Url, path);   // impure
             if (saved is Result<Unit, string>.Error)
             {
                 return saved;
@@ -44,14 +50,15 @@ public static class ManifestDownload
         }
 
         var versionFile = ManifestDownloading.WriteVersionFile(found.Value);   // pure
-        var written = ManifestFiles.WriteText(Path.Combine(command.Folder, "version.txt"), versionFile);   // impure
+        var versionPath = Path.Combine(command.Folder, "version.txt");   // pure
+        var written = ManifestFiles.WriteText(versionPath, versionFile);   // impure
         var described = ManifestDownloading.DescribeDownload(found.Value, command.Folder);   // pure
         ManifestFiles.Report(described);   // impure
         return written;
     }
 
-    /// <summary>The index, saved as index.json in the folder, → the version.</summary>
-    private static async Task<Result<ManifestVersion, string>> ReadIndex(HttpClient client, string folder, Optional<string> apiKey)
+    /// <summary>The index's text, saved as index.json in the folder too.</summary>
+    private static async Task<Result<string, string>> ReadIndex(HttpClient client, string folder, Optional<string> apiKey)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, ManifestDownloading.IndexUrl);
         if (apiKey is Optional<string>.Some { Value.Length: > 0 } key)
@@ -65,16 +72,16 @@ public static class ManifestDownload
             var text = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
-                return new Result<ManifestVersion, string>.Error(
+                return new Result<string, string>.Error(
                     $"The manifest index answered {(int)response.StatusCode}: give MANIFEST_ID and MANIFEST_VERSION instead (tools/manifest/README.md).");
             }
 
             await File.WriteAllTextAsync(Path.Combine(folder, "index.json"), text);
-            return ManifestDownloading.ReadIndex(text);
+            return new Result<string, string>.Ok(text);
         }
         catch (Exception exception) when (exception is HttpRequestException or IOException or UnauthorizedAccessException or TaskCanceledException)
         {
-            return new Result<ManifestVersion, string>.Error($"Cannot read the manifest index: {exception.Message}");
+            return new Result<string, string>.Error($"Cannot read the manifest index: {exception.Message}");
         }
     }
 

@@ -36,11 +36,11 @@ public static partial class NamedHashReading
 
     /// <summary>Every number after <c>hash:</c> (one, or a [list]).</summary>
     public static IEnumerable<long> ReadRuleHashes(string text) =>
-        FindHashes().Matches(text).SelectMany(match => FindNumbers().Matches(match.Groups[1].Value).Select(number => ParseNumber(number.Value)));
+        FindHashes().Matches(text).SelectMany(match => FindNumbers().Matches(match.Groups[1].Value).SelectMany(number => ParseNumber(number.Value)));
 
     /// <summary>Every number after <c>trait:</c>.</summary>
     public static IEnumerable<long> ReadRuleTraits(string text) =>
-        FindTraits().Matches(text).Select(match => ParseNumber(match.Groups[1].Value));
+        FindTraits().Matches(text).SelectMany(match => ParseNumber(match.Groups[1].Value));
 
     /// <summary>The <c>hash</c> of each entry of test-items.yaml (a list of <c>{ hash, name, why }</c>; empty when it lists none).</summary>
     public static Result<ImmutableHashSet<long>, string> ReadTestItemHashes(string yaml) =>
@@ -69,7 +69,9 @@ public static partial class NamedHashReading
         }
     }
 
-    private static long ParseNumber(string digits) => long.Parse(digits, NumberStyles.None, CultureInfo.InvariantCulture);
+    /// <summary>A run of digits as a hash; none past what a hash can be (Bungie's hashes are 32-bit).</summary>
+    private static IEnumerable<long> ParseNumber(string digits) =>
+        long.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var number) ? [number] : [];
 
     [GeneratedRegex(@"hash:\s*(\[[^\]]*\]|[0-9]+)")]
     private static partial Regex FindHashes();

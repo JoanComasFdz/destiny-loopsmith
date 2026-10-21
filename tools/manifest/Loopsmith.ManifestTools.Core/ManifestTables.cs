@@ -7,10 +7,10 @@ using Loopsmith.Functional;
 namespace Loopsmith.ManifestTools.Core;
 
 /// <summary>
-/// One manifest component (DestinyInventoryItemDefinition, …): its definitions in the file's order, and by their key (a hash
-/// as text). A key the file holds twice keeps its first place and its last definition, as a JSON reader's dictionary does.
+/// One manifest component (DestinyInventoryItemDefinition, …): its definitions in the file's order, and by their hash (the
+/// file's key). A hash the file holds twice keeps its first place and its last definition, as a JSON reader's dictionary does.
 /// </summary>
-public sealed record ManifestTable(ImmutableArray<KeyValuePair<string, JsonElement>> Entries, FrozenDictionary<string, JsonElement> ByKey);
+public sealed record ManifestTable(ImmutableArray<KeyValuePair<long, JsonElement>> Entries, FrozenDictionary<long, JsonElement> ByKey);
 
 /// <summary>The twelve English components the excerpt is read from (get by <see cref="ManifestDownloading"/>).</summary>
 public sealed record ManifestComponents(
@@ -39,13 +39,26 @@ public static class ManifestTableParsing
         "DestinyInventoryItemConstantsDefinition", "DestinyTraitDefinition", "DestinyStatDefinition",
     ];
 
-    /// <summary>A component's JSON (an object of definitions by key) → its table; an error naming it when it isn't one.</summary>
+    /// <summary>
+    /// A component's JSON (an object of definitions by hash) → its table; an error naming it when it isn't one, or when a
+    /// key isn't a hash.
+    /// </summary>
     public static Result<ManifestTable, string> ParseTable(string name, ReadOnlyMemory<byte> json) =>
         ParseDocument(json).Match<Result<ManifestTable, string>>(
-            root => root.Value.ValueKind == JsonValueKind.Object
-                ? new Result<ManifestTable, string>.Ok(ToTable(root.Value.EnumerateObject().Select(property => KeyValuePair.Create(property.Name, property.Value))))
-                : new Result<ManifestTable, string>.Error($"{name}.json isn't a JSON object of definitions."),
+            root => root.Value.ValueKind != JsonValueKind.Object
+                ? new Result<ManifestTable, string>.Error($"{name}.json isn't a JSON object of definitions.")
+                : root.Value.EnumerateObject().Select(property => property.Name).Where(key => !ParseHash(key).IsSome())
+                    .Select(Optional.Some).FirstOrDefault(Optional.None<string>()) is Optional<string>.Some notHash
+                ? new Result<ManifestTable, string>.Error($"{name}.json has a definition whose key isn't a hash: '{notHash.Value}'.")
+                : new Result<ManifestTable, string>.Ok(ToTable(root.Value.EnumerateObject()
+                    .Select(property => KeyValuePair.Create(ParseHash(property.Name).UnwrapOr(0), property.Value)))),
             _ => new Result<ManifestTable, string>.Error($"{name}.json isn't JSON."));
+
+    /// <summary>A key that is a hash: digits only, as Bungie writes them.</summary>
+    public static Optional<long> ParseHash(string key) =>
+        key.Length > 0 && key.All(char.IsAsciiDigit) && long.TryParse(key, NumberStyles.None, CultureInfo.InvariantCulture, out var hash)
+            ? Optional.Some(hash)
+            : Optional.None<long>();
 
     /// <summary>The tables in <see cref="ComponentNames"/>' order → the components.</summary>
     public static Result<ManifestComponents, string> ToComponents(ImmutableArray<ManifestTable> tables) =>
@@ -55,10 +68,10 @@ public static class ManifestTableParsing
             : new Result<ManifestComponents, string>.Error($"{ComponentNames.Length} components are needed, not {tables.Length}.");
 
     /// <summary>Definitions in order → a table: a repeated key keeps its first place and takes its last definition.</summary>
-    public static ManifestTable ToTable(IEnumerable<KeyValuePair<string, JsonElement>> definitions)
+    public static ManifestTable ToTable(IEnumerable<KeyValuePair<long, JsonElement>> definitions)
     {
-        var byKey = new Dictionary<string, JsonElement>();
-        var order = new List<string>();
+        var byKey = new Dictionary<long, JsonElement>();
+        var order = new List<long>();
         foreach (var (key, value) in definitions)
         {
             if (!byKey.ContainsKey(key))
@@ -93,13 +106,10 @@ public static class ManifestTableParsing
 /// </summary>
 public static class DefinitionReading
 {
-    public static Optional<JsonElement> FindDefinition(this ManifestTable table, string key) =>
-        table.ByKey.TryGetValue(key, out var definition) ? Optional.Some(definition) : Optional.None<JsonElement>();
-
     public static Optional<JsonElement> FindDefinition(this ManifestTable table, long hash) =>
-        table.FindDefinition(ToKey(hash));
+        table.ByKey.TryGetValue(hash, out var definition) ? Optional.Some(definition) : Optional.None<JsonElement>();
 
-    public static bool HasDefinition(this ManifestTable table, long hash) => table.ByKey.ContainsKey(ToKey(hash));
+    public static bool HasDefinition(this ManifestTable table, long hash) => table.ByKey.ContainsKey(hash);
 
     public static string ToKey(long hash) => hash.ToString(CultureInfo.InvariantCulture);
 
