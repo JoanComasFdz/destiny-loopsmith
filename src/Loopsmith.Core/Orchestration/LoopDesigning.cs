@@ -1200,6 +1200,15 @@ public static class LoopDesigning
     public static ImmutableArray<int> ListWeaponsGiving(ValidatedBuild build, StatusId buff) =>
         BuildValidation.ListWeaponsGiving(build.Catalog, build.Build, buff);
 
+    /// <summary>
+    /// The weapons a buff shows with: those holding the element it shows (the enhanced Stats for All: the weapon that shot,
+    /// not one rolling the base perk); when none holds it, every weapon whose own perks give it.
+    /// </summary>
+    public static ImmutableArray<int> ListWeaponsShowingBuff(ValidatedBuild build, StatusId buff, Optional<ElementId> element) =>
+        element.Map(shown => BuildValidation.ListWeaponsHolding(build.Catalog, build.Build, shown)).UnwrapOr([]) is { IsEmpty: false } holding
+            ? holding
+            : BuildValidation.ListWeaponsGiving(build.Catalog, build.Build, buff);
+
     /// <summary>The static view of a build: every trigger and what it sets off, as a tree, the sources aligned.</summary>
     public static ImmutableArray<StyledLine> ExplainBuild(ValidatedBuild build) =>
         BuildExplaining.RenderExplanation(build.Catalog.Glossary, BuildExplaining.ExplainBuild(build));

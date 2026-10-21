@@ -140,7 +140,7 @@ public static class StepStateShaping
                 .SelectMany(rule => rule.Then)
                 .OfType<Outcome.ApplyBuff>()
                 .Where(apply => apply.Status == status)
-                .Select(apply => apply.Duration is BuffDuration.Fixed duration ? Optional.Some(duration.Time) : Optional.None<Seconds>())
+                .Select(apply => apply.Duration.ReadFixedTime())
                 .FindFirstSome());
 
     /// <summary>

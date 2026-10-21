@@ -29,7 +29,7 @@ public static class StateReading
     /// <summary>A counted buff with these stacks (ADRs D33): present, in its place, at its maximum or not.</summary>
     public static GameState PutTally(this GameState state, StatusId status, StackTally tally, bool atMax) =>
         state.HasBuff(status)
-            ? state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status ? buff with { AtMax = atMax, Tally = Optional.Some(tally) } : buff)] }
+            ? state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status ? buff with { AtMax = atMax, Tally = Optional.Some(tally), GivenBy = Optional.None<ElementId>() } : buff)] }
             : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, atMax, Optional.Some(tally), Optional.None<ElementId>())) };
 
     public static GameState DeclareAtMax(this GameState state, StatusId status) =>
