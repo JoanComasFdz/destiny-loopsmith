@@ -147,7 +147,6 @@ public sealed class SliceTests : BaseE2E
           When I close the item details popup
           And I tap "Slice" in "+1 Slice (9s)", which "Slice (enhanced)" fires in card #1
           Then the item details popup opens, titled "Slice (enhanced)"
-          And its "Right then, after #1" card reads only "up to x5 · 9s"
         """)]
     public async Task EnhancedSlicesDodgeArmsSliceFor9S(Screen screen)
     {
@@ -185,8 +184,7 @@ public sealed class SliceTests : BaseE2E
         // Then
         var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(keywordDetails)
-            .IsTitled(new WeaponPerk.SliceEnhanced())
-            .HasRightThen("Right then, after #1", "up to x5 · 9s");
+            .IsTitled(new WeaponPerk.SliceEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

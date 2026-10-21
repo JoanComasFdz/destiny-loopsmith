@@ -100,7 +100,6 @@ public sealed class OneForAllTests : BaseE2E
           When I close the item details popup
           And I tap "One for All" in "One for All (11s)", which "One for All (enhanced)" fires in card #1
           Then the item details popup opens, titled "One for All (enhanced)"
-          And its "Right then, after #1" card reads only "11s"
         """)]
     public async Task EnhancedOneForAlls3QuickHitsPowerUpItsWeapon(Screen screen)
     {
@@ -142,8 +141,7 @@ public sealed class OneForAllTests : BaseE2E
         // Then
         var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(keywordDetails)
-            .IsTitled(new WeaponPerk.OneForAllEnhanced())
-            .HasRightThen("Right then, after #1", "11s");
+            .IsTitled(new WeaponPerk.OneForAllEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

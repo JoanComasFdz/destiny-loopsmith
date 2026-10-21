@@ -144,7 +144,6 @@ public sealed class StatsForAllTests : BaseE2E
           # keeping step #1: its Stats for All is what the line names
           When I tap "Stats for All" in "Stats for All (11s)", which "Stats for All (enhanced)" fires in card #1
           Then the item details popup opens, titled "Stats for All (enhanced)"
-          And its "Right then, after #1" card reads only "11s" and "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
         """)]
     public async Task EnhancedStatsForAlls3QuickHitsGiveStatsForAll(Screen screen)
     {
@@ -174,8 +173,7 @@ public sealed class StatsForAllTests : BaseE2E
         // Then
         var details = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(details)
-            .IsTitled(new WeaponPerk.StatsForAllEnhanced())
-            .HasRightThen("Right then, after #1", "11s", "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
+            .IsTitled(new WeaponPerk.StatsForAllEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

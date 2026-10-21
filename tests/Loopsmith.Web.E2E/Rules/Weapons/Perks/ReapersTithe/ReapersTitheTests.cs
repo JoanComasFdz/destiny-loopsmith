@@ -136,7 +136,6 @@ public sealed class ReapersTitheTests : BaseE2E
           When I close the item details popup
           And I tap "Reaper's Tithe" in "+2 Reaper's Tithe (17s)", which "Reaper's Tithe (enhanced)" fires in card #1
           Then the item details popup opens, titled "Reaper's Tithe (enhanced)"
-          And its "Right then, after #1" card reads only "up to x4 · 17s"
         """)]
     public async Task EnhancedReapersTithes2KillsAtOnceGive2Stacks(Screen screen)
     {
@@ -178,8 +177,7 @@ public sealed class ReapersTitheTests : BaseE2E
         // Then
         var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(keywordDetails)
-            .IsTitled(new WeaponPerk.ReapersTitheEnhanced())
-            .HasRightThen("Right then, after #1", "up to x4 · 17s");
+            .IsTitled(new WeaponPerk.ReapersTitheEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

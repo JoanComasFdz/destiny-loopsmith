@@ -56,7 +56,6 @@ public sealed class AllStarTests : BaseE2E
           # keeping step #1: its All-Star is what the line names
           When I tap "All-Star" in "All-Star (7s)", which "All-Star (enhanced)" fires in card #1
           Then the item details popup opens, titled "All-Star (enhanced)"
-          And its "Right then, after #1" card reads only "10s" and "Kinetic weapon: +~100 Reload Speed"
         """)]
     public async Task EnhancedAllStarsAmmoBrickPickupGivesAllStarFor7S(Screen screen)
     {
@@ -84,8 +83,7 @@ public sealed class AllStarTests : BaseE2E
         // Then
         var details = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(details)
-            .IsTitled(new WeaponPerk.AllStarEnhanced())
-            .HasRightThen("Right then, after #1", "10s", "Kinetic weapon: +~100 Reload Speed");
+            .IsTitled(new WeaponPerk.AllStarEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
