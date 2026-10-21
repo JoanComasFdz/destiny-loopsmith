@@ -8,6 +8,9 @@
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Loopsmith.Core.Tests" />
   </ItemGroup>
 </Project>

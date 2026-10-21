@@ -1,4 +1,4 @@
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.RuleViewer.Page;
 
 namespace Loopsmith.RuleViewer.Tests;

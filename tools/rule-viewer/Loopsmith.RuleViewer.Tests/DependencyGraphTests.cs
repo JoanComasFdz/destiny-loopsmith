@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.RuleViewer.Core;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.RuleViewer.Tests.Support;
 using static Loopsmith.RuleViewer.Tests.Support.TestCatalog;
 

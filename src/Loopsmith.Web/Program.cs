@@ -1,4 +1,4 @@
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Web;
 using Loopsmith.Web.Hosting;

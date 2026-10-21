@@ -99,7 +99,7 @@ internal static class CoreAssembly
             _ => false,
         };
 
-    private static string FindCorePath() => typeof(Loopsmith.Core.Functional.Unit).Assembly.Location;
+    private static string FindCorePath() => typeof(Loopsmith.Core.Orchestration.LoopDesigning).Assembly.Location;
 
     /// <summary>Where referenced assemblies are looked up: next to the tests, and the shared framework.</summary>
     private static ImmutableArray<string> FindSearchDirectories() =>

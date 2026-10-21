@@ -1,5 +1,5 @@
 using System.Text.RegularExpressions;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.Tests.Support;
 
 namespace Loopsmith.Core.Tests.Docs;

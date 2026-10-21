@@ -1,4 +1,4 @@
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Xunit.Sdk;
 
 namespace Loopsmith.Core.Tests.RuleParsing;

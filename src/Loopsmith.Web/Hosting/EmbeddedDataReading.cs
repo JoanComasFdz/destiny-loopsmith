@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Reflection;
 using System.Text;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Web.Hosting;
 

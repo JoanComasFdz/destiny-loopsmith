@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using static Loopsmith.Core.ManifestJoining.ManifestEntryReading;
 
 namespace Loopsmith.Core.ManifestJoining;

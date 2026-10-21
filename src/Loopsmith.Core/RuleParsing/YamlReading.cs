@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using YamlDotNet.Core;
 using YamlDotNet.RepresentationModel;
 using static Loopsmith.Core.RuleParsing.ResultAccumulation;

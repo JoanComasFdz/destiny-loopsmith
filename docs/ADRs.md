@@ -55,6 +55,7 @@ founding one: every other decision follows from it.
 | D43 | An ammo brick picked up is a step the player declares, Special or Heavy, slid over or not; it names no weapon and is always available | The perks that react to a brick (All-Star, Adhesive Ordnance, Overflow, Lead from Gold) need a trigger; bricks drop from enemies, which only play decides, and a slide is one way of picking a brick up |
 | D44 | Readying (swapping to) a weapon is a step the player declares; which weapon is in hand isn't kept | Mechaneer's Tricksleeves's damage buff comes from readying a sidearm at critical health; a weapon in hand would be state no other rule reads |
 | D45 | A kill step or a finisher says the rank of the enemy it kills (`energy:kill:elite`); a rule needs one rank or that rank and stronger (`tier: elite+`) | Ascendant Escape and Iron Sharpens Iron react to an Elite+ kill; the pack is minor (D7), and which enemy dies is play |
+| D46 | Optional, Result and Unit are a project of their own, `Loopsmith.Functional`; Core is the main app's domain and logic, and a tool references it only when it uses that | A development tool that needs only the coding building blocks builds in seconds instead of compiling Core (about 27 s on a clean CI runner) |
 
 ## What the product is
 
@@ -799,3 +800,18 @@ Champion, Boss), enabled only when an equipped rule reacts to a rank; it stays p
 the finisher show it too, and picks like a weapon instead of acting at one tap. **Consequence.** The pack stays minor
 and keeps its debuffs: a stronger enemy is one kill, not a new pack. Damage still has no rank (no rule reads one). The
 counters that count a kill of each rank differently (Synergy, Spark of Discharge) keep their per-rank figures as facts.
+
+### D46 — Optional, Result and Unit are a project of their own
+
+**Context.** `Optional`, `Result` and `Unit`, the coding building blocks every piece of C# here uses
+([CODING_RULES](CODING_RULES.md), "Honest, total signatures"), lived in Core as its `Functional` kernel module. A
+developer tool that needs only them (the "E2E videos" PR poster, run on a GitHub runner that compiles it on every post)
+had to reference Core, which takes about 27 s to build from a clean checkout. **Decision (product owner).** They move to
+`src/Loopsmith.Functional`, a project that depends on nothing but .NET and Dunet, under the namespace
+`Loopsmith.Functional` (not `Loopsmith.Core.Functional`: a tool that never touches Core shouldn't read as if it did).
+Core references it, and every slice may use it. Core is for what has to do with the main app, its domain and business
+logic: a tool under `tools/` references Core only when it uses that (the rule viewer does, to draw the rules' flows,
+D39); a development tool that doesn't references only `Loopsmith.Functional`, or nothing, and still follows the coding
+rules. **Consequence.** Core's kernel is `Domain`, `Phrasing` and `Causality`; Core's architecture tests guard
+`Loopsmith.Functional` in its own assembly (`FunctionalProjectTests`: only .NET and Dunet, no I/O, its own namespace,
+immutable), and a type Core declares in that namespace fails `Every_core_type_lives_in_a_known_slice`.

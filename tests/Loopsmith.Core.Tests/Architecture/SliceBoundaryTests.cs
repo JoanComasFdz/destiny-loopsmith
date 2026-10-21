@@ -2,7 +2,7 @@ namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
 /// Rules 1 and 2 (slice part): feature slices and <c>SourceFetching</c> depend only on the kernel and themselves;
-/// the kernel depends on no slice (<c>Domain</c> → <c>Functional</c>, <c>Phrasing</c>/<c>Causality</c> → both).
+/// the kernel depends on no slice but its own (<c>Phrasing</c>/<c>Causality</c> → <c>Domain</c>).
 /// </summary>
 public sealed class SliceBoundaryTests
 {

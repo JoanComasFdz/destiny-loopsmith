@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json.Nodes;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.RuleViewer.Core;
 

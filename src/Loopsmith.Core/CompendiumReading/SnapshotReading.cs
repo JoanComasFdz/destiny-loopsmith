@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.CompendiumReading;
 

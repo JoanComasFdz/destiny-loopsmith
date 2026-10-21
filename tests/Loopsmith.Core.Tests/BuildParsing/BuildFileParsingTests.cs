@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using static Loopsmith.Core.Tests.RuleParsing.ParsingAssertions;
 using Loopsmith.Core.Tests.Support;
 

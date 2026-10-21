@@ -22,8 +22,9 @@ edit files.
 
 1. **Slice boundaries** (vertical slices = folders under `src/Loopsmith.Core/`, and the namespace matches
    the folder):
-   - Kernel: `Domain`, `Functional`, `Phrasing`, `Causality`. `Functional` depends on nothing, `Domain`
-     on `Functional`, and `Phrasing`/`Causality` on `Domain` + `Functional` (not on each other).
+   - Kernel: `Domain`, `Phrasing`, `Causality`. `Domain` depends on no slice, and `Phrasing`/`Causality` on
+     `Domain` (not on each other). Every slice may use `Loopsmith.Functional` (`src/Loopsmith.Functional`: Optional,
+     Result, Unit), which depends on nothing but .NET and Dunet.
    - `SourceFetching` (impure boundary) and the feature slices (`RuleParsing`, `BuildParsing`, `LoopFiles`,
      `BuildComposition`, `StepPlaying`, `LoopAnalyzing`, `BuildExplanation`, `TraceRendering`)
      depend only on the kernel and themselves. They never depend on each other or on

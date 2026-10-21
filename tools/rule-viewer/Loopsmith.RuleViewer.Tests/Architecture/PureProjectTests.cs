@@ -6,12 +6,13 @@ namespace Loopsmith.RuleViewer.Tests.Architecture;
 
 /// <summary>
 /// ADRs D39: the rule viewer's logic is a pure project. It touches no files, network or console (its host does), and it
-/// uses of Core only the kernel and Orchestration, as a host does (Core's HostBoundaryTests check its calls too).
+/// uses of Core only the kernel and Orchestration, as a host does (Core's HostBoundaryTests check its calls too); Loopsmith.Functional
+/// is a project of its own, not part of Core, so it is free to use.
 /// </summary>
 public sealed class PureProjectTests
 {
     private static readonly string[] CoreAllowed =
-        ["Loopsmith.Core.Domain", "Loopsmith.Core.Functional", "Loopsmith.Core.Phrasing", "Loopsmith.Core.Causality", "Loopsmith.Core.Orchestration"];
+        ["Loopsmith.Core.Domain", "Loopsmith.Core.Phrasing", "Loopsmith.Core.Causality", "Loopsmith.Core.Orchestration"];
 
     /// <summary>Every other top-level namespace of Core: its feature slices and SourceFetching.</summary>
     private static readonly string[] CoreForbidden = [.. typeof(RuleCatalog).Assembly.GetTypes()

@@ -21,9 +21,11 @@
   </ItemGroup>
 
   <!-- Blazor trims only framework assemblies by default. The core is mostly generated code (Dunet matchers,
-       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> 516 KB when added). -->
+       Vogen converters) the app never calls and it uses no reflection, so trim it too (1.3 MB -> 516 KB when added),
+       and Loopsmith.Functional, its Dunet unions, with it. -->
   <ItemGroup>
     <TrimmableAssembly Include="Loopsmith.Core" />
+    <TrimmableAssembly Include="Loopsmith.Functional" />
   </ItemGroup>
 
   <!-- Bundled data, read at startup as SourceTexts: the rules. Logical names always use forward slashes: rules/<path>. -->

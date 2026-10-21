@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.StatLoading;
 

@@ -1,6 +1,6 @@
 using Dunet;
 
-namespace Loopsmith.Core.Functional;
+namespace Loopsmith.Functional;
 
 /// <summary>Presence or absence of a value — never null-as-absence.</summary>
 [Union]

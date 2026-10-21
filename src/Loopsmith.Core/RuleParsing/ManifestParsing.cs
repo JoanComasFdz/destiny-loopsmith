@@ -1,6 +1,6 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using static Loopsmith.Core.RuleParsing.ResultAccumulation;
 using static Loopsmith.Core.RuleParsing.ValueReading;
 using Errors = System.Collections.Immutable.ImmutableArray<Loopsmith.Core.RuleParsing.ParseError>;

@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.BuildComposition;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.Tests.Support;
 

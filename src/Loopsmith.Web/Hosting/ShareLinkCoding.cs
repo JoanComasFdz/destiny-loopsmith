@@ -1,7 +1,7 @@
 using System.Buffers.Text;
 using System.IO.Compression;
 using System.Text;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Web.Hosting;
 

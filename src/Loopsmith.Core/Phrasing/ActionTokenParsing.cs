@@ -1,6 +1,6 @@
 using System.Globalization;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 
 namespace Loopsmith.Core.Phrasing;
 

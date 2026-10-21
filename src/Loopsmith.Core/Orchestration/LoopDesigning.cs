@@ -4,7 +4,7 @@ using Loopsmith.Core.BuildExplanation;
 using Loopsmith.Core.BuildParsing;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using Loopsmith.Core.LoopAnalyzing;
 using Loopsmith.Core.ManifestJoining;
 using Loopsmith.Core.LoopFiles;

@@ -25,8 +25,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   manifest → the excerpt some hashes need), `StatLoading` (a Bungie login's answers → the player's armor
   → the build's stats), `CompendiumReading` (a Compendium snapshot → the check of the rules' citations
   and numbers against it), `Orchestration`).
-- **Feature slices depend only on the shared kernel** (`Domain` / `Functional` /
-  `Phrasing` / `Causality`) — never sideways on each other. The only cross-slice
+- **Feature slices depend only on the shared kernel** (`Domain` / `Phrasing` / `Causality`, and the
+  `Loopsmith.Functional` project) — never sideways on each other. The only cross-slice
   dependency is `Orchestration` → every slice. An **architecture test** enforces
   these boundaries in CI.
   The kernel has two small non-`Domain` modules for behaviour that is shared across
@@ -42,7 +42,7 @@ itself, under `src/Loopsmith.Core/Domain/`.
 - **`Domain` holds data + pure value arithmetic only** — no feature behaviour, no
   outward dependency, never depends on a feature slice or on `System.IO`. The
   allowed exceptions are pure, dependency-free value arithmetic (e.g.
-  `GameValueArithmetic.ResolveForCopies`, `ToDamageType`, the `Functional`
+  `GameValueArithmetic.ResolveForCopies`, `ToDamageType`, the `Loopsmith.Functional`
   primitives' generic `Map`/`Bind`) and pure reads of its records that slices share
   (`BuildReading`, `GlossaryReading`, `GameStateReading`: what a build, the glossary
   or a state holds).
@@ -55,6 +55,12 @@ itself, under `src/Loopsmith.Core/Domain/`.
   only `Orchestration` and the kernel; its page's markup is its own presentation. A tool's logic that no player's host
   uses is a pure project of the tool's own (`tools/rule-viewer/Loopsmith.RuleViewer.Core`), not a Core slice: it follows
   these rules like a slice, references only Core and uses only its kernel and `Orchestration`.
+  **Core is for what has to do with the main app**: its domain and business logic. A tool under `tools/` references
+  Core only when it uses that, as the rule viewer does (it uses the domain and the rules' logic to draw the flows).
+  Many tools are for development and don't need Core at all, and that is fine: such a tool references only
+  `Loopsmith.Functional` (Optional, Result, Unit), or nothing, and still follows these rules (its own Optional/Result,
+  the pure/impure split, verb names, immutable records). `Loopsmith.Functional` is a project of its own for that reason:
+  it builds in seconds, where Core takes about half a minute on a clean CI runner.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
@@ -96,7 +102,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   what the host shows or saves (a `Result`, a session, a text); the host's handler
   performs the side effect in its own `// impure` line ([ADRs D38](ADRs.md)).
 - **Honest, total signatures** via our own `Optional<T>`, `Result<T, F>`, and
-  `Unit` (in `Functional/`) — defined as Dunet DUs with `Map`/`Bind`/`Match` as
+  `Unit` (in their own project, `src/Loopsmith.Functional`, namespace `Loopsmith.Functional`; it depends on nothing but
+  .NET and Dunet) — defined as Dunet DUs with `Map`/`Bind`/`Match` as
   extension methods. **No third-party FP library.** No partial functions, no
   null-as-absence, no exceptions-as-control-flow across the pure core.
 - **Railway-oriented (ROP)** for the end-to-end flow: the pipeline composes

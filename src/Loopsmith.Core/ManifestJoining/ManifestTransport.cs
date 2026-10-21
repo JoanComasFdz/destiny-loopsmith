@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using Loopsmith.Core.Domain;
-using Loopsmith.Core.Functional;
+using Loopsmith.Functional;
 using static Loopsmith.Core.ManifestJoining.ManifestEntryReading;
 
 namespace Loopsmith.Core.ManifestJoining;

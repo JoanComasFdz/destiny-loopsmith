@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Loopsmith.Core/Loopsmith.Core.csproj" />
+    <Project Path="src/Loopsmith.Functional/Loopsmith.Functional.csproj" />
     <Project Path="src/Loopsmith.Web/Loopsmith.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">

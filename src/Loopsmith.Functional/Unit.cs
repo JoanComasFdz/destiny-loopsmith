@@ -1,6 +1,6 @@
 using Dunet;
 
-namespace Loopsmith.Core.Functional;
+namespace Loopsmith.Functional;
 
 /// <summary>The single "nothing interesting" value: <c>new Unit.Value()</c>.</summary>
 [Union]
