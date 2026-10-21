@@ -6,7 +6,7 @@
 // releases from GitHub, the scenario files from the editor, and draws what the pure functions describe.
 'use strict';
 
-/** The longest asset name the workflow writes (tools/e2e/post-scenarios.py, MAX_NAME). */
+/** The longest asset name the workflow writes (tools/e2e ReleaseNaming.MaxName). */
 const MAX_ASSET_NAME = 200;
 /** The screens a scenario is played on, in the order they show. */
 const SCREENS = ['desktop', 'mobile'];
@@ -61,7 +61,7 @@ function toDomainFolder(namespace) {
 }
 
 /**
- * The release that holds a scenario's recordings (post-scenarios.py, find_release): a rule scenario's (Rules/Hunter/Arc/Melees)
+ * The release that holds a scenario's recordings (tools/e2e ReleaseNaming.FindRelease): a rule scenario's (Rules/Hunter/Arc/Melees)
  * is its rule group's, rules-hunter-arc-melees-resources; any other's is the setting's (prs-resources).
  */
 function toRelease(domain, release) {
@@ -75,7 +75,7 @@ function toGifPath(domain, gifName) {
 }
 
 /**
- * The asset name the workflow gives a run's GIF or MP4 (post-scenarios.py, name_asset): pr-<n>-v<version>-<GIF name>,
+ * The asset name the workflow gives a run's GIF or MP4 (tools/e2e ReleaseNaming.NameAsset): pr-<n>-v<version>-<GIF name>,
  * or, past 200 characters, its start and "-<digest>", the first 8 hex digits of the SHA-256 of its GIF path.
  */
 function nameAsset(pr, version, gifName, extension, digest) {
