@@ -128,7 +128,7 @@ public sealed class ManifestJoinTests
         Assert.IsType<Result<ManifestAnswer, string>.Error>(ManifestTransport.ReadAnswer(query, "{}", "[]"));
     }
 
-    /// <summary>The C# join and the Python extractor read Bungie's manifest the same way: every bundled item, joined anew, is the same.</summary>
+    /// <summary>The join and the manifest tool read Bungie's manifest the same way: every bundled item, joined anew, is the same.</summary>
     [Fact]
     public void The_real_manifest_joins_to_the_bundled_excerpt()
     {

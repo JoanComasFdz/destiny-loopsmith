@@ -45,8 +45,10 @@ also mention it in the rule's `reason`. Something that only a creator says becom
   level) stays `"?"`, with the number and the reason in a YAML comment next to it.
 - **Record provenance on every element** (`source:`): `compendium/<date>/<Tab>#<row>` (`<Tab>` as
   `INDEX.md` names it, quoted in YAML when it has a space; `<row>` = the 1-based record number in
-  `NN_<Tab>.csv` — count it with a script kept outside the snapshot folder, run with `python3 -I`;
-  never an `OLD …` tab), `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for
+  `NN_<Tab>.csv` — don't count the CSV's lines (a cell's line break spans several): read it from
+  `NN_<Tab>.md`, whose table has one line per record (a cell's line breaks are `<br>`), with `grep -n`: the
+  table's first line, the record 1, is the file's line 3, and from its line 5 on (after the `|---|` line) the record is
+  the line number minus 3; never an `OLD …` tab), `clarity/<hash>@<version>`, or a creator claim. Leave `source` out only for
   modelling you introduced yourself (it then defaults to the file and line). Add `hash:` when Clarity
   gives it. When a better source disagrees with the one an element cites, cite the better one and record
   the disagreement in a comment beside the element. Glossary entries have no `source` key: cite their row in a comment.

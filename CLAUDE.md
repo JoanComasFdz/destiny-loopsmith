@@ -43,9 +43,8 @@ LOOPSMITH_COMPENDIUM_DIR=$PWD/snapshots/compendium/<date> dotnet test --filter C
 dotnet run --project src/Loopsmith.Web          # the loop designer in the browser
 ```
 Cloud sessions: `.claude/hooks/session-start.sh` installs `dotnet-sdk-10.0` from Ubuntu's
-repos (Microsoft's download hosts are blocked by the network policy), restores, installs the
-Python packages of the Compendium download (`requests`, `beautifulsoup4`), and installs the manifest extractor's PyYAML
-(`python3-yaml`) and `ffmpeg` (turns the e2e recordings into GIFs and MP4s) when they are missing.
+repos (Microsoft's download hosts are blocked by the network policy), restores, and installs
+`ffmpeg` (turns the e2e recordings into GIFs and MP4s) when it is missing.
 
 ## Where things live
 - `src/Loopsmith.Functional/` — `Optional`, `Result`, `Unit` (namespace `Loopsmith.Functional`; Dunet unions,
@@ -97,7 +96,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   + what it needs from outside, + what builds on it → its rules: every rule and passive as one flow, trigger ➜ what must
   be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
   `Loopsmith.RuleViewer.Tests` its unit, golden and architecture tests ([tools/rule-viewer/README.md](tools/rule-viewer/README.md)).
-  `tools/rule-viewer/prototype/` is the page the owner designed, kept as the reference the tool reproduces.
+  The page the owner designed, which the tool reproduces, was `tools/rule-viewer/prototype/` until commit `3237e89`.
 - `tools/e2e/` — the e2e recording scripts (`record.sh`, `push-gifs.sh`) and the e2e tool, run by `e2e-videos.yml`:
   `dotnet run --project tools/e2e/Loopsmith.E2ETools -- post --pr <n> --commit <sha> --out <dir>` posts a PR's recorded
   scenarios on it and `… post --pr <n> --closed [--merged]` cleans the releases when it closes (`--dry-run` prints
@@ -105,7 +104,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   versions, the releases' names and what they keep, and the steps the e2e scripts hand it: `record.sh`'s TRX report,
   Home in a video, rules' flows and `scenarios.json`, `push-gifs.sh`'s files, the dev container's `.vsix`);
   `Loopsmith.StaticServer` the Kestrel server `record.sh` serves the published site with; `Loopsmith.E2ETools.Tests` their
-  tests. None references Core, only `Loopsmith.Functional`, so a runner builds it in seconds, and no script runs Python
+  tests. None references Core, only `Loopsmith.Functional`, so a runner builds it in seconds
   ([tools/e2e/README.md](tools/e2e/README.md)).
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
   play button and a panel beside the code show each e2e scenario's recordings from its release (`prs-resources`, or a rule
@@ -114,9 +113,9 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   vscode.dev installs it from a local container (its `Dockerfile`: vscode.dev fetches only from `localhost` and its own
   hosts) ([docs/hosting.md](docs/hosting.md) "The VS Code extension", its [README](src/Loopsmith.VsCodeExtension/README.md)).
 - `.devcontainer/` — the dev container for a GitHub Codespace or desktop VS Code's Dev Containers: one numbered script
-  per feature (.NET 10, ffmpeg, the Python packages of the Compendium download and the manifest extractor, Playwright's Chromium, zsh, tmux), run by
+  per feature (.NET 10, ffmpeg, Playwright's Chromium, zsh, tmux), run by
   `postCreateCommand.sh`, and the VS Code extension installed from its source each time VS Code attaches
-  (`7-install-e2e-recordings-extension.sh`) ([.devcontainer/README.md](.devcontainer/README.md)).
+  (`6-install-e2e-recordings-extension.sh`) ([.devcontainer/README.md](.devcontainer/README.md)).
 - `tests/Loopsmith.Core.Tests/` — unit, golden (`Golden/*.verified.txt`) and architecture tests; the docs' ```yaml examples
   are read by tests from the docs themselves, through a marker comment on the line above each fence
   (`<!-- <TestClass> reads the next yaml block … -->`, or `<!-- abridged: no test reads the next yaml block -->`; `Support/DocExamples.cs`).
@@ -185,7 +184,7 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   checks" rules to it (the workflows push straight to it).
 - **Verify web changes in a browser, not just tests:** `dotnet publish src/Loopsmith.Web -c Release -o <dir>`,
   `tools/web/prepare-pages.sh <dir>/wwwroot /destiny-loopsmith/ --root`, serve the parent of a
-  `destiny-loopsmith/` copy with `python3 -m http.server`, drive it with Playwright using the
+  `destiny-loopsmith/` copy with `dotnet run --project tools/e2e/Loopsmith.StaticServer -- <parent> --port 8080`, drive it with Playwright using the
   pre-installed Chromium (`/opt/pw-browsers`; never `playwright install`), check the console.
 - **Snapshot tests (Verify):** review `*.received.txt`, then rename to `*.verified.txt`.
   Verify.XunitV3 stays on 32.0.1 (33.x needs a licence decision — ADRs D26).

@@ -3,7 +3,7 @@ using Loopsmith.StaticServer.Hosting;
 
 namespace Loopsmith.E2ETools.Tests;
 
-/// <summary>The static server record.sh serves the published site with, as GitHub Pages and Python's http.server serve it.</summary>
+/// <summary>The static server record.sh serves the published site with, as GitHub Pages serves it.</summary>
 public sealed class StaticServerTests : IAsyncLifetime
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), $"static-server-{Guid.NewGuid():N}");
