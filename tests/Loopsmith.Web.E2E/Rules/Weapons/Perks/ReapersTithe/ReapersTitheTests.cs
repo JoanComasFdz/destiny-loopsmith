@@ -133,6 +133,10 @@ public sealed class ReapersTitheTests : BaseE2E
           When I tap the "Reaper's Tithe · Bellowing Giant" chip in card #1's WEAPONS
           Then the item details popup opens, titled "Reaper's Tithe (enhanced)"
           And its "Right then, after #1" card reads only "up to x4 · 17s"
+          When I close the item details popup
+          And I tap "Reaper's Tithe" in "+2 Reaper's Tithe (17s)", which "Reaper's Tithe (enhanced)" fires in card #1
+          Then the item details popup opens, titled "Reaper's Tithe (enhanced)"
+          And its "Right then, after #1" card reads only "up to x4 · 17s"
         """)]
     public async Task EnhancedReapersTithes2KillsAtOnceGive2Stacks(Screen screen)
     {
@@ -162,6 +166,18 @@ public sealed class ReapersTitheTests : BaseE2E
         // Then
         var details = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(details)
+            .IsTitled(new WeaponPerk.ReapersTitheEnhanced())
+            .HasRightThen("Right then, after #1", "up to x4 · 17s");
+
+        // When
+        await Frontend.Designer.ItemDetails.ClickCloseAsync();
+        await Frontend.Designer.ItemDetails.WaitUntilClosedAsync();
+        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.ReapersTithe(), "+2 Reaper's Tithe (17s)", new WeaponPerk.ReapersTitheEnhanced());
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(keywordDetails)
             .IsTitled(new WeaponPerk.ReapersTitheEnhanced())
             .HasRightThen("Right then, after #1", "up to x4 · 17s");
     }

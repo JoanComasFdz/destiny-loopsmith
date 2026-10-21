@@ -77,7 +77,7 @@ public static class StepOutcomeShaping
         var text = build.Catalog.Glossary.DescribeFiredEvent(group, build.Build);
         var weapon = FindEventWeapon(first.Trigger);
         var pickup = first.Trigger is GameEvent.PickedUp picked ? Optional.Some(picked.Pickup) : Optional.None<PickupId>();
-        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text), weapon,
+        return new EventOutcomes(first.Depth, text, SplitText(build.Catalog.Glossary, catalog, text, Optional.None<ElementId>()), weapon,
             weapon.Bind(slot => IconFinding.FindWeaponIcon(catalog, build.Build, slot)), pickup, 1, [.. sources]);
     }
 
@@ -107,11 +107,11 @@ public static class StepOutcomeShaping
     {
         var chance = rule.Likelihood == Likelihood.Chance;
         return rule.NotStackedWith.Match(
-            partner => [ToLine(glossary, catalog, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
+            partner => [ToLine(glossary, catalog, rule.Source, $"doesn't stack with {partner.Value}", Tone.Warning, chance)],
             _ => rule.Outcomes.IsEmpty
-                ? [ToLine(glossary, catalog, "(no effect)", Tone.Muted, chance)]
+                ? [ToLine(glossary, catalog, rule.Source, "(no effect)", Tone.Muted, chance)]
                 : glossary.ListOutcomePhrases(rule.Outcomes.Select(outcome => new OutcomeMention(outcome.Outcome, copies, outcome.Spend)), superType)
-                    .Select(phrase => ToLine(glossary, catalog, phrase.Text, Tone.Plain, chance)));
+                    .Select(phrase => ToLine(glossary, catalog, rule.Source, phrase.Text, Tone.Plain, chance)));
     }
 
     /// <summary>
@@ -174,15 +174,18 @@ public static class StepOutcomeShaping
     private static string DescribeEventKey(ShapedEvent shaped) =>
         $"{shaped.Outcomes.Depth}|{shaped.Kind}";
 
-    private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, string text, Tone tone, bool chance) =>
-        new(text, tone, SplitText(glossary, catalog, text), chance);
+    private static OutcomeLine ToLine(KeywordGlossary glossary, RuleCatalog catalog, ElementId firedBy, string text, Tone tone, bool chance) =>
+        new(text, tone, SplitText(glossary, catalog, text, Optional.Some(firedBy)), chance);
 
-    /// <summary>A text in parts, each keyword the glossary knows apart, with the element of its id when the catalog has one.</summary>
-    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, RuleCatalog catalog, string text) =>
+    /// <summary>
+    /// A text in parts, each keyword the glossary knows apart, with the element it shows when the catalog has one: the
+    /// element of its id, or the enhanced trait that fired it.
+    /// </summary>
+    private static ImmutableArray<TextPart> SplitText(KeywordGlossary glossary, RuleCatalog catalog, string text, Optional<ElementId> firedBy) =>
     [
         .. glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindKeywordElement(keyword.Keyword), catalog.FindKeywordIcon(keyword.Keyword))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindFiredKeywordElement(keyword.Keyword, firedBy), catalog.FindKeywordIcon(keyword.Keyword))))),
     ];
 
     private static Optional<WeaponSlot> FindEventWeapon(GameEvent gameEvent) =>

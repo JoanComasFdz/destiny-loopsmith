@@ -108,6 +108,41 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     }
 
     [Theory]
+    [InlineData("stats-for-all", "Stats for All (10s)", "stats-for-all")]
+    [InlineData("stats-for-all-enhanced", "Stats for All (11s)", "stats-for-all-enhanced")]
+    [InlineData("one-for-all", "One for All (10s)", "one-for-all")]
+    [InlineData("one-for-all-enhanced", "One for All (11s)", "one-for-all-enhanced")]
+    [InlineData("reapers-tithe", "+2 Reaper's Tithe (15s)", "reapers-tithe")]
+    [InlineData("reapers-tithe-enhanced", "+2 Reaper's Tithe (17s)", "reapers-tithe-enhanced")]
+    [InlineData("slice", "+1 Slice (8s)", "slice")]
+    [InlineData("slice-enhanced", "+1 Slice (9s)", "slice-enhanced")]
+    [InlineData("all-star", "All-Star (6s)", "all-star")]
+    [InlineData("all-star-enhanced", "All-Star (7s)", "all-star-enhanced")]
+    public void The_buff_a_perk_fires_opens_the_perk_that_fired_it_its_enhanced_trait_too(string perk, string line, string opens)
+    {
+        var session = StartWithKineticPerk(perk);
+
+        var resolution = PlayGivingStep(session, perk);
+
+        var fired = StepOutcomeShaping.ShapeStepOutcomes(session.Build, resolution, new TraceOptions(false, false, false)).Events
+            .SelectMany(shaped => shaped.Sources)
+            .Where(source => source.Source.Value == perk)
+            .SelectMany(source => source.Outcomes);
+        var keyword = Assert.Single(Assert.Single(fired, outcome => outcome.Text == line).Parts, part => part.Keyword.IsSome());
+        Assert.Equal(Optional.Some(ElementId.From(opens)), keyword.Keyword.Bind(found => found.Element));
+    }
+
+    /// <summary>The step that gives a perk's buff: 3 hits, 2 kills at once, a dodge (it arms Slice) or an ammo brick picked up.</summary>
+    private static Resolution PlayGivingStep(DesignSession session, string perk) =>
+        perk.Replace("-enhanced", "", StringComparison.Ordinal) switch
+        {
+            "reapers-tithe" => Kill(session, WeaponSlot.Kinetic, 2),
+            "slice" => LoopDesigning.AppendStep(session, new PlayerAction.UseClassAbility(), Optional.None<string>()).Resolutions[^1],
+            "all-star" => LoopDesigning.AppendStep(session, new PlayerAction.PickUpAmmo(AmmoBrick.Special), Optional.None<string>()).Resolutions[^1],
+            _ => Hit(session, WeaponSlot.Kinetic, 3),
+        };
+
+    [Theory]
     [InlineData(1, null)]
     [InlineData(2, 2)]
     [InlineData(3, 3)]

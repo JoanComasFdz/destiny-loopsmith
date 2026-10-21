@@ -52,6 +52,13 @@ public sealed class StepCard(IPage page, int number)
     /// </summary>
     public Task ClickStateChipAsync(StateGroup group, string chip) => OnScreen.PressAsync(State, FindStateChip(group, chip));
 
+    /// <summary>
+    /// Clicks <paramref name="keyword"/> ("Stats for All") in the line <paramref name="line"/> ("Stats for All (11s)") that
+    /// <paramref name="source"/> fired: its details open in the item details popup.
+    /// </summary>
+    public Task ClickFiredKeywordAsync(WeaponPerk keyword, string line, WeaponPerk source) =>
+        OnScreen.PressAsync(Card, FindFiredKeyword(keyword.ToShownText(), line, source.ToShownText()));
+
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
 
@@ -75,6 +82,14 @@ public sealed class StepCard(IPage page, int number)
     private ILocator FindStateChip(StateGroup group, string chip) =>
         State.Locator($"[data-testid=state-group][data-group={ToGroupKey(group)}] [data-testid=state-chip]")
             .Filter(new() { Has = page.Locator("[data-testid=state-chip-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(chip.Split(" · ")[0])}$") }) });
+
+    // A keyword by its name, in the line of that text under the element of that name.
+    private ILocator FindFiredKeyword(string keyword, string line, string source) =>
+        Card.Locator("[data-testid=outcome-source]")
+            .Filter(new() { Has = page.Locator("[data-testid=outcome-element-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(source)}$") }) })
+            .Locator("[data-testid=outcome-line]")
+            .Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(line)}$") })
+            .GetByRole(AriaRole.Button, new() { Name = keyword, Exact = true });
 
     private static string ToGroupKey(StateGroup group) =>
         group.Match(

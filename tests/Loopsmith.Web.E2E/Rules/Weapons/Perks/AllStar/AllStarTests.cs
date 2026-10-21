@@ -53,6 +53,10 @@ public sealed class AllStarTests : BaseE2E
           Then card #1's heading is "#1 Pick up a Heavy ammo brick"
           And "All-Star (enhanced)" fires "All-Star (7s)" and "+35% [PvP 15%] kinetic weapon damage"
           And its WEAPONS show only "All-Star · 1 effect · Battle Scar"
+          # keeping step #1: its All-Star is what the line names
+          When I tap "All-Star" in "All-Star (7s)", which "All-Star (enhanced)" fires in card #1
+          Then the item details popup opens, titled "All-Star (enhanced)"
+          And its "Right then, after #1" card reads only "10s" and "Kinetic weapon: +~100 Reload Speed"
         """)]
     public async Task EnhancedAllStarsAmmoBrickPickupGivesAllStarFor7S(Screen screen)
     {
@@ -72,6 +76,16 @@ public sealed class AllStarTests : BaseE2E
             .HasHeading("#1 Pick up a Heavy ammo brick")
             .Fires(new WeaponPerk.AllStarEnhanced(), "All-Star (7s)", "+35% [PvP 15%] kinetic weapon damage")
             .Shows(new StateGroup.Weapons(), "All-Star · 1 effect · Battle Scar");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.AllStar(), "All-Star (7s)", new WeaponPerk.AllStarEnhanced());
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.AllStarEnhanced())
+            .HasRightThen("Right then, after #1", "10s", "Kinetic weapon: +~100 Reload Speed");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

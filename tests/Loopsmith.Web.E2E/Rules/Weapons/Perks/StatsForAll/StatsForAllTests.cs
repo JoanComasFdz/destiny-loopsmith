@@ -141,6 +141,10 @@ public sealed class StatsForAllTests : BaseE2E
           And it reads "Ogma PR6 🥊 hit 3 enemies in 3 s"
           And "Stats for All (enhanced)" fires "Stats for All (11s)"
           And its WEAPONS show only "Stats for All · 1 effect · Ogma PR6"
+          # keeping step #1: its Stats for All is what the line names
+          When I tap "Stats for All" in "Stats for All (11s)", which "Stats for All (enhanced)" fires in card #1
+          Then the item details popup opens, titled "Stats for All (enhanced)"
+          And its "Right then, after #1" card reads only "11s" and "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"
         """)]
     public async Task EnhancedStatsForAlls3QuickHitsGiveStatsForAll(Screen screen)
     {
@@ -162,6 +166,16 @@ public sealed class StatsForAllTests : BaseE2E
             .Reads("Ogma PR6 🥊 hit 3 enemies in 3 s")
             .Fires(new WeaponPerk.StatsForAllEnhanced(), "Stats for All (11s)")
             .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.StatsForAll(), "Stats for All (11s)", new WeaponPerk.StatsForAllEnhanced());
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.StatsForAllEnhanced())
+            .HasRightThen("Right then, after #1", "11s", "Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

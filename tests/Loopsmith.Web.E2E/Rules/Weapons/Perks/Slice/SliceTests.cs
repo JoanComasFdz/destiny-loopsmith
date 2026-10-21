@@ -144,6 +144,10 @@ public sealed class SliceTests : BaseE2E
           When I tap the "Slice · Festival Flight" chip in card #1's WEAPONS
           Then the item details popup opens, titled "Slice (enhanced)"
           And its "Right then, after #1" card reads only "up to x5 · 9s"
+          When I close the item details popup
+          And I tap "Slice" in "+1 Slice (9s)", which "Slice (enhanced)" fires in card #1
+          Then the item details popup opens, titled "Slice (enhanced)"
+          And its "Right then, after #1" card reads only "up to x5 · 9s"
         """)]
     public async Task EnhancedSlicesDodgeArmsSliceFor9S(Screen screen)
     {
@@ -169,6 +173,18 @@ public sealed class SliceTests : BaseE2E
         // Then
         var details = await Frontend.Designer.ItemDetails.ReadAsync();
         Asserting.That(details)
+            .IsTitled(new WeaponPerk.SliceEnhanced())
+            .HasRightThen("Right then, after #1", "up to x5 · 9s");
+
+        // When
+        await Frontend.Designer.ItemDetails.ClickCloseAsync();
+        await Frontend.Designer.ItemDetails.WaitUntilClosedAsync();
+        await Frontend.Designer.Loop.Step(1).ClickFiredKeywordAsync(new WeaponPerk.Slice(), "+1 Slice (9s)", new WeaponPerk.SliceEnhanced());
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(keywordDetails)
             .IsTitled(new WeaponPerk.SliceEnhanced())
             .HasRightThen("Right then, after #1", "up to x5 · 9s");
     }
