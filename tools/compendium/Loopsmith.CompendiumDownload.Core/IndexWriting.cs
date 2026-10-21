@@ -33,24 +33,24 @@ public static partial class IndexWriting
     /// The tab's in-sheet sections: the texts of its links to a named range (<c>#rangeid=</c>), at most 40 characters,
     /// without "Go back…", each once.
     /// </summary>
-    public static ImmutableArray<string> ReadSections(IElement? table) =>
-        table is null
+    public static ImmutableArray<string> ReadSections(Optional<IElement> table) =>
+        table is not Optional<IElement>.Some found
             ? []
-            : [.. table.QuerySelectorAll("a[href^='#rangeid=']")
+            : [.. found.Value.QuerySelectorAll("a[href^='#rangeid=']")
                 .Select(link => string.Join(' ', HtmlReading.ReadStrippedTexts(link)))
-                .Where(text => text.Length > 0 && PythonText.CountCharacters(text) <= 40 && !GoBack().IsMatch(text))
+                .Where(text => text.Length > 0 && PythonText.CountCharacters(text) <= 40 && !CreateGoBackPattern().IsMatch(text))
                 .Distinct()];
 
     private static string WriteIndexRow(SnapshotTab tab)
     {
         var rows = tab.Csv is Optional<string>.Some csv ? TabWriting.CountCsvRows(csv.Value) : 0;
         var tokens = tab.MarkdownBytes is Optional<long>.Some bytes ? PythonText.FormatThousandsToTenths(bytes.Value) : "0";
-        var table = tab.RawHtml is Optional<string>.Some html ? HtmlReading.FindSheetTable(HtmlReading.ParseHtml(html.Value)) : null;
+        var table = tab.RawHtml.Bind(html => HtmlReading.FindSheetTable(HtmlReading.ParseHtml(html)));
         var sections = string.Join(", ", ReadSections(table)).Replace("|", "/");
         var stem = SheetNaming.ToStem(tab.Place, tab.Tab.Name);
         return $"| {tab.Place} | {tab.Tab.Name} | [{stem}.md]({stem}.md) | {rows} | {tokens}k | {sections} |";
     }
 
     [GeneratedRegex("^go back", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex GoBack();
+    private static partial Regex CreateGoBackPattern();
 }

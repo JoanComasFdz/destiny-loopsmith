@@ -40,4 +40,11 @@ public sealed class TabListingTests
     [Fact]
     public void A_page_without_a_title_is_named_by_the_sheets_id() =>
         Assert.Equal("abc", TabListing.ReadTitle(HtmlReading.ParseHtml("<p>x</p>"), "abc"));
+
+    [Theory]
+    [InlineData(200, "a,b\n1,2", true)]
+    [InlineData(200, "  <html>sign in</html>", false)]
+    [InlineData(404, "a,b", false)]
+    public void A_csv_export_is_one_that_succeeded_and_isnt_a_page(int status, string text, bool isCsv) =>
+        Assert.Equal(isCsv, TabListing.IsGvizCsv(status, text));
 }

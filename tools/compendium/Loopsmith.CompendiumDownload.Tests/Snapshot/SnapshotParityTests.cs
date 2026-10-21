@@ -16,8 +16,13 @@ public sealed class SnapshotParityTests
     {
         var folder = ReadSnapshotFolder();   // impure
         var tabs = ReadTabs(folder);   // impure
+        var markdowns = tabs.Select(tab => ReadTabFile(folder, tab, ".md")).ToImmutableArray();   // impure
 
-        var differing = tabs.Where(tab => tab.RawHtml is Optional<string>.Some).Select(tab => CompareTab(folder, tab)).Where(found => found.Length > 0).ToImmutableArray();   // impure
+        var differing = tabs.Zip(markdowns)
+            .Where(tab => tab.First.RawHtml is Optional<string>.Some)
+            .Select(tab => CompareTab(tab.First, tab.Second))
+            .Where(found => found.Length > 0)
+            .ToImmutableArray();   // pure
 
         Assert.True(differing.IsEmpty, string.Join("\n", differing));
     }
@@ -36,17 +41,15 @@ public sealed class SnapshotParityTests
         Assert.Equal(expected, index);
     }
 
-    private static string CompareTab(string folder, SnapshotTab tab)
+    /// <summary>"" when the tab's files are what its raw page makes, else which differ.</summary>
+    private static string CompareTab(SnapshotTab tab, string markdown)
     {
-        var stem = SheetNaming.ToStem(tab.Place, tab.Tab.Name);   // pure
-        var markdown = File.ReadAllText(Path.Combine(folder, $"{stem}.md"));   // impure
-        var csv = File.ReadAllText(Path.Combine(folder, $"{stem}.csv"));   // impure
-
-        var page = HtmlReading.ParseHtml(((Optional<string>.Some)tab.RawHtml).Value);   // pure
-        var rows = GridReading.ReadGrid(HtmlReading.FindSheetTable(page));   // pure
-
-        var wrongMarkdown = TabWriting.WriteMarkdown(tab.Tab.Name, rows) == markdown ? "" : $"{stem}.md differs. ";   // pure
-        var wrongCsv = TabWriting.WriteCsv(rows) == csv ? "" : $"{stem}.csv differs.";   // pure
+        var stem = SheetNaming.ToStem(tab.Place, tab.Tab.Name);
+        var page = HtmlReading.ParseHtml(((Optional<string>.Some)tab.RawHtml).Value);
+        var rows = GridReading.ReadGrid(HtmlReading.FindSheetTable(page));
+        var csv = tab.Csv is Optional<string>.Some found ? found.Value : "";
+        var wrongMarkdown = TabWriting.WriteMarkdown(tab.Tab.Name, rows) == markdown ? "" : $"{stem}.md differs. ";
+        var wrongCsv = TabWriting.WriteCsv(rows) == csv ? "" : $"{stem}.csv differs.";
         return wrongMarkdown + wrongCsv;
     }
 
@@ -55,6 +58,12 @@ public sealed class SnapshotParityTests
         var folder = Environment.GetEnvironmentVariable("LOOPSMITH_COMPENDIUM_DIR");   // impure
         Assert.SkipWhen(string.IsNullOrEmpty(folder), "Set LOOPSMITH_COMPENDIUM_DIR to a downloaded Compendium snapshot (tools/compendium/README.md) to run it.");   // impure
         return folder!;
+    }
+
+    private static string ReadTabFile(string folder, SnapshotTab tab, string extension)
+    {
+        var path = Path.Combine(folder, SheetNaming.ToStem(tab.Place, tab.Tab.Name) + extension);   // pure
+        return File.Exists(path) ? File.ReadAllText(path) : "";   // impure
     }
 
     private static ImmutableArray<SnapshotTab> ReadTabs(string folder)

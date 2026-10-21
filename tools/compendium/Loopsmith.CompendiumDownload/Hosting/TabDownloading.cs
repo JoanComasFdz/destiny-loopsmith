@@ -22,7 +22,8 @@ public static class TabDownloading
         }
 
         var tabList = ((Result<SheetAnswer, string>.Ok)listed).Value;
-        if (tabList.Status >= 400)
+        var refused = TabListing.IsAnswerFailed(tabList.Status);   // pure
+        if (refused)
         {
             return new Result<(string, SnapshotLog), string>.Error($"GET {tabListUrl} failed: HTTP {tabList.Status}. Is the sheet public?");
         }
@@ -32,7 +33,7 @@ public static class TabDownloading
         var folder = givenFolder is Optional<string>.Some some ? some.Value : SheetNaming.NameDefaultFolder(title, now);   // pure
         var log = SnapshotLog.OpenLog(folder, args);   // impure
         var described = ResponseDescribing.DescribeAnswer(tabList.Facts);   // pure
-        log.Info($"GET {tabListUrl} -> {described}");   // impure
+        log.LogInfo($"GET {tabListUrl} -> {described}");   // impure
         log.Say($"Output folder: {folder}");   // impure
         SnapshotFiles.CreateFolder(folder, "gviz");   // impure
         SnapshotFiles.CreateFolder(folder, "raw");   // impure
@@ -62,6 +63,7 @@ public static class TabDownloading
     private static async Task<Result<Unit, string>> DownloadTab(SheetClient client, string sheetId, string folder, SnapshotLog log, int place, SheetTab tab)
     {
         var stem = SheetNaming.ToStem(place, tab.Name);   // pure
+        var quotedName = PythonText.QuoteForConsole(tab.Name);   // pure
         var tabUrl = SheetNaming.BuildTabUrl(sheetId, tab.Gid);   // pure
         var answered = await client.GetAsync(tabUrl, [], PageTimeout);   // impure
         if (answered is Result<SheetAnswer, string>.Error noAnswer)
@@ -71,7 +73,7 @@ public static class TabDownloading
 
         var answer = ((Result<SheetAnswer, string>.Ok)answered).Value;
         var described = ResponseDescribing.DescribeAnswer(answer.Facts);   // pure
-        log.Info($"tab {PythonText.QuoteForConsole(tab.Name)} GET {tabUrl} -> {described}");   // impure
+        log.LogInfo($"tab {quotedName} GET {tabUrl} -> {described}");   // impure
         SnapshotFiles.WriteText(folder, Path.Combine("raw", $"{stem}.html"), answer.Text);   // impure
         var page = HtmlReading.ParseHtml(answer.Text);   // pure
         var table = HtmlReading.FindSheetTable(page);   // pure
@@ -86,8 +88,8 @@ public static class TabDownloading
         if (exported is Result<SheetAnswer, string>.Ok gviz)
         {
             var gvizDescribed = ResponseDescribing.DescribeAnswer(gviz.Value.Facts);   // pure
-            log.Info($"tab {PythonText.QuoteForConsole(tab.Name)} gviz -> {gvizDescribed}");   // impure
-            var isCsv = gviz.Value.Status < 400 && !gviz.Value.Text.TrimStart().StartsWith('<');   // pure
+            log.LogInfo($"tab {quotedName} gviz -> {gvizDescribed}");   // impure
+            var isCsv = TabListing.IsGvizCsv(gviz.Value.Status, gviz.Value.Text);   // pure
             if (isCsv)
             {
                 SnapshotFiles.WriteText(folder, Path.Combine("gviz", $"{stem}.csv"), gviz.Value.Text);   // impure
@@ -95,10 +97,10 @@ public static class TabDownloading
         }
         else
         {
-            log.Warn($"tab {PythonText.QuoteForConsole(tab.Name)} gviz -> {((Result<SheetAnswer, string>.Error)exported).Failure}");   // impure
+            log.LogWarning($"tab {quotedName} gviz -> {((Result<SheetAnswer, string>.Error)exported).Failure}");   // impure
         }
 
-        log.Say($"  [{place:00}] {PythonText.QuoteForConsole(tab.Name),-45} gid={tab.Gid,-12} rows={rows.Length}");   // impure
+        log.Say($"  [{place:00}] {quotedName,-45} gid={tab.Gid,-12} rows={rows.Length}");   // impure
         return new Result<Unit, string>.Ok(new Unit.Value());
     }
 }

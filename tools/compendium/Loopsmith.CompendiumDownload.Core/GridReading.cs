@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using AngleSharp.Dom;
+using Loopsmith.Functional;
 
 namespace Loopsmith.CompendiumDownload.Core;
 
@@ -9,8 +10,8 @@ namespace Loopsmith.CompendiumDownload.Core;
 /// </summary>
 public static class GridReading
 {
-    public static ImmutableArray<ImmutableArray<string>> ReadGrid(IElement? table) =>
-        table is null ? [] : TrimGrid(SpreadCells(table));
+    public static ImmutableArray<ImmutableArray<string>> ReadGrid(Optional<IElement> table) =>
+        table is Optional<IElement>.Some found ? TrimGrid(SpreadCells(found.Value)) : [];
 
     private static Dictionary<(int Row, int Column), string> SpreadCells(IElement table)
     {

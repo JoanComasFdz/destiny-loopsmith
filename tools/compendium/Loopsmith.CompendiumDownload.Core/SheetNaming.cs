@@ -8,7 +8,7 @@ public static partial class SheetNaming
     /// <summary>A sheet's URL → its id (<c>…/d/&lt;id&gt;/edit</c>); anything else is taken as the id itself.</summary>
     public static string ReadSheetId(string sheet)
     {
-        var found = SheetIdPattern().Match(sheet);
+        var found = CreateSheetIdPattern().Match(sheet);
         return found.Success ? found.Groups[1].Value : sheet;
     }
 
@@ -28,7 +28,7 @@ public static partial class SheetNaming
     /// <summary>A name made safe for a file: letters, digits, <c>_</c>, <c>-</c> and spaces kept, spaces as <c>_</c>, at most 60 characters.</summary>
     public static string ToSlug(string name)
     {
-        var kept = PythonText.StripWhitespace(UnsafeCharacters().Replace(name, "")).Replace(' ', '_');
+        var kept = PythonText.StripWhitespace(CreateUnsafeCharactersPattern().Replace(name, "")).Replace(' ', '_');
         var slug = PythonText.TakeCharacters(kept, 60);
         return slug.Length > 0 ? slug : "tab";
     }
@@ -40,9 +40,9 @@ public static partial class SheetNaming
     public static string NameDefaultFolder(string title, DateTime now) => $"{ToSlug(title).ToLowerInvariant()}_{now:yyyy-MM-dd_HHmm}";
 
     [GeneratedRegex("/d/([a-zA-Z0-9_-]+)")]
-    private static partial Regex SheetIdPattern();
+    private static partial Regex CreateSheetIdPattern();
 
     /// <summary>Python's <c>[^\w\- ]+</c>: <c>\w</c> there is a letter, a digit of any kind or <c>_</c>.</summary>
     [GeneratedRegex(@"[^\p{L}\p{N}_\- ]+")]
-    private static partial Regex UnsafeCharacters();
+    private static partial Regex CreateUnsafeCharactersPattern();
 }

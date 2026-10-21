@@ -19,8 +19,8 @@ public sealed class SnapshotLog
     {
         Directory.CreateDirectory(folder);
         var log = new SnapshotLog(Path.Combine(folder, "download.log"));
-        log.Info(new string('=', 70));
-        log.Info($"run: Loopsmith.CompendiumDownload {string.Join(' ', args)}");
+        log.LogInfo(new string('=', 70));
+        log.LogInfo($"run: Loopsmith.CompendiumDownload {string.Join(' ', args)}");
         return log;
     }
 
@@ -34,16 +34,16 @@ public sealed class SnapshotLog
             Console.WriteLine(message);
         }
 
-        Info(message);
+        LogInfo(message);
     }
 
-    public void Debug(string message) => Write("DEBUG", message);
+    public void LogDebug(string message) => Write("DEBUG", message);
 
-    public void Info(string message) => Write("INFO", message);
+    public void LogInfo(string message) => Write("INFO", message);
 
-    public void Warn(string message) => Write("WARNING", message);
+    public void LogWarning(string message) => Write("WARNING", message);
 
-    public void Error(string message) => Write("ERROR", message);
+    public void LogError(string message) => Write("ERROR", message);
 
     private void Write(string level, string message)
     {

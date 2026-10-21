@@ -29,7 +29,7 @@ public static partial class ImageListing
 
     /// <summary>The image links a tab's page holds (<c>&lt;img … src="https://…"&gt;</c>), its entities decoded.</summary>
     public static ImmutableArray<string> FindImageUrls(string rawHtml) =>
-        [.. ImageSource().Matches(rawHtml).Select(found => DecodeEntities(found.Groups[1].Value))];
+        [.. CreateImageSourcePattern().Matches(rawHtml).Select(found => DecodeEntities(found.Groups[1].Value))];
 
     /// <summary>Every image link the pages hold, each once.</summary>
     public static ImmutableArray<string> ListImageUrls(IEnumerable<string> rawHtmls) =>
@@ -47,6 +47,23 @@ public static partial class ImageListing
     public static string ReadMediaType(string contentType) => contentType.Split(';')[0].Trim();
 
     public static bool IsImage(string mediaType) => mediaType.StartsWith("image/", StringComparison.Ordinal);
+
+    /// <summary>An answer is an image to save when it succeeded (below 400) and is an image.</summary>
+    public static bool IsSavable(int status, string mediaType) => status < 400 && IsImage(mediaType);
+
+    /// <summary>The error an answer that isn't an image is recorded with (failed.txt reads it back): <c>HTTP 404 text/html</c>.</summary>
+    public static string DescribeFailedAnswer(int status, string mediaType) => $"HTTP {status} {mediaType}";
+
+    /// <summary>What an answer that isn't an image said, for the log: its first 300 characters on one line; nothing for an image.</summary>
+    public static string ReadFailedBody(string mediaType, string text) =>
+        IsImage(mediaType) ? "" : PythonText.TakeCharacters(text, 300).Replace('\n', ' ');
+
+    /// <summary>The first link of each host, by host name: one is asked first, so a host that never answers is found quickly.</summary>
+    public static ImmutableArray<(string Host, string Url)> ListHostProbes(ImmutableArray<string> urls) =>
+        [.. urls.GroupBy(ReadHost).OrderBy(group => group.Key, StringComparer.Ordinal).Select(group => (group.Key, group.First()))];
+
+    /// <summary>The links without a host's.</summary>
+    public static ImmutableArray<string> DropHost(ImmutableArray<string> urls, string host) => [.. urls.Where(url => ReadHost(url) != host)];
 
     /// <summary>
     /// After a failed answer: a 400, 403, 404 or 410 is a link gone for good, and the last attempt gives up too; else
@@ -83,7 +100,7 @@ public static partial class ImageListing
 
     /// <summary>The links failed.txt records as gone for good (400, 403, 404, 410): the viewer leaves them out.</summary>
     public static ImmutableHashSet<string> ReadGoneImages(string failedList) =>
-        [.. failedList.Split('\n').Select(line => line.TrimEnd('\r').Split('\t', 2)).Where(parts => GoneError().IsMatch(parts[0])).Select(parts => parts.Length > 1 ? parts[1] : "")];
+        [.. failedList.Split('\n').Select(line => line.TrimEnd('\r').Split('\t', 2)).Where(parts => CreateGoneErrorPattern().IsMatch(parts[0])).Select(parts => parts.Length > 1 ? parts[1] : "")];
 
     /// <summary>The failures counted by host and kind of error, the most first: <c>"   12  host  HTTP 404 text/html"</c>.</summary>
     public static ImmutableArray<string> SummarizeFailures(ImmutableArray<FailedImage> failed) =>
@@ -111,8 +128,8 @@ public static partial class ImageListing
         HtmlReading.ParseHtml($"<img src=\"{attribute}\">").QuerySelector("img")!.GetAttribute("src")!;
 
     [GeneratedRegex("<img[^>]+src=\"(https?://[^\"]+)\"")]
-    private static partial Regex ImageSource();
+    private static partial Regex CreateImageSourcePattern();
 
     [GeneratedRegex(@"^HTTP (400|403|404|410)\b")]
-    private static partial Regex GoneError();
+    private static partial Regex CreateGoneErrorPattern();
 }

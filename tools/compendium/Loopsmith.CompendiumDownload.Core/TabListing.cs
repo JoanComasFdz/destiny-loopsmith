@@ -17,20 +17,20 @@ public static partial class TabListing
     /// </summary>
     public static ImmutableArray<SheetTab> ListTabs(string html, IDocument page)
     {
-        var pushed = PushedTab().Matches(html).Select(found => new SheetTab(UnescapeJavaScript(found.Groups[1].Value), found.Groups[2].Value)).ToImmutableArray();
+        var pushed = CreatePushedTabPattern().Matches(html).Select(found => new SheetTab(UnescapeJavaScript(found.Groups[1].Value), found.Groups[2].Value)).ToImmutableArray();
         if (pushed.Length > 0)
         {
             return pushed;
         }
 
         var menu = page.QuerySelectorAll("#sheet-menu li")
-            .Select(item => (Item: item, Found: MenuButton().Match(item.GetAttribute("id") ?? "")))
+            .Select(item => (Item: item, Found: CreateMenuButtonPattern().Match(item.GetAttribute("id") ?? "")))
             .Where(item => item.Found.Success)
             .Select(item => new SheetTab(string.Concat(HtmlReading.ReadStrippedTexts(item.Item)), item.Found.Groups[1].Value))
             .ToImmutableArray();
         return menu.Length > 0
             ? menu
-            : [.. SwitchToSheet().Matches(html).Select(found => found.Groups[1].Value).Distinct().Select(gid => new SheetTab($"gid_{gid}", gid))];
+            : [.. CreateSwitchToSheetPattern().Matches(html).Select(found => found.Groups[1].Value).Distinct().Select(gid => new SheetTab($"gid_{gid}", gid))];
     }
 
     /// <summary>The page's title without Google's " - Google Sheets"; the sheet's id when it has none.</summary>
@@ -40,27 +40,33 @@ public static partial class TabListing
         return title is null ? sheetId : TrimGoogleSuffix(string.Concat(HtmlReading.ReadStrippedTexts(title)));
     }
 
-    public static string TrimGoogleSuffix(string title) => GoogleSuffix().Replace(title, "");
+    public static string TrimGoogleSuffix(string title) => CreateGoogleSuffixPattern().Replace(title, "");
+
+    /// <summary>An answer that failed (400 or more): the tab list's means the sheet isn't public.</summary>
+    public static bool IsAnswerFailed(int status) => status >= 400;
+
+    /// <summary>A CSV export answer is one that succeeded and isn't an HTML page (Google's sign-in, say).</summary>
+    public static bool IsGvizCsv(int status, string text) => !IsAnswerFailed(status) && !text.TrimStart().StartsWith('<');
 
     /// <summary>A JavaScript string's escapes (<c>\x41</c>, <c>\u0041</c>, <c>\"</c>) → their characters.</summary>
     public static string UnescapeJavaScript(string text) =>
-        JavaScriptEscape().Replace(text, found =>
+        CreateJavaScriptEscapePattern().Replace(text, found =>
             found.Groups[1].Success || found.Groups[2].Success
                 ? ((char)int.Parse(found.Groups[1].Success ? found.Groups[1].Value : found.Groups[2].Value, NumberStyles.HexNumber, CultureInfo.InvariantCulture)).ToString()
                 : found.Groups[3].Value);
 
     [GeneratedRegex(@"items\.push\(\{name: ""((?:[^""\\]|\\.)*)"",.*?gid: ""(-?\d+)""")]
-    private static partial Regex PushedTab();
+    private static partial Regex CreatePushedTabPattern();
 
     [GeneratedRegex(@"sheet-button-(\d+)")]
-    private static partial Regex MenuButton();
+    private static partial Regex CreateMenuButtonPattern();
 
     [GeneratedRegex(@"switchToSheet\('(\d+)'\)")]
-    private static partial Regex SwitchToSheet();
+    private static partial Regex CreateSwitchToSheetPattern();
 
     [GeneratedRegex(@"\s*-\s*Google (Drive|Sheets)\s*$")]
-    private static partial Regex GoogleSuffix();
+    private static partial Regex CreateGoogleSuffixPattern();
 
     [GeneratedRegex(@"\\x([0-9a-fA-F]{2})|\\u([0-9a-fA-F]{4})|\\(.)")]
-    private static partial Regex JavaScriptEscape();
+    private static partial Regex CreateJavaScriptEscapePattern();
 }

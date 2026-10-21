@@ -75,5 +75,29 @@ public sealed class ImageListingTests
             ["        2  b.com                        HTTP 404 text/html", "        1  a.com                        HttpRequestException"],
             ImageListing.SummarizeFailures([new("HttpRequestException: refused", "https://a.com/1"), new("HTTP 404 text/html", "https://b.com/1"), new("HTTP 404 text/html", "https://b.com/2")]));
 
+    [Fact]
+    public void One_link_of_each_host_is_asked_first_and_a_dead_hosts_are_dropped()
+    {
+        ImmutableArray<string> urls = ["https://b.com/1", "https://a.com/1", "https://b.com/2", "https://a.com/2"];
+
+        Assert.Equal([("a.com", "https://a.com/1"), ("b.com", "https://b.com/1")], ImageListing.ListHostProbes(urls));
+        Assert.Equal(["https://b.com/1", "https://b.com/2"], ImageListing.DropHost(urls, "a.com"));
+    }
+
+    [Theory]
+    [InlineData(200, "image/png", true)]
+    [InlineData(200, "text/html", false)]
+    [InlineData(404, "image/png", false)]
+    public void An_answer_is_saved_when_it_succeeded_and_is_an_image(int status, string mediaType, bool savable) =>
+        Assert.Equal(savable, ImageListing.IsSavable(status, mediaType));
+
+    [Fact]
+    public void A_failed_answer_is_recorded_as_its_status_and_type_and_its_page_on_one_line()
+    {
+        Assert.Equal("HTTP 404 text/html", ImageListing.DescribeFailedAnswer(404, "text/html"));
+        Assert.Equal("<p>gone </p>", ImageListing.ReadFailedBody("text/html", "<p>gone\n</p>"));
+        Assert.Equal("", ImageListing.ReadFailedBody("image/png", "binary"));
+    }
+
     private static Optional<string> ToOptional(string text) => text.Length > 0 ? Optional.Some(text) : Optional.None<string>();
 }

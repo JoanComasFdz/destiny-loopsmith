@@ -16,24 +16,21 @@ public static class ImageDownloading
 
     public static async Task<Result<Unit, string>> DownloadImages(SheetClient client, bool freshClient, string folder, SnapshotLog log)
     {
-        var snapshot = SnapshotFiles.ReadSnapshot(folder);   // impure
-        if (snapshot is Result<SnapshotContents, string>.Error unreadable)
+        var read = SnapshotFiles.ReadSnapshotFolder(folder);   // impure
+        var opened = read.Bind(SnapshotOpening.OpenSnapshot);   // pure
+        var mapJson = SnapshotFiles.ReadText(folder, Path.Combine("images", "map.json"));   // impure
+        var savedBefore = mapJson.Bind(ReadImageMap);   // pure
+        var rawPages = SnapshotFiles.ReadRawPages(folder);   // impure
+        var started = opened.Bind(snapshot => savedBefore.Bind(map => rawPages.Map(pages => (snapshot.Meta, Map: map, Pages: pages))));   // pure
+        if (started is Result<(SheetMeta Meta, ImmutableArray<(string Url, string File)> Map, ImmutableArray<string> Pages), string>.Error unreadable)
         {
             return new Result<Unit, string>.Error(unreadable.Failure);
         }
 
-        var meta = ((Result<SnapshotContents, string>.Ok)snapshot).Value.Meta;
+        var (meta, before, pages) = ((Result<(SheetMeta Meta, ImmutableArray<(string Url, string File)> Map, ImmutableArray<string> Pages), string>.Ok)started).Value;
         SnapshotFiles.CreateFolder(folder, "images");   // impure
-        var mapJson = SnapshotFiles.ReadText(folder, Path.Combine("images", "map.json"));   // impure
-        var savedBefore = mapJson is Optional<string>.Some json ? ImageListing.ReadImageMap(json.Value) : new Result<ImmutableArray<(string Url, string File)>, string>.Ok([]);   // pure
-        if (savedBefore is Result<ImmutableArray<(string Url, string File)>, string>.Error badMap)
-        {
-            return new Result<Unit, string>.Error(badMap.Failure);
-        }
-
-        var saved = new ImageMap(((Result<ImmutableArray<(string Url, string File)>, string>.Ok)savedBefore).Value);
-        var rawPages = SnapshotFiles.ReadRawPages(folder);   // impure
-        var urls = ImageListing.ListImageUrls(rawPages);   // pure
+        var saved = new ImageMap(before);
+        var urls = ImageListing.ListImageUrls(pages);   // pure
         var todo = ImageListing.ListImagesToDownload(urls, saved.ToDictionary());   // pure
         if (todo.IsEmpty)
         {
@@ -41,22 +38,49 @@ public static class ImageDownloading
             return new Result<Unit, string>.Ok(new Unit.Value());
         }
 
-        var referer = $"{SheetNaming.BuildTabListUrl(meta.Id)}";   // pure
+        var referer = SheetNaming.BuildTabListUrl(meta.Id);   // pure
         if (freshClient && meta.Id.Length > 0)
         {
             await client.GetAsync(referer, [], ImageTimeout);   // impure: picks up the cookies Google sets for a viewer
         }
 
-        var fetching = new ImageFetching(client, folder, log, referer);
-        var remaining = await ProbeHosts(fetching, todo, saved);   // impure
+        var probing = new ImageFetch(client, folder, log, referer, Optional.None<Progress>());
+        var remaining = await ProbeHosts(probing, todo, saved);   // impure
         log.Say($"Images: downloading {remaining.Length} of {urls.Length} ({AtOnce} at a time) ...");   // impure
         var progress = new Progress("Images", remaining.Length);   // impure
-        fetching = fetching with { Progress = Optional.Some(progress) };
+        var fetching = probing with { Progress = Optional.Some(progress) };
+        var failed = await FetchAll(fetching, remaining, saved, progress);   // impure
+        progress.Close();   // impure
+        var map = ImageListing.WriteImageMap(saved.ToList());   // pure
+        SnapshotFiles.WriteText(folder, Path.Combine("images", "map.json"), map);   // impure
+        log.Say($"Images: {saved.Count} saved, {failed.Length} failed");   // impure
+        if (!failed.IsEmpty)
+        {
+            var failedList = ImageListing.WriteFailedList(failed);   // pure
+            SnapshotFiles.WriteText(folder, Path.Combine("images", "failed.txt"), failedList);   // impure
+            var summary = ImageListing.SummarizeFailures(failed);   // pure
+            foreach (var line in summary)
+            {
+                log.Say(line);   // impure
+            }
+
+            log.Say("  (see images/failed.txt; failed ones stay as remote links; re-run with --rebuild to retry only those)");   // impure
+        }
+
+        return new Result<Unit, string>.Ok(new Unit.Value());
+    }
+
+    private static Result<ImmutableArray<(string Url, string File)>, string> ReadImageMap(Optional<string> mapJson) =>
+        mapJson is Optional<string>.Some json ? ImageListing.ReadImageMap(json.Value) : new Result<ImmutableArray<(string Url, string File)>, string>.Ok([]);
+
+    /// <summary>The images left, 4 at a time; map.json written every 100, so a stopped run resumes. The ones given up.</summary>
+    private static async Task<ImmutableArray<FailedImage>> FetchAll(ImageFetch fetching, ImmutableArray<string> remaining, ImageMap saved, Progress progress)
+    {
         var failed = ImmutableArray.CreateBuilder<FailedImage>();
         var finished = 0;
         await Parallel.ForEachAsync(remaining, new ParallelOptions { MaxDegreeOfParallelism = AtOnce }, async (url, _) =>
         {
-            var image = await fetching.FetchImage(url);   // impure
+            var image = await ImageFetching.FetchImage(fetching, url);   // impure
             lock (failed)
             {
                 if (image is Result<string, FailedImage>.Ok file)
@@ -73,49 +97,35 @@ public static class ImageDownloading
                 if (finished % 100 == 0)
                 {
                     var resumable = ImageListing.WriteImageMap(saved.ToList());   // pure
-                    SnapshotFiles.WriteText(folder, Path.Combine("images", "map.json"), resumable);   // impure
-                    log.Info($"progress {finished}/{remaining.Length} ok={progress.Saved} fail={progress.Failed}");   // impure
+                    SnapshotFiles.WriteText(fetching.Folder, Path.Combine("images", "map.json"), resumable);   // impure
+                    fetching.Log.LogInfo($"progress {finished}/{remaining.Length} ok={progress.Saved} fail={progress.Failed}");   // impure
                 }
             }
         });
-        progress.Close();   // impure
-        var map = ImageListing.WriteImageMap(saved.ToList());   // pure
-        SnapshotFiles.WriteText(folder, Path.Combine("images", "map.json"), map);   // impure
-        log.Say($"Images: {saved.Count} saved, {failed.Count} failed");   // impure
-        if (failed.Count > 0)
-        {
-            var failures = failed.ToImmutable();
-            var failedList = ImageListing.WriteFailedList(failures);   // pure
-            SnapshotFiles.WriteText(folder, Path.Combine("images", "failed.txt"), failedList);   // impure
-            var summary = ImageListing.SummarizeFailures(failures);   // pure
-            foreach (var line in summary)
-            {
-                log.Say(line);   // impure
-            }
-
-            log.Say("  (see images/failed.txt; failed ones stay as remote links; re-run with --rebuild to retry only those)");   // impure
-        }
-
-        return new Result<Unit, string>.Ok(new Unit.Value());
+        return failed.ToImmutable();
     }
 
     /// <summary>One image of each host first, so a host that never answers doesn't cost minutes of retries: its images are skipped.</summary>
-    private static async Task<ImmutableArray<string>> ProbeHosts(ImageFetching fetching, ImmutableArray<string> todo, ImageMap saved)
+    private static async Task<ImmutableArray<string>> ProbeHosts(ImageFetch fetching, ImmutableArray<string> todo, ImageMap saved)
     {
         var left = todo;
-        foreach (var host in todo.Select(ImageListing.ReadHost).Distinct().Order(StringComparer.Ordinal))
+        var probes = ImageListing.ListHostProbes(todo);   // pure
+        foreach (var (host, url) in probes)
         {
-            var first = todo.First(url => ImageListing.ReadHost(url) == host);
-            var image = await fetching.FetchImage(first);   // impure
+            var image = await ImageFetching.FetchImage(fetching, url);   // impure
             if (image is Result<string, FailedImage>.Ok file)
             {
-                saved.Add(first, file.Value);
+                saved.Add(url, file.Value);
+                continue;
             }
-            else if (ImageListing.IsHostUnreachable(((Result<string, FailedImage>.Error)image).Failure.Error))
+
+            var error = ((Result<string, FailedImage>.Error)image).Failure.Error;
+            var unreachable = ImageListing.IsHostUnreachable(error);   // pure
+            if (unreachable)
             {
-                var error = ((Result<string, FailedImage>.Error)image).Failure.Error;
-                fetching.Log.Say($"Images: {host} not usable ({PythonText.TakeCharacters(error, 100)}); keeping remote links for it");   // impure
-                left = [.. left.Where(url => ImageListing.ReadHost(url) != host)];
+                var shown = PythonText.TakeCharacters(error, 100);   // pure
+                fetching.Log.Say($"Images: {host} not usable ({shown}); keeping remote links for it");   // impure
+                left = ImageListing.DropHost(left, host);   // pure
             }
         }
 
@@ -139,20 +149,24 @@ public static class ImageDownloading
     }
 }
 
-/// <summary>Impure: one image asked for, again after a wait when Google is busy, until it is saved or given up.</summary>
-internal sealed record ImageFetching(SheetClient Client, string Folder, SnapshotLog Log, string Referer)
-{
-    public Optional<Progress> Progress { get; init; } = Optional.None<Progress>();
+/// <summary>What fetching an image needs: the client, the folder its file goes in, the log, the page to say it is asked from and the progress line.</summary>
+internal sealed record ImageFetch(SheetClient Client, string Folder, SnapshotLog Log, string Referer, Optional<Progress> Progress);
 
-    public async Task<Result<string, FailedImage>> FetchImage(string url)
+/// <summary>How one attempt went: the file saved, or the error, what to do next and whether Google asked to wait.</summary>
+internal sealed record ImageAttempt(Optional<string> Saved, string Error, ImageRetry Retry, bool RateLimited);
+
+/// <summary>Impure: one image asked for, again after a wait when Google is busy, until it is saved or given up.</summary>
+internal static class ImageFetching
+{
+    public static async Task<Result<string, FailedImage>> FetchImage(ImageFetch fetching, string url)
     {
         var error = "?";
         for (var attempt = 1; attempt <= ImageListing.Attempts; attempt++)
         {
-            var answered = await Client.GetAsync(url, [("Referer", Referer), ("Accept", "image/avif,image/webp,image/png,image/*,*/*;q=0.8")], TimeSpan.FromSeconds(60));   // impure
+            var answered = await fetching.Client.GetAsync(url, [("Referer", fetching.Referer), ("Accept", "image/avif,image/webp,image/png,image/*,*/*;q=0.8")], TimeSpan.FromSeconds(60));   // impure
             var next = answered is Result<SheetAnswer, string>.Ok answer
-                ? ReadAnswer(url, attempt, answer.Value)   // impure
-                : ReadError(url, attempt, ((Result<SheetAnswer, string>.Error)answered).Failure);   // impure
+                ? SaveAnswer(fetching, url, attempt, answer.Value)   // impure
+                : LogError(fetching, url, attempt, ((Result<SheetAnswer, string>.Error)answered).Failure);   // impure
             if (next.Saved is Optional<string>.Some file)
             {
                 return new Result<string, FailedImage>.Ok(file.Value);
@@ -166,54 +180,57 @@ internal sealed record ImageFetching(SheetClient Client, string Folder, Snapshot
 
             if (next.RateLimited)
             {
-                Log.Info($"img wait {again.WaitSeconds}s before retry | {url}");   // impure
-                ChangeWaiting(+1);   // impure
+                fetching.Log.LogInfo($"img wait {again.WaitSeconds}s before retry | {url}");   // impure
+                ChangeWaiting(fetching, +1);   // impure
             }
 
             await Task.Delay(TimeSpan.FromSeconds(again.WaitSeconds));   // impure
             if (next.RateLimited)
             {
-                ChangeWaiting(-1);   // impure
+                ChangeWaiting(fetching, -1);   // impure
             }
         }
 
-        Log.Error($"img GAVE UP: {error} | {url}");   // impure
+        fetching.Log.LogError($"img GAVE UP: {error} | {url}");   // impure
         return new Result<string, FailedImage>.Error(new FailedImage(error, url));
     }
 
-    private Attempted ReadAnswer(string url, int attempt, SheetAnswer answer)
+    /// <summary>An image answer saved into images/; anything else logged, with what to do next.</summary>
+    private static ImageAttempt SaveAnswer(ImageFetch fetching, string url, int attempt, SheetAnswer answer)
     {
         var mediaType = ImageListing.ReadMediaType(answer.ContentType);   // pure
         var described = ResponseDescribing.DescribeAnswer(answer.Facts);   // pure
-        if (answer.Status < 400 && ImageListing.IsImage(mediaType))
+        var savable = ImageListing.IsSavable(answer.Status, mediaType);   // pure
+        if (savable)
         {
             var name = ImageListing.NameImageFile(url, mediaType);   // pure
-            SnapshotFiles.WriteBytes(Folder, Path.Combine("images", name), answer.Body);   // impure
-            Log.Debug($"img OK   try{attempt} {name} -> {described} | {url}");   // impure
-            return new Attempted(Optional.Some(name), "", new ImageRetry.GiveUp(), false);
+            SnapshotFiles.WriteBytes(fetching.Folder, Path.Combine("images", name), answer.Body);   // impure
+            fetching.Log.LogDebug($"img OK   try{attempt} {name} -> {described} | {url}");   // impure
+            return new ImageAttempt(Optional.Some(name), "", new ImageRetry.GiveUp(), false);
         }
 
-        var body = ImageListing.IsImage(mediaType) ? "" : PythonText.TakeCharacters(answer.Text, 300).Replace('\n', ' ');   // pure
-        Log.Warn($"img FAIL try{attempt} {described} | body={PythonText.QuoteForConsole(body)} | {url}");   // impure
+        var body = ImageListing.ReadFailedBody(mediaType, answer.Text);   // pure
+        var quotedBody = PythonText.QuoteForConsole(body);   // pure
+        fetching.Log.LogWarning($"img FAIL try{attempt} {described} | body={quotedBody} | {url}");   // impure
         var retry = ImageListing.DecideAfterAnswer(answer.Status, attempt, answer.RetryAfter);   // pure
-        return new Attempted(Optional.None<string>(), $"HTTP {answer.Status} {mediaType}", retry, true);
+        var failure = ImageListing.DescribeFailedAnswer(answer.Status, mediaType);   // pure
+        return new ImageAttempt(Optional.None<string>(), failure, retry, true);
     }
 
-    private Attempted ReadError(string url, int attempt, string error)
+    /// <summary>A request that got no answer, logged, with what to do next.</summary>
+    private static ImageAttempt LogError(ImageFetch fetching, string url, int attempt, string error)
     {
-        Log.Warn($"img EXC  try{attempt} {error} | {url}");   // impure
+        fetching.Log.LogWarning($"img EXC  try{attempt} {error} | {url}");   // impure
         var retry = ImageListing.DecideAfterError(attempt);   // pure
-        return new Attempted(Optional.None<string>(), PythonText.TakeCharacters(error, 150), retry, false);
+        var shown = PythonText.TakeCharacters(error, 150);   // pure
+        return new ImageAttempt(Optional.None<string>(), shown, retry, false);
     }
 
-    private void ChangeWaiting(int change)
+    private static void ChangeWaiting(ImageFetch fetching, int change)
     {
-        if (Progress is Optional<Progress>.Some progress)
+        if (fetching.Progress is Optional<Progress>.Some progress)
         {
             progress.Value.Wait(change);
         }
     }
-
-    /// <summary>How one attempt went: the file saved, or the error, what to do next and whether Google asked to wait.</summary>
-    private sealed record Attempted(Optional<string> Saved, string Error, ImageRetry Retry, bool RateLimited);
 }

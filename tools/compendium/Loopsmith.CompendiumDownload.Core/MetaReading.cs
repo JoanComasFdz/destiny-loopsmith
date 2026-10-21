@@ -47,8 +47,8 @@ public static partial class MetaReading
     /// </summary>
     public static SheetMeta BuildFallbackMeta(string tabListHtml, string folderName, DateOnly tabsJsonDate)
     {
-        var title = TitlePattern().Match(tabListHtml);
-        var id = IdPattern().Match(tabListHtml);
+        var title = CreateTitlePattern().Match(tabListHtml);
+        var id = CreateIdPattern().Match(tabListHtml);
         var sheetId = id.Success ? id.Groups[1].Value : "";
         var extracted = tabsJsonDate.ToString("yyyy-MM-dd");
         return new SheetMeta(
@@ -83,8 +83,8 @@ public static partial class MetaReading
     }
 
     [GeneratedRegex("<title>(.*?)</title>", RegexOptions.Singleline)]
-    private static partial Regex TitlePattern();
+    private static partial Regex CreateTitlePattern();
 
     [GeneratedRegex(@"spreadsheets\\?/d\\?/([a-zA-Z0-9_-]{20,})")]
-    private static partial Regex IdPattern();
+    private static partial Regex CreateIdPattern();
 }

@@ -20,9 +20,12 @@ public static partial class ViewerWriting
         var templates = new List<string>();
         foreach (var tab in tabs)
         {
-            var page = tab.RawHtml is Optional<string>.Some html ? HtmlReading.ParseHtml(html.Value) : null;
-            var table = page is null ? null : HtmlReading.FindSheetTable(page);
-            if (page is null || table is null)
+            var parsed = tab.RawHtml.Bind(html =>
+            {
+                var page = HtmlReading.ParseHtml(html);
+                return HtmlReading.FindSheetTable(page).Map(table => (Page: page, Table: table));
+            });
+            if (parsed is not Optional<(AngleSharp.Html.Dom.IHtmlDocument Page, IElement Table)>.Some (var (page, table)))
             {
                 templates.Add($"<template id=\"tpl-{tab.Tab.Gid}\"><p class=\"missing\">This tab could not be loaded.</p></template>");
                 continue;
@@ -44,11 +47,11 @@ public static partial class ViewerWriting
 
     /// <summary>A style sheet's cell rules (<c>.ritz … { … }</c>), renamed for the tab in <paramref name="place"/> (<c>.s3</c> → <c>.t6s3</c>), Google's fonts by their own names.</summary>
     public static ImmutableArray<string> ReadCellStyles(string styleSheet, int place) =>
-        [.. CellRule().Matches(styleSheet).Select(rule =>
+        [.. CreateCellRulePattern().Matches(styleSheet).Select(rule =>
         {
-            var renamed = CellStyleClass().Replace(rule.Value, $".t{place}s${{1}}");
+            var renamed = CreateCellStyleClassPattern().Replace(rule.Value, $".t{place}s${{1}}");
             var roboto = renamed.Replace("docs-Roboto", "Roboto");
-            return GoogleFont().Replace(roboto, "\"${1}\"");
+            return CreateGoogleFontPattern().Replace(roboto, "\"${1}\"");
         })];
 
     /// <summary>A link through Google's redirect (<c>https://www.google.com/url?q=…</c>) → where it goes.</summary>
@@ -72,7 +75,7 @@ public static partial class ViewerWriting
     {
         foreach (var element in table.QuerySelectorAll("[class]"))
         {
-            element.ClassName = string.Join(' ', element.ClassList.Select(name => CellStyleName().IsMatch(name) ? $"t{place}{name}" : name));
+            element.ClassName = string.Join(' ', element.ClassList.Select(name => CreateCellStyleNamePattern().IsMatch(name) ? $"t{place}{name}" : name));
         }
 
         foreach (var element in table.QuerySelectorAll("script, style"))
@@ -121,14 +124,14 @@ public static partial class ViewerWriting
     private static string DecodeQueryPart(string part) => Uri.UnescapeDataString(part.Replace('+', ' '));
 
     [GeneratedRegex(@"\.ritz[^{}]*\{[^}]*\}")]
-    private static partial Regex CellRule();
+    private static partial Regex CreateCellRulePattern();
 
     [GeneratedRegex(@"\.s(\d+)\b")]
-    private static partial Regex CellStyleClass();
+    private static partial Regex CreateCellStyleClassPattern();
 
     [GeneratedRegex(@"docs-([A-Za-z][\w ]*?)(?=[,;}])")]
-    private static partial Regex GoogleFont();
+    private static partial Regex CreateGoogleFontPattern();
 
     [GeneratedRegex(@"^s\d+$")]
-    private static partial Regex CellStyleName();
+    private static partial Regex CreateCellStyleNamePattern();
 }

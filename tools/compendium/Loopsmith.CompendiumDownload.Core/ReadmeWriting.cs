@@ -78,7 +78,7 @@ public static partial class ReadmeWriting
     }
 
     /// <summary>A tab whose name starts with the word OLD holds outdated values.</summary>
-    public static bool IsArchived(string name) => OldTab().IsMatch(name);
+    public static bool IsArchived(string name) => CreateOldTabPattern().IsMatch(name);
 
     /// <summary>Places as runs: 1, 2, 3, 5 → "01–03, 05"; none → "none".</summary>
     public static string WritePlaces(ImmutableArray<int> places) =>
@@ -100,5 +100,5 @@ public static partial class ReadmeWriting
     }
 
     [GeneratedRegex(@"^old\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex OldTab();
+    private static partial Regex CreateOldTabPattern();
 }

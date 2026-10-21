@@ -3,6 +3,7 @@ using System.Text;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
+using Loopsmith.Functional;
 
 namespace Loopsmith.CompendiumDownload.Core;
 
@@ -17,7 +18,7 @@ public static class HtmlReading
     public static IHtmlDocument ParseHtml(string html) => new HtmlParser().ParseDocument(html);
 
     /// <summary>The tab's table: the one Google classes <c>waffle</c>, else the first.</summary>
-    public static IElement? FindSheetTable(IDocument page) => page.QuerySelector("table.waffle") ?? page.QuerySelector("table");
+    public static Optional<IElement> FindSheetTable(IDocument page) => Optional.FromNullable(page.QuerySelector("table.waffle") ?? page.QuerySelector("table"));
 
     /// <summary>The element's text, each <c>&lt;br&gt;</c> a line break when <paramref name="breaksAsNewlines"/> (a cell's text).</summary>
     public static string ReadText(INode node, bool breaksAsNewlines)
