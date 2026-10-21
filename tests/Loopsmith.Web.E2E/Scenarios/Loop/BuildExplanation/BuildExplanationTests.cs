@@ -1,6 +1,7 @@
 using JoanComasFdz.AssertingThat;
 using Loopsmith.Web.E2E.Infrastructure;
 using Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
+using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Loop;
 
@@ -14,7 +15,7 @@ public sealed class BuildExplanationTests : BaseE2E
           Given the build "build-explanation-mechaneers-tricksleeves" is imported, with no steps
           When I tap "What this build does" above the loop
           Then the panel shows no "Note" or "Tree" choice
-          And its "Always" heading is followed by the line "├ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]"
+          And its "Always" heading is followed by the line "└ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]"
         """)]
     public async Task WhatThisBuildDoesShowsEachTriggerWithOneOutcomePerLineAndNoNoteTreeChoice(Screen screen)
     {
@@ -30,7 +31,7 @@ public sealed class BuildExplanationTests : BaseE2E
         var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
             .OffersNoStyleChoice()
-            .HasRowUnder("Always", "├ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]");
+            .HasRowUnder("Always", "└ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]");
     }
 
     [Theory, PlayInMobile]
@@ -60,5 +61,56 @@ public sealed class BuildExplanationTests : BaseE2E
             .WrapsWithItsSourceOnTheLastLine("Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed [Mechaneer's Tricksleeves]")
             .HasEveryLineInsideThePanel()
             .FitsInsideTheScreen();
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: "What this build does" lists no keyword the build doesn't use
+          Given the build "build-explanation-mechaneers-tricksleeves" is imported, with no steps
+          When I tap "What this build does" above the loop
+          Then the panel shows no row whose source is "[Bolt Charge]", "[Jolt]", "[Ionic Trace]", "[Amplified]", "[Guardian]", "[Orb of Power]", "[Unraveling Rounds]", "[Woven Mail]" or "[Super]"
+        """)]
+    public async Task WhatThisBuildDoesListsNoKeywordTheBuildDoesntUse(Screen screen)
+    {
+        // Given
+        await Frontend.Home.ImportBuildAsync("build-explanation-mechaneers-tricksleeves.build.yaml");
+        await Frontend.Designer.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Designer.ExplainPanel.ClickOpenAsync();
+        await Frontend.Designer.ExplainPanel.WaitUntilOpenAsync();
+
+        // Then
+        var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
+        Asserting.That(explained)
+            .HasNoRowFrom(new Keyword.BoltCharge(), new Keyword.Jolt(), new Keyword.IonicTrace(), new Keyword.Amplified(), new Keyword.Guardian(),
+                new Keyword.OrbOfPower(), new Keyword.UnravelingRounds(), new Keyword.WovenMail(), new Keyword.Super());
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: "What this build does" lists a keyword the build gives
+          Given the build "build-explanation-shinobus-vow" is imported, with no steps
+          When I tap "What this build does" above the loop
+          Then the panel has a row whose source is "[Bolt Charge]" under "Gain Bolt Charge"
+          And it shows no row whose source is "[Jolt]" or "[Woven Mail]"
+        """)]
+    public async Task WhatThisBuildDoesListsAKeywordTheBuildGives(Screen screen)
+    {
+        // Given
+        await Frontend.Home.ImportBuildAsync("build-explanation-shinobus-vow.build.yaml");
+        await Frontend.Designer.WaitUntilShownAsync();
+
+        // When
+        await Frontend.Designer.ExplainPanel.ClickOpenAsync();
+        await Frontend.Designer.ExplainPanel.WaitUntilOpenAsync();
+
+        // Then
+        var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
+        Asserting.That(explained)
+            .HasRowFromUnder("Gain Bolt Charge", new Keyword.BoltCharge())
+            .HasNoRowFrom(new Keyword.Jolt(), new Keyword.WovenMail());
     }
 }

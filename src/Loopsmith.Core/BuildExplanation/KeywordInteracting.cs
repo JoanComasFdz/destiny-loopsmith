@@ -58,6 +58,25 @@ public static class KeywordInteracting
             keyword => catalog.Glossary.DescribeKeywordKind(keyword.Value),
             _ => catalog.Elements.TryGetValue(element, out var found) ? found.Kind.DescribeElementKind() : "Element");
 
+    /// <summary>Whether an element names the keyword at all: one of its rules or passives has a role toward it.</summary>
+    internal static bool IsNamedBy(KeywordRef keyword, BuildElement element) =>
+        element.Rules.Any(rule => FindRuleRole(keyword, rule).Any())
+        || element.Passives.Any(passive => FindPassiveRole(keyword, passive).Any());
+
+    /// <summary>Whether an element gives the keyword: one of its rules applies it, debuffs with it or spawns it.</summary>
+    internal static bool IsGivenBy(KeywordRef keyword, BuildElement element) =>
+        element.Rules.Any(rule => rule.Then.Any(outcome => IsGiving(keyword, outcome)));
+
+    /// <summary>
+    /// Whether an element reads the keyword: a trigger or a guard of its rules names it, a rule uses it up, or a passive is
+    /// switched on by it.
+    /// </summary>
+    internal static bool IsReadBy(KeywordRef keyword, BuildElement element) =>
+        element.Rules.Any(rule => IsNamedBy(keyword, rule.On)
+            || rule.When.Any(condition => IsNamedBy(keyword, condition))
+            || rule.Then.Any(outcome => IsUsingUp(keyword, outcome)))
+        || element.Passives.Any(passive => keyword is KeywordRef.Status status && passive.IsSwitchedOnBy(status.Id));
+
     /// <summary>The first role a rule has toward the keyword: what fires it, what it needs, what it does.</summary>
     private static IEnumerable<InteractionRole> FindRuleRole(KeywordRef keyword, Rule rule) =>
         new (InteractionRole Role, bool Has)[]

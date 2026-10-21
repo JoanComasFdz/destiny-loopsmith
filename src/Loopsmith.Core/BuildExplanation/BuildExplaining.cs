@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
 using Loopsmith.Functional;
 using Loopsmith.Core.Phrasing;
@@ -21,8 +22,42 @@ public sealed record ExplanationGroup(string Heading, Affinity Affinity, Immutab
 /// <summary>The static view of a build: what each trigger sets off, without simulating.</summary>
 public static class BuildExplaining
 {
+    /// <summary>What the build sets off: its own elements, and of the keywords every build equips only those it uses.</summary>
     public static ImmutableArray<ExplanationGroup> ExplainBuild(ValidatedBuild build) =>
-        ExplainEquipped(build, build.Equipped);
+        ExplainEquipped(build, ListUsedElements(build));
+
+    /// <summary>
+    /// The build's elements without the keywords it doesn't use. A keyword is used when an element already listed names it
+    /// (gives it, reacts to it, needs it, uses it up, strikes with it, changes it), or gives a keyword one of them reads
+    /// (Orb of Power, for a build that reads Armor Charge); a keyword listed so lists the keywords it names in turn.
+    /// </summary>
+    private static ImmutableArray<EquippedElement> ListUsedElements(ValidatedBuild build)
+    {
+        var catalog = build.Catalog;
+        var keywords = ListGlossaryKeywords(catalog.Glossary);
+        var used = AddUsedKeywords(catalog, keywords, build.Equipped, [.. build.Equipped.Where(equipped => equipped.Element.Kind != ElementKind.Keyword).Select(equipped => equipped.Element.Id)]);
+        return [.. build.Equipped.Where(equipped => used.Contains(equipped.Element.Id))];
+    }
+
+    private static ImmutableArray<KeywordRef> ListGlossaryKeywords(KeywordGlossary glossary) =>
+    [
+        .. glossary.Statuses.Keys.Select(status => (KeywordRef)new KeywordRef.Status(status)),
+        .. glossary.Pickups.Keys.Select(pickup => (KeywordRef)new KeywordRef.Pickup(pickup)),
+        .. glossary.Summons.Keys.Select(summon => (KeywordRef)new KeywordRef.Summon(summon)),
+    ];
+
+    /// <summary>The used elements, with every keyword the ones listed so far use, until a round adds none.</summary>
+    private static ImmutableHashSet<ElementId> AddUsedKeywords(
+        RuleCatalog catalog, ImmutableArray<KeywordRef> keywords, ImmutableArray<EquippedElement> equipped, ImmutableHashSet<ElementId> used)
+    {
+        var listed = equipped.Where(e => used.Contains(e.Element.Id)).Select(e => e.Element).ToImmutableArray();
+        var added = equipped.Where(e => !used.Contains(e.Element.Id) && IsKeywordUsed(catalog, keywords, listed, e.Element)).Select(e => e.Element.Id).ToImmutableArray();
+        return added.IsEmpty ? used : AddUsedKeywords(catalog, keywords, equipped, used.Union(added));
+    }
+
+    private static bool IsKeywordUsed(RuleCatalog catalog, ImmutableArray<KeywordRef> keywords, ImmutableArray<BuildElement> listed, BuildElement keywordElement) =>
+        catalog.FindElementKeyword(keywordElement.Id).Match(own => listed.Any(element => KeywordInteracting.IsNamedBy(own.Value, element)), _ => false)
+        || keywords.Any(keyword => KeywordInteracting.IsGivenBy(keyword, keywordElement) && listed.Any(element => KeywordInteracting.IsReadBy(keyword, element)));
 
     /// <summary>
     /// What one element sets off in this build (its copies counted), grouped by trigger: an item's details. An element

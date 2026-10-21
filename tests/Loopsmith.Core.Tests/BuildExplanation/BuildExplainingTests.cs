@@ -1,4 +1,5 @@
 using Loopsmith.Core.BuildExplanation;
+using System.Collections.Immutable;
 using Loopsmith.Core.Domain;
 using Loopsmith.Functional;
 using Loopsmith.Core.Phrasing;
@@ -70,4 +71,49 @@ public class BuildExplainingTests
 
         Assert.Equal(["Class ability", "Pick up Ionic Trace", "Max Bolt Charge (x3)"], headings);   // a max names its cap
     }
+
+    [Fact]
+    public void Keywords_the_build_doesnt_name_are_left_out_of_its_explanation_yet_stay_equipped()
+    {
+        var vow = Element("shinobus-vow", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
+        var build = ValidateBuild([vow], keywords: [CreateBoltCharge(), Jolt]);
+
+        var sources = BuildExplaining.ExplainBuild(build).SelectMany(group => group.Items).Select(item => item.SourceName).Distinct();
+
+        Assert.Equal(["Shinobus Vow", "Bolt Charge"], sources);
+        Assert.Contains(build.Equipped, equipped => equipped.Element.Id == ElementId.From("jolt"));   // step playing still fires it
+    }
+
+    [Fact]
+    public void A_keyword_named_only_by_another_keyword_the_build_uses_is_listed_too()
+    {
+        var vow = Element("shinobus-vow", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
+        var build = ValidateBuild([vow], keywords: [CreateBoltCharge(Debuff("jolt")), Jolt]);
+
+        var sources = BuildExplaining.ExplainBuild(build).SelectMany(group => group.Items).Select(item => item.SourceName).Distinct();
+
+        Assert.Contains("Jolt", sources);
+    }
+
+    [Fact]
+    public void A_keyword_that_gives_what_the_build_reads_is_listed()
+    {
+        var kickstart = Element("grenade-kickstart", ElementKind.Fragment,
+            [OnWhen(new Trigger.AbilityCast(AbilityKind.Grenade), new Condition.HasBuff(Status("armor-charge")), Energy(AbilityKind.Grenade, new GameValue.Unknown()))]);
+        var orbOfPower = Element("orb-of-power", ElementKind.Keyword, [On(new Trigger.PickUp(Pickup("orb-of-power")), Buff("armor-charge"))]);
+
+        var reading = BuildExplaining.ExplainBuild(ValidateBuild([kickstart], keywords: [orbOfPower]));
+        var notReading = BuildExplaining.ExplainBuild(ValidateBuild([], keywords: [orbOfPower]));
+
+        Assert.Contains(reading.SelectMany(group => group.Items), item => item.SourceName == "Orb Of Power");
+        Assert.Empty(notReading);
+    }
+
+    private static BuildElement CreateBoltCharge(params Outcome[] onGain) =>
+        Element("bolt-charge", ElementKind.Keyword, [On(new Trigger.BuffGained(Status("bolt-charge")), [Energy(AbilityKind.Melee, new GameValue.Unknown()), .. onGain])]);
+
+    private static readonly BuildElement Jolt =
+        Element("jolt", ElementKind.Keyword, [On(new Trigger.DamageDebuffed(new DamageSource.AnyWeapon(), [Status("jolt")]), new Outcome.StrikeTarget(Status("jolt"), HitOutcome.Damage))]);
 }
