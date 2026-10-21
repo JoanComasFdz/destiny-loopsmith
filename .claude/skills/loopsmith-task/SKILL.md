@@ -202,8 +202,8 @@ right before a push is posted. Right before its first push:
 4. Push and open the pull request.
 5. With scenarios recorded, push their GIFs: `tools/e2e/push-gifs.sh` (it finds the PR from the
    branch). It pushes a throwaway branch `e2e-gifs/pr-<n>-<short sha>`; the "E2E videos" workflow
-   uploads the GIFs and the flows, posts them on the PR as `## Scenarios (V<N>)` (each scenario's
-   title, then the flow PNG of the rule a rule scenario names, its Gherkin, then its `🖥️ Desktop`
+   uploads the GIFs and the flows, posts them on the PR as `## Scenarios (V<N>)` (each scenario a
+   closed `<details>` under its title, holding the flow PNG of the rule a rule scenario names, its Gherkin, then its `🖥️ Desktop`
    and/or `📱 Mobile` GIF; the scenarios only re-recorded because a fixture file
    they use changed come last, under "Re-recorded: their fixtures changed") and deletes the branch. "What
    changed" in that post is the body of the head commit's message, or `--message "<text>"`. Check

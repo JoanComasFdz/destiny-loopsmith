@@ -40,20 +40,43 @@ class WriteSectionTests(unittest.TestCase):
         post = post_scenarios.write_section(REPO, 2, runs, "Text.")
         own = post.index("### Added or changed by this PR")
         rerecorded = post.index("### Re-recorded: their fixtures changed")
-        self.assertLess(own, post.index("#### Imports title"))
-        self.assertLess(post.index("#### Imports title"), rerecorded)
-        self.assertLess(rerecorded, post.index("#### Counts title"))
-        self.assertIn("##### 🖥️ Desktop", post)
-        self.assertIn("##### 📱 Mobile", post)
-        self.assertIn("_`Scenarios/Loop/Weapons/a.build.yaml`, `Scenarios/Loop/Weapons/b.build.yaml` changed._", post)
-        self.assertNotIn("\n### Imports title", post)
+        self.assertLess(own, post.index("<b>Imports title</b>"))
+        self.assertLess(post.index("<b>Imports title</b>"), rerecorded)
+        self.assertLess(rerecorded, post.index("<b>Counts title</b>"))
+        self.assertIn("\n#### 🖥️ Desktop\n", post)
+        self.assertIn("\n#### 📱 Mobile\n", post)
+        fixtures = "_`Scenarios/Loop/Weapons/a.build.yaml`, `Scenarios/Loop/Weapons/b.build.yaml` changed._"
+        self.assertLess(post.index("<b>Counts title</b>"), post.index(fixtures))
+        self.assertNotIn("### Imports title", post)
+
+    def test_each_scenario_is_a_closed_details_holding_its_gherkin_and_screens_and_the_sections_stay_outside(self):
+        runs = [
+            self.run_of("EnemyCountTests", "Counts", "desktop", selected="fixtures", fixtures=["f.yaml"]),
+            self.run_of("BuildImportTests", "Imports", "desktop", selected="changed"),
+        ]
+        post = post_scenarios.write_section(REPO, 1, runs, "Text.")
+        self.assertEqual(post.count("<details><summary>"), 2)
+        self.assertEqual(post.count("\n</details>\n"), 2)
+        self.assertNotIn("<details open", post)
+        self.assertIn("\n<details><summary><b>Imports title</b></summary>\n\n```gherkin\nScenario: Imports\n```", post)
+        imports = post[post.index("<b>Imports title</b>"):post.index("### Re-recorded")]
+        self.assertTrue(imports.rstrip().endswith("</details>"))
+        self.assertIn("#### 🖥️ Desktop", imports)
+        self.assertLess(post.index("### Added or changed by this PR"), post.index("<details>"))
+        self.assertEqual(post_scenarios.count_scenarios(post), 2)
+
+    def test_a_title_is_escaped_in_its_summary(self):
+        run = self.run_of("ReloadTests", "Reloads", "desktop")
+        run["title"] = "Keeps <b> & <i> as text"
+        post = post_scenarios.write_section(REPO, 1, [run], "Text.")
+        self.assertIn("<summary><b>Keeps &lt;b&gt; &amp; &lt;i&gt; as text</b></summary>", post)
 
     def test_only_rerecorded_scenarios_leave_out_the_prs_own_heading(self):
         runs = [self.run_of("CodeLensTests", "Lens", "desktop", selected="fixtures", fixtures=["Workspace/x.cs"])]
         post = post_scenarios.write_section(REPO, 1, runs, "Text.")
         self.assertNotIn("Added or changed by this PR", post)
         self.assertIn("### Re-recorded: their fixtures changed", post)
-        self.assertIn("#### Lens title", post)
+        self.assertIn("<details><summary><b>Lens title</b></summary>", post)
         self.assertIn("_`Workspace/x.cs` changed._", post)
 
     def test_only_the_prs_own_scenarios_read_as_before_without_section_headings(self):
@@ -61,14 +84,14 @@ class WriteSectionTests(unittest.TestCase):
         post = post_scenarios.write_section(REPO, 1, runs, "Text.")
         self.assertNotIn("Added or changed by this PR", post)
         self.assertNotIn("Re-recorded", post)
-        self.assertIn("\n### Imports title\n", post)
+        self.assertIn("\n<details><summary><b>Imports title</b></summary>\n", post)
         self.assertIn("\n#### 🖥️ Desktop\n", post)
 
     def test_a_scenarios_json_without_selected_reads_as_before(self):
         runs = [self.run_of("ReloadTests", "Reloads", "mobile")]
         post = post_scenarios.write_section(REPO, 1, runs, "Text.")
         self.assertNotIn("Re-recorded", post)
-        self.assertIn("\n### Reloads title\n", post)
+        self.assertIn("\n<details><summary><b>Reloads title</b></summary>\n", post)
         self.assertIn("\n#### 📱 Mobile\n", post)
 
     def test_a_failing_scenario_keeps_its_mark_in_either_section(self):
@@ -77,9 +100,9 @@ class WriteSectionTests(unittest.TestCase):
             self.run_of("ReloadTests", "Reloads", "desktop", passed=False, selected="fixtures", fixtures=["f.yaml"]),
         ]
         post = post_scenarios.write_section(REPO, 1, runs, "Text.")
-        self.assertIn("#### ❌ Imports title", post)
-        self.assertIn("#### ❌ Reloads title", post)
-        self.assertEqual(post.count("##### ❌ 🖥️ Desktop"), 2)
+        self.assertIn("<details><summary><b>❌ Imports title</b></summary>", post)
+        self.assertIn("<details><summary><b>❌ Reloads title</b></summary>", post)
+        self.assertEqual(post.count("#### ❌ 🖥️ Desktop"), 2)
 
     def test_a_rule_runs_gif_and_player_link_point_at_its_rule_release(self):
         run = self.run_of("CombinationBlowTests", "Hits", "desktop", release="rules-hunter-arc-melees-resources")
@@ -113,7 +136,7 @@ class WriteSectionTests(unittest.TestCase):
         flow = ("![Flow of hunter-arc-aspects-lethal-current-2](https://github.com/Owner/repo/releases/download/"
                 "rules-hunter-arc-aspects-resources/pr-1-v1-hunter-arc-aspects-lethal-current-2.png)")
         self.assertEqual(post.count(flow), 1)
-        self.assertLess(post.index("### Arms title"), post.index(flow))
+        self.assertLess(post.index("<b>Arms title</b>"), post.index(flow))
         self.assertLess(post.index(flow), post.index("```gherkin"))
         self.assertLess(post.index("```gherkin"), post.index("#### 🖥️ Desktop"))
         self.assertLess(post.index("#### 🖥️ Desktop"), post.index("#### 📱 Mobile"))
@@ -125,7 +148,7 @@ class WriteSectionTests(unittest.TestCase):
         line = ("_No flow drawn for `all-classes-arc-fragments-spark-of-shock-1`: No rule is named "
                 "'all-classes-arc-fragments-spark-of-shock-1'._")
         self.assertIn(line, post)
-        self.assertLess(post.index("### Jolts title"), post.index(line))
+        self.assertLess(post.index("<b>Jolts title</b>"), post.index(line))
         self.assertLess(post.index(line), post.index("```gherkin"))
         self.assertNotIn("![Flow", post)
 
@@ -217,14 +240,19 @@ class CleanTests(unittest.TestCase):
         self.assertEqual(post_scenarios.find_last_version([comment(2, edits[1][1])]), 2)
 
 
-def post_of(version, *titles, sections=False):
-    """A workflow post as write_section writes it: titles ### (#### under a section), screens one level down."""
+def post_of(version, *titles, sections=False, headings=False):
+    """A workflow post as write_section writes it: each title a closed <details>, its screens ####. With headings, as it
+    was written before them: titles ### (#### under a section), screens one level down."""
     level = "####" if sections else "###"
     lines = [f"## Scenarios (V{version})", "", "**What changed**", "", "Text.", ""]
     if sections:
         lines += ["### Added or changed by this PR", ""]
     for title in titles:
-        lines += [f"{level} {title}", "", "```gherkin", "Scenario: x", "```", "", f"{level}# 🖥️ Desktop", "", "![gif](u)", ""]
+        if headings:
+            lines += [f"{level} {title}", "", "```gherkin", "Scenario: x", "```", "", f"{level}# 🖥️ Desktop", "", "![gif](u)", ""]
+        else:
+            lines += [f"<details><summary><b>{title}</b></summary>", "", "```gherkin", "Scenario: x", "```", "",
+                      "#### 🖥️ Desktop", "", "![gif](u)", "", "</details>", ""]
     lines += ["---", post_scenarios.FOOTER, ""]
     return "\n".join(lines)
 
@@ -252,6 +280,7 @@ class CollapseTests(unittest.TestCase):
 
     def test_scenarios_under_sections_count_once_each_and_one_reads_singular(self):
         self.assertEqual(post_scenarios.count_scenarios(post_of(1, "A", "B", sections=True)), 2)
+        self.assertEqual(post_scenarios.count_scenarios(post_of(1, "A", "B")), 2)
         [(_, body)] = post_scenarios.plan_collapses([comment(1, post_of(1, "A"))], 2)
         self.assertIn("· 1 scenario ·", body)
 
@@ -259,6 +288,18 @@ class CollapseTests(unittest.TestCase):
         other = comment(9, f"Something else\n\n---\n{post_scenarios.FOOTER}\n")
         self.assertEqual(post_scenarios.plan_collapses([other], 1), [])
         self.assertEqual(post_scenarios.plan_shrinks([other]), [])
+
+
+    def test_a_post_written_with_headings_still_counts_its_scenarios(self):
+        self.assertEqual(post_scenarios.count_scenarios(post_of(1, "A", "B", sections=True, headings=True)), 2)
+        self.assertEqual(post_scenarios.count_scenarios(post_of(1, "A", "B", "C", headings=True)), 3)
+
+    def test_a_collapsed_post_counts_its_scenarios_not_its_own_details(self):
+        [(_, body)] = post_scenarios.plan_collapses([comment(1, post_of(1, "A", "B"))], 2)
+        self.assertIn("· 2 scenarios · replaced by V2", body)
+        self.assertEqual(post_scenarios.count_scenarios(body), 2)
+        self.assertEqual(body.count("<details>"), 3)
+        self.assertEqual(body.count("</details>"), 3)
 
 
 class HideTests(unittest.TestCase):
@@ -281,6 +322,16 @@ class HideTests(unittest.TestCase):
 
 
 class ShrinkTests(unittest.TestCase):
+    def test_closing_counts_the_scenarios_of_posts_written_with_details_or_with_headings(self):
+        v1 = comment(1, post_scenarios.plan_collapses([comment(1, post_of(1, "A", "B", "C", headings=True))], 2)[0][1])
+        v2 = comment(2, post_of(2, "A", "B", sections=True))
+        edits = post_scenarios.plan_shrinks([v1, v2], newest_too=True)
+        self.assertEqual(edits[0][1].splitlines()[0],
+                         "**Scenarios (V1)** · 3 scenarios · replaced by V2 · recordings deleted when the PR closed")
+        self.assertEqual(edits[1][1].splitlines()[0],
+                         "**Scenarios (V2)** · 2 scenarios · recordings deleted when the PR closed without merging")
+        self.assertNotIn("<details>", edits[0][1] + edits[1][1])
+
     def test_closing_shrinks_every_post_but_the_newest_to_its_line(self):
         v1 = comment(1, post_scenarios.plan_collapses([comment(1, post_of(1, "A", "B"))], 2)[0][1])
         v2 = comment(2, post_of(2, "A"))
