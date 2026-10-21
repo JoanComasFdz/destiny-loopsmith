@@ -113,7 +113,7 @@ public, cross-origin), indexes them in the page
 (`https://www.bungie.net/Platform/Destiny2/Manifest/`, sent with `BungieApiKey` from `wwwroot/appsettings.json`:
 Loopsmith's key, registered for the site's origin, so it isn't a secret — it ships in the site and Bungie answers it
 from that origin); when the index doesn't answer, from `ManifestContentId` there — the content id of the manifest the
-excerpt was made from. Update it when you regenerate the excerpt (`tools/manifest/get-manifest.sh` prints it). Only
+excerpt was made from. Update it when you regenerate the excerpt (the manifest tool's `download` prints it, [tools/manifest/README.md](../tools/manifest/README.md)). Only
 paths in bungie.net's component folder are taken from the index. The tab remembers which items it read the manifest
 for, so the designer doesn't read again what Home just read (or failed to).
 

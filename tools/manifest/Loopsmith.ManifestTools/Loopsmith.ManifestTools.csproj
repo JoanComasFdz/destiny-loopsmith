@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The manifest tool (tools/manifest/README.md): downloads Bungie's manifest and writes rules/manifest.yaml from it. A
+       host: its logic is Loopsmith.ManifestTools.Core. It never references Loopsmith.Core: a development tool needs only
+       Loopsmith.Functional. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.ManifestTools</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+    <ProjectReference Include="..\Loopsmith.ManifestTools.Core\Loopsmith.ManifestTools.Core.csproj" />
+  </ItemGroup>
+</Project>

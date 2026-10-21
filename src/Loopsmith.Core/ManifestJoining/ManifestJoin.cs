@@ -9,7 +9,7 @@ namespace Loopsmith.Core.ManifestJoining;
 
 /// <summary>
 /// Pure: Bungie's full manifest → the excerpt of what some hashes need (ADRs D14), the way
-/// <c>tools/manifest/extract_manifest.py</c> writes <c>rules/manifest.yaml</c>: each item's name, kind, type, rarity,
+/// <c>tools/manifest/</c>'s manifest tool writes <c>rules/manifest.yaml</c>: each item's name, kind, type, rarity,
 /// description, icon and a weapon's or armor's season watermark; a weapon's slot, damage type, breaker (its own, else its
 /// intrinsic frame's: a frame's perk named with the breaker, "[Shield-Piercing] Barrier"), trait columns (and their perks), mods (the mod socket's plugs), intrinsic perk and an
 /// exotic's catalyst (and the perks it grants); armor's slot, intrinsic perk and set (and the set's perks). The breaker

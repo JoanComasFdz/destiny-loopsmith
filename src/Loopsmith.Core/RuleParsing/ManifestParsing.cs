@@ -9,7 +9,7 @@ namespace Loopsmith.Core.RuleParsing;
 
 /// <summary>
 /// <c>rules/manifest.yaml</c>: Loopsmith's excerpt of the Bungie manifest, written by
-/// <c>tools/manifest/extract_manifest.py</c> (docs/rule-format.md, "Manifest").
+/// <c>tools/manifest/</c>'s manifest tool (docs/rule-format.md, "Manifest").
 /// </summary>
 internal static class ManifestParsing
 {

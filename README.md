@@ -73,7 +73,7 @@ tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
 docs/                    requirements, rule format, loop format, hosting, backlog
 tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
-tools/manifest/          Bungie manifest excerpt: get-manifest.sh + extract_manifest.py → rules/manifest.yaml
+tools/manifest/          Bungie manifest excerpt: the manifest tool (.NET) downloads the manifest → rules/manifest.yaml
 tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
 .github/workflows/       CI, Pages deploy (main), PR previews
 .claude/                 cloud-session hook + project subagents

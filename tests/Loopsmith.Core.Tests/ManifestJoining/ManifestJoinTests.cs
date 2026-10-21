@@ -9,7 +9,7 @@ using Loopsmith.Core.Tests.Support;
 namespace Loopsmith.Core.Tests.ManifestJoining;
 
 /// <summary>
-/// The manifest join: Bungie's full manifest → the excerpt some hashes need, the way tools/manifest/extract_manifest.py
+/// The manifest join: Bungie's full manifest → the excerpt some hashes need, the way tools/manifest/'s manifest tool
 /// writes rules/manifest.yaml. A fixture shaped like Bungie's JSON always runs; the real manifest, when one is
 /// downloaded (<c>LOOPSMITH_MANIFEST_DIR</c>), must give every item of the bundled excerpt exactly as it is.
 /// </summary>
@@ -133,7 +133,7 @@ public sealed class ManifestJoinTests
     public void The_real_manifest_joins_to_the_bundled_excerpt()
     {
         var directory = Environment.GetEnvironmentVariable("LOOPSMITH_MANIFEST_DIR");
-        Assert.SkipWhen(string.IsNullOrEmpty(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest (tools/manifest/get-manifest.sh) to run it.");
+        Assert.SkipWhen(string.IsNullOrEmpty(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest (tools/manifest/README.md) to run it.");
         var bundled = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
             .Bind(CatalogLoading.ParseCatalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure))
