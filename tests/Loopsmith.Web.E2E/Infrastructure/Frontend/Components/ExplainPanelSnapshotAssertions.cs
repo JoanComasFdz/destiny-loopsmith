@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.RegularExpressions;
 using JoanComasFdz.AssertingThat;
 using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
@@ -51,6 +52,59 @@ public static class ExplainPanelSnapshotAssertions
         Assert.True(that.InstanceToAssert.Choices.IsEmpty, $"The panel offers {Describe(that.InstanceToAssert.Choices)}, but no choice was expected.");
         return that;
     }
+
+    /// <summary>The panel shows exactly the tabs <paramref name="tabs"/>, in order.</summary>
+    public static AssertingThat<ExplainPanelSnapshot> HasTabs(this AssertingThat<ExplainPanelSnapshot> that, params string[] tabs)
+    {
+        var shown = that.InstanceToAssert.Tabs;
+        Assert.True(shown.Select(tab => tab.Name).SequenceEqual(tabs), $"The panel shows the tabs {Describe(shown.Select(tab => tab.Name))}, but {Describe(tabs)} were expected.");
+        return that;
+    }
+
+    /// <summary>The panel's <paramref name="tab"/> tab is the one selected.</summary>
+    public static AssertingThat<ExplainPanelSnapshot> HasSelectedTab(this AssertingThat<ExplainPanelSnapshot> that, string tab)
+    {
+        var selected = that.InstanceToAssert.Tabs.Where(shown => shown.Selected).Select(shown => shown.Name).ToArray();
+        Assert.True(selected.SequenceEqual([tab]), $"The panel's selected tab is {Describe(selected)}, but \"{tab}\" was expected.");
+        return that;
+    }
+
+    /// <summary>
+    /// Under the Outcomes tab's <paramref name="outcome"/> ("Jolt · Arc debuff"), its <paramref name="block"/> ("Is given by")
+    /// lists exactly <paramref name="ways"/>, in order, each read with its source ("Class ability in the air → Jolt target
+    /// (10s) [Ascension]"), the row's branch and alignment left out.
+    /// </summary>
+    public static AssertingThat<ExplainPanelSnapshot> ListsOnlyUnder(this AssertingThat<ExplainPanelSnapshot> that, string outcome, string block, params string[] ways)
+    {
+        var shown = ReadBlockRows(that.InstanceToAssert, outcome, block).Select(ReadEffect).ToArray();
+        Assert.True(shown.SequenceEqual(ways), $"Under \"{outcome}\", \"{block}\" lists {Describe(shown)}, but only {Describe(ways)} were expected.");
+        return that;
+    }
+
+    /// <summary>The Outcomes tab lists exactly the outcomes <paramref name="outcomes"/> ("Jolt · Arc debuff"), in this order.</summary>
+    public static AssertingThat<ExplainPanelSnapshot> HasOutcomesInOrder(this AssertingThat<ExplainPanelSnapshot> that, params string[] outcomes)
+    {
+        var lines = that.InstanceToAssert.Lines;
+        var shown = lines.Where((_, index) => IsOutcome(lines, index)).ToArray();
+        Assert.True(shown.SequenceEqual(outcomes), $"The Outcomes tab lists {Describe(shown)}, but {Describe(outcomes)} were expected, in that order.");
+        return that;
+    }
+
+    // The rows of an outcome's block: after the outcome's line, the block's label among its blocks, then its rows.
+    private static string[] ReadBlockRows(ExplainPanelSnapshot shown, string outcome, string block)
+    {
+        var lines = shown.Lines;
+        var heading = lines.IndexOf(outcome);
+        Assert.True(heading >= 0 && IsOutcome(lines, heading), $"The panel shows the lines {Describe(lines)}, but an outcome \"{outcome}\" was expected.");
+        var blocks = lines.Skip(heading + 1).TakeWhile((_, offset) => !IsOutcome(lines, heading + 1 + offset)).ToArray();
+        var label = Array.IndexOf(blocks, block);
+        Assert.True(label >= 0, $"Under \"{outcome}\" the panel shows {Describe(blocks.Where(line => !IsRow(line)))}, but \"{block}\" was expected among them.");
+        return [.. blocks.Skip(label + 1).TakeWhile(IsRow)];
+    }
+
+    // An outcome's line ("Jolt · Arc debuff") is followed by a block's label ("Is given by"), which is followed by its rows.
+    private static bool IsOutcome(ImmutableArray<string> lines, int index) =>
+        index + 2 < lines.Length && !IsRow(lines[index]) && !IsRow(lines[index + 1]) && IsRow(lines[index + 2]);
 
     // The rows under a trigger's heading: the lines after it that start with a branch ("├ ", "└ "), until the next heading.
     private static string[] ReadRows(ExplainPanelSnapshot shown, string trigger)

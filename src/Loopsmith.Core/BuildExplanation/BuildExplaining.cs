@@ -31,7 +31,7 @@ public static class BuildExplaining
     /// (gives it, reacts to it, needs it, uses it up, strikes with it, changes it), or gives a keyword one of them reads
     /// (Orb of Power, for a build that reads Armor Charge); a keyword listed so lists the keywords it names in turn.
     /// </summary>
-    private static ImmutableArray<EquippedElement> ListUsedElements(ValidatedBuild build)
+    internal static ImmutableArray<EquippedElement> ListUsedElements(ValidatedBuild build)
     {
         var catalog = build.Catalog;
         var keywords = ListGlossaryKeywords(catalog.Glossary);
@@ -87,7 +87,7 @@ public static class BuildExplaining
     ];
 
     /// <summary>A text as spans: each keyword the glossary knows in its affinity's tone, the rest in the given one.</summary>
-    private static ImmutableArray<StyledSpan> SplitKeywords(KeywordGlossary glossary, string text, Tone rest) =>
+    internal static ImmutableArray<StyledSpan> SplitKeywords(KeywordGlossary glossary, string text, Tone rest) =>
         [.. glossary.SplitKeywords(text).Select(part => part.Text.ToSpan(part.Keyword.Match(keyword => keyword.Value.Affinity.ToHighlightTone(), _ => rest)))];
 
     private static ImmutableArray<ExplanationGroup> ExplainEquipped(ValidatedBuild build, ImmutableArray<EquippedElement> equippedElements)
@@ -112,7 +112,7 @@ public static class BuildExplaining
         var passiveItems = equippedElements
             .SelectMany(equipped => equipped.Element.Passives.Select(passive => (equipped.Element, equipped.Count, Passive: passive)))
             .Select((x, order) => (
-                Heading: x.Passive.When.IsEmpty ? "Always" : DomainPhrasing.Capitalize(glossary.DescribeConditions(x.Passive.When)),
+                Heading: DescribePassiveHeading(glossary, x.Passive),
                 Rank: x.Passive.When.IsEmpty ? 70 : 60,
                 Order: 10_000 + order,
                 Affinity: x.Passive.When.Select(c => ReadConditionAffinity(glossary, c)).FirstOrDefault(Affinity.Neutral),
@@ -144,13 +144,17 @@ public static class BuildExplaining
         [.. groups.SelectMany(group => RenderTree(glossary, group))];
 
     /// <summary>The trigger; a stacking buff's max also names the build's cap ("Max Bolt Charge (x10)", Charged Up raises it), a fact.</summary>
-    private static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
+    internal static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
         build.Catalog.Glossary.DescribeTrigger(trigger, build.ReadSuperType()) + (trigger is Trigger.StacksMaxed maxed
             ? build.DescribeStackCap(maxed.Status).Match(cap => $" ({cap.Value})", _ => "")
             : "");
 
+    /// <summary>A passive's heading: "Always", or when it holds ("While Amplified").</summary>
+    internal static string DescribePassiveHeading(KeywordGlossary glossary, PassiveRule passive) =>
+        passive.When.IsEmpty ? "Always" : DomainPhrasing.Capitalize(glossary.DescribeConditions(passive.When));
+
     /// <summary>The rule's guards, plus "doesn't stack with X" for each equipped element it gives way to.</summary>
-    private static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)
+    internal static Optional<string> DescribeRuleCondition(ValidatedBuild build, Rule rule)
     {
         var guards = rule.When.IsEmpty ? [] : new[] { build.Catalog.Glossary.DescribeConditions(rule.When) };
         var partners = build.Equipped

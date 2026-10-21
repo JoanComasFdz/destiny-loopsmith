@@ -1,0 +1,5 @@
+# Ascension and Lethal Current alone: two ways to Jolt, Lethal Current given and used up, and a strike, for the Outcomes tab.
+name: "E2E - Outcomes tab, Ascension and Lethal Current"
+class: hunter
+subclass: arc
+aspects: [ascension, lethal-current]

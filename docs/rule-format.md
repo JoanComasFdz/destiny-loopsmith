@@ -314,7 +314,16 @@ Two keys belong to some kinds only (anywhere else they are an error):
 build slot ([Build check](#build-check)). The build's explanation ("What this build does") lists a keyword's rules only when
 the build uses it: an element of the build names it (gives it, reacts to it, needs it, uses it up, strikes with it or
 changes it), a keyword already listed names it, or it gives a keyword one of them reads (Orb of Power, for a build that
-reads Armor Charge). The Guardian's resistance, which no element names, is never listed; nor is Super unless an element names it. A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
+reads Armor Charge). The Guardian's resistance, which no element names, is never listed; nor is Super unless an element names it.
+The explanation has two tabs over those same elements. **Triggers** (it opens on it, each time) is the tree of every trigger
+and what it sets off. **Outcomes** answers "in this build, how do I get X?": one heading per thing the rules and passives
+can get you, in groups (buffs on you, weapon buffs, debuffs on the target, strikes, pickups, summons, energy by ability,
+health, damage bonus, damage resistance, weapons, stats), alphabetical within a group, a keyword with what it is ("Jolt
+· Arc debuff"). Under each, its blocks: **Is given by**, **Is picked up by** (`collect`), **Is ended or used up by**
+(`removeBuff`, `spendStacks`, `convertStacksToEnergy`, which also gives its ability's energy) and **Is changed by**
+(`extraStacks`, `raiseMaxStacks`). Each row is one direct way: the trigger (a passive's condition, or "Always") → that one
+outcome with its number as a fact, the rule's guards, "(chance)", and the source (`Class ability in the air → Jolt target
+(10s)  [Ascension]`). No chain is followed: the trigger names what the way needs (ADRs D1). A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
 `inert` ("A jump: movement has no part in a loop."), so the build knows it and its subclass editor marks it, but it
 sets nothing off and the engine never plays it. The rules have the Arcstrider's four, by that subclass's hashes; a
 jump of another subclass (each has its own copies) stays a left-out plug. Besides the keywords, `keywords/guardian.yaml`

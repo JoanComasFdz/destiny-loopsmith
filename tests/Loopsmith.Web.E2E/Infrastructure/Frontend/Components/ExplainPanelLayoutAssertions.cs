@@ -32,6 +32,18 @@ public static class ExplainPanelLayoutAssertions
         return that;
     }
 
+    /// <summary>The panel's tabs sit side by side on one line, in order, each inside the panel.</summary>
+    public static AssertingThat<ExplainPanelLayout> HasTabsSideBySideInsideThePanel(this AssertingThat<ExplainPanelLayout> that, params string[] tabs)
+    {
+        var shown = that.InstanceToAssert;
+        Assert.True(shown.Tabs.Select(tab => tab.Name).SequenceEqual(tabs), $"The panel shows the tabs {string.Join(", ", shown.Tabs.Select(tab => $"\"{tab.Name}\""))}, but {string.Join(", ", tabs.Select(tab => $"\"{tab}\""))} were expected.");
+        var apart = shown.Tabs.Zip(shown.Tabs.Skip(1)).Where(pair => Math.Abs(pair.First.Box.Top - pair.Second.Box.Top) > Tolerance || pair.Second.Box.Left < pair.First.Box.Right - Tolerance).ToArray();
+        Assert.True(apart.Length == 0, $"The tabs {string.Join(", ", apart.Select(pair => $"\"{pair.First.Name}\" and \"{pair.Second.Name}\""))} aren't side by side on one line, but they were expected to be.");
+        var outside = shown.Tabs.Where(tab => tab.Box.Left < shown.Panel.Left - Tolerance || tab.Box.Right > shown.Panel.Right + Tolerance).Select(tab => $"\"{tab.Name}\"").ToArray();
+        Assert.True(outside.Length == 0, $"The tabs {string.Join(", ", outside)} reach past the panel's edges, but every tab was expected inside it.");
+        return that;
+    }
+
     /// <summary>The page doesn't scroll sideways.</summary>
     public static AssertingThat<ExplainPanelLayout> FitsInsideTheScreen(this AssertingThat<ExplainPanelLayout> that)
     {

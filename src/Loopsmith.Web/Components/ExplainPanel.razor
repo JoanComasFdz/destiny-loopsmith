@@ -1,28 +1,54 @@
-@* "What this build does": every trigger and what it sets off, as a tree, without simulating (LoopDesigning.ExplainBuild). *@
-<details class="panel explain-panel" data-testid="build-explanation">
+@* "What this build does": two tabs, "Triggers" (every trigger and what it sets off, LoopDesigning.ExplainBuild) and
+   "Outcomes" (everything the build can get you and every way to it, LoopDesigning.ExplainOutcomes), without simulating.
+   It opens on Triggers each time. *@
+<details class="panel explain-panel" data-testid="build-explanation" @ontoggle="ShowTriggers">
     <summary data-action="build-explanation-toggle">
         <span class="explain-title">What this build does</span>
-        <span class="muted">every trigger → outcome [source]</span>
+        <span class="muted">Summary</span>
     </summary>
-    <StyledLines Lines="@RenderLines()" Preformatted="true" />
+    <div class="explain-tabs" role="tablist" aria-label="How to list the build" data-testid="build-explanation-tabs">
+        <button type="button" role="tab" class="explain-tab @(byOutcome ? "" : "on")" aria-selected="@(byOutcome ? "false" : "true")"
+                data-action="build-explanation-triggers" @onclick="ShowTriggers">Triggers</button>
+        <button type="button" role="tab" class="explain-tab @(byOutcome ? "on" : "")" aria-selected="@(byOutcome ? "true" : "false")"
+                data-action="build-explanation-outcomes" @onclick="ShowOutcomes">Outcomes</button>
+    </div>
+    <StyledLines Lines="@(byOutcome ? RenderOutcomes() : RenderTriggers())" Preformatted="true" />
 </details>
 
 @code {
-    private ImmutableArray<StyledLine> rendered = [];
+    private bool byOutcome;
+    private ImmutableArray<StyledLine> triggers = [];
+    private ImmutableArray<StyledLine> outcomes = [];
     private object explained = new();
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    /// <summary>The explanation, computed once per build.</summary>
-    private ImmutableArray<StyledLine> RenderLines()
+    private void ShowTriggers() => byOutcome = false;
+
+    private void ShowOutcomes() => byOutcome = true;
+
+    /// <summary>The tree by trigger, computed once per build.</summary>
+    private ImmutableArray<StyledLine> RenderTriggers()
+    {
+        ExplainOnce();
+        return triggers;
+    }
+
+    /// <summary>The list by outcome, computed once per build.</summary>
+    private ImmutableArray<StyledLine> RenderOutcomes()
+    {
+        ExplainOnce();
+        return outcomes;
+    }
+
+    private void ExplainOnce()
     {
         if (!ReferenceEquals(explained, Build))
         {
-            rendered = LoopDesigning.ExplainBuild(Build);
+            triggers = LoopDesigning.ExplainBuild(Build);
+            outcomes = LoopDesigning.ExplainOutcomes(Build);
             explained = Build;
         }
-
-        return rendered;
     }
 }
