@@ -18,7 +18,7 @@ public static class StateHudShaping
 {
     public static ImmutableArray<BuffWeapon> ListBuffWeapons(ValidatedBuild build, StateEntry entry) =>
         entry.Keyword is KeywordRef.Status status
-            ? ListWeapons(build, LoopDesigning.ListWeaponsGiving(build, status.Id))
+            ? ListWeapons(build, LoopDesigning.ListWeaponsShowingBuff(build, status.Id, entry.Element))
             : [];
 
     /// <summary>The build's weapons at these places, with their icons.</summary>

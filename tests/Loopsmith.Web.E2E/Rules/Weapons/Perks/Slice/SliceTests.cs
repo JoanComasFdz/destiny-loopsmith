@@ -140,6 +140,10 @@ public sealed class SliceTests : BaseE2E
           Then card #1's heading is "#1 Class ability"
           And "Slice (enhanced)" fires "+1 Slice (9s)"
           And its WEAPONS show only "Slice · Festival Flight"
+          # keeping step #1: its Slice is what the chip shows
+          When I tap the "Slice · Festival Flight" chip in card #1's WEAPONS
+          Then the item details popup opens, titled "Slice (enhanced)"
+          And its "Right then, after #1" card reads only "up to x5 · 9s"
         """)]
     public async Task EnhancedSlicesDodgeArmsSliceFor9S(Screen screen)
     {
@@ -157,6 +161,16 @@ public sealed class SliceTests : BaseE2E
             .HasHeading("#1 Class ability")
             .Fires(new WeaponPerk.SliceEnhanced(), "+1 Slice (9s)")
             .Shows(new StateGroup.Weapons(), "Slice · Festival Flight");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Weapons(), "Slice · Festival Flight");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.SliceEnhanced())
+            .HasRightThen("Right then, after #1", "up to x5 · 9s");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

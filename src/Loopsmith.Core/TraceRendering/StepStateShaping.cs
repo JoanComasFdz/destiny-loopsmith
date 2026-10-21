@@ -79,7 +79,7 @@ public static class StepStateShaping
             [.. buffs.Where(buff => buff.OnWeapons).Select(buff => buff.Entry)],
             [
                 .. reaching
-                    .Where(passive => !passive.Passive.Passive.When.IsEmpty && !statuses.Any(status => passive.Passive.Source.IsStatusElement(status)))
+                    .Where(passive => !passive.Passive.Passive.When.IsEmpty && !statuses.Any(status => catalog.IsOwnElementOf(passive.Passive.Source, status)))
                     .SelectMany(ToWeaponEffect),
             ],
             [.. state.Target.Debuffs.Select(debuff => ShapeDebuff(build, reaching, debuff))],
@@ -105,34 +105,52 @@ public static class StepStateShaping
         glossary.Statuses.TryGetValue(status, out var definition) && definition.Kind == KeywordKind.WeaponBuff;
 
     private static StateEntry ShapeBuff(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, ActiveBuff buff) =>
-        ShapeStatus(build, reaching, buff.Status, build.Catalog.Glossary.DescribeActiveBuff(buff));
+        ShapeStatus(build, reaching, buff.Status, build.Catalog.Glossary.DescribeActiveBuff(buff), buff.GivenBy);
 
     private static StateEntry ShapeDebuff(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, StatusId debuff) =>
-        ShapeStatus(build, reaching, debuff, build.Catalog.Glossary.DescribeStatus(debuff));
+        ShapeStatus(build, reaching, debuff, build.Catalog.Glossary.DescribeStatus(debuff), Optional.None<ElementId>());
 
-    private static StateEntry ShapeStatus(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, StatusId status, string text)
+    /// <summary>
+    /// A status as the element that gave it shows it (the enhanced Stats for All on the weapon that shot: its details, its
+    /// 11s, its stats), else as the element of its id.
+    /// </summary>
+    private static StateEntry ShapeStatus(ValidatedBuild build, ImmutableArray<ReachingPassive> reaching, StatusId status, string text, Optional<ElementId> givenBy)
     {
         var glossary = build.Catalog.Glossary;
-        var keyword = new KeywordRef.Status(status);
-        var facts = build.DescribeStatusFacts(status);
+        var element = build.Catalog.FindGivingElement(status, givenBy);
+        var facts = build.DescribeStatusFacts(status, ReadEnhancedDuration(build.Catalog, status, element));
         return new StateEntry(
-            keyword,
+            new KeywordRef.Status(status),
             text,
             glossary.ReadStatusAffinity(status),
-            build.Catalog.FindKeywordElement(keyword),
+            element,
             facts,
-            [.. ListSwitchedOn(reaching, status)],
-            [.. ListOwnEffects(reaching, status)]);
+            [.. ListSwitchedOn(build.Catalog, reaching, status)],
+            [.. ListOwnEffects(reaching, element)]);
     }
+
+    /// <summary>
+    /// The duration an enhanced trait gives the status (the enhanced Stats for All's 11s, where the glossary says 10s): the
+    /// first its rules state; none for any other element, whose duration is the glossary's.
+    /// </summary>
+    private static Optional<Seconds> ReadEnhancedDuration(RuleCatalog catalog, StatusId status, Optional<ElementId> element) =>
+        element
+            .Bind(id => catalog.EnhancedPerks.ContainsValue(id) && catalog.Elements.TryGetValue(id, out var enhanced) ? Optional.Some(enhanced) : Optional.None<BuildElement>())
+            .Bind(enhanced => enhanced.Rules
+                .SelectMany(rule => rule.Then)
+                .OfType<Outcome.ApplyBuff>()
+                .Where(apply => apply.Status == status)
+                .Select(apply => apply.Duration.ReadFixedTime())
+                .FindFirstSome());
 
     /// <summary>
     /// What the status's own element does while it is there that no other part of the step shows: its changes to the
     /// build's weapons (Stats for All's stats) and its faster regeneration (Spark of Recharge's). Its damage resistance and
     /// damage bonuses are in their own sections (Woven Mail's).
     /// </summary>
-    private static IEnumerable<string> ListOwnEffects(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
+    private static IEnumerable<string> ListOwnEffects(ImmutableArray<ReachingPassive> reaching, Optional<ElementId> element) =>
         reaching
-            .Where(passive => passive.Passive.Source.IsStatusElement(status) && IsOwnEffect(passive))
+            .Where(passive => element.Map(own => passive.Passive.Source == own).UnwrapOr(false) && IsOwnEffect(passive))
             .Select(passive => passive.Text + (passive.Passive.Likelihood == Likelihood.Chance ? " (chance)" : ""));
 
     private static bool IsOwnEffect(ReachingPassive passive) =>
@@ -149,9 +167,9 @@ public static class StepStateShaping
     }
 
     /// <summary>What the status switches on that does something in this build (a weapon change none of its weapons takes does nothing).</summary>
-    private static IEnumerable<SwitchedOnEffect> ListSwitchedOn(ImmutableArray<ReachingPassive> reaching, StatusId status) =>
+    private static IEnumerable<SwitchedOnEffect> ListSwitchedOn(RuleCatalog catalog, ImmutableArray<ReachingPassive> reaching, StatusId status) =>
         reaching
-            .Where(passive => passive.Passive.IsSwitchedOnBy(status) && passive.Reach is not PassiveReach.NoWeapon)
+            .Where(passive => passive.Passive.IsSwitchedOnBy(catalog, status) && passive.Reach is not PassiveReach.NoWeapon)
             .Select(passive => new SwitchedOnEffect(
                 passive.Text + (passive.Passive.Likelihood == Likelihood.Chance ? " (chance)" : ""),
                 passive.Passive.Source, passive.Passive.SourceName, passive.Passive.Affinity));

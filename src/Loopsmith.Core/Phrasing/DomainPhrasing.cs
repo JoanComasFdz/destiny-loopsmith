@@ -878,9 +878,13 @@ public static class DomainPhrasing
     /// A status's facts: "up to x10" (the build's cap: Charged Up raises Armor Charge's), "15s" from the glossary — shown,
     /// never counted (ADRs D1); none when the glossary gives neither.
     /// </summary>
-    public static Optional<string> DescribeStatusFacts(this ValidatedBuild build, StatusId status)
+    public static Optional<string> DescribeStatusFacts(this ValidatedBuild build, StatusId status) =>
+        build.DescribeStatusFacts(status, Optional.None<Seconds>());
+
+    /// <summary>A status's facts with the duration its giver states (the enhanced Stats for All's 11s), else the glossary's.</summary>
+    public static Optional<string> DescribeStatusFacts(this ValidatedBuild build, StatusId status, Optional<Seconds> stated)
     {
-        var duration = build.Catalog.Glossary.Statuses.TryGetValue(status, out var definition) ? definition.Duration : Optional.None<Seconds>();
+        var duration = build.Catalog.Glossary.ReadShownDuration(status, stated);
         var facts = new[] { build.DescribeStackCap(status).Map(cap => $"up to {cap}"), duration.Map(FormatSeconds) }
             .OfType<Optional<string>.Some>()
             .Select(fact => fact.Value)

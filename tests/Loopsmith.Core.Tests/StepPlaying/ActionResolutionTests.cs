@@ -191,7 +191,7 @@ public class ActionResolutionTests
         var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
         Assert.All(resolutions, resolution => Assert.Single(resolution.Fired, f => f.Trigger is GameEvent.BuffGained));
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolutions[^1].State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>(), Optional.Some(ElementId.From("charger")))], resolutions[^1].State.Buffs);
         Assert.DoesNotContain(resolutions.SelectMany(r => r.Fired), f => f.Source.Value == "maxed");
         Assert.Contains("+2 Bolt Charge [Charger]", DescribeTrace(build, resolutions[^1]));
     }
@@ -212,7 +212,7 @@ public class ActionResolutionTests
 
         Assert.False(declared.Blocked.IsSome());
         Assert.Equal([new GameEvent.StacksMaxed(Status("bolt-charge"))], declared.Fired.Select(f => f.Trigger));
-        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>()), declared.State.Buffs);
+        Assert.Contains(new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>(), Optional.Some(ElementId.From("charger"))), declared.State.Buffs);
         Assert.Single(thrown.Fired, f => f.Source.Value == "discharge");
         Assert.DoesNotContain(thrown.State.Buffs, b => b.Status == Status("bolt-charge"));
         Assert.Equal("Bolt Charge at max (x3)", build.DescribeAction(DeclareMax("bolt-charge")));   // the test glossary's cap
@@ -229,7 +229,7 @@ public class ActionResolutionTests
         var declared = ActionResolution.ResolveAction(build, charged.State, DeclareMax("bolt-charge"));
         var gained = ActionResolution.ResolveAction(build, declared.State, Dodge);
 
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>())], gained.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: true, Optional.None<StackTally>(), Optional.Some(ElementId.From("charger")))], gained.State.Buffs);
         Assert.Equal([new GameEvent.BuffGained(Status("bolt-charge"))], gained.Fired.Select(f => f.Trigger).OfType<GameEvent.BuffGained>());
     }
 
@@ -321,7 +321,7 @@ public class ActionResolutionTests
         var yielded = resolution.Fired.Single(f => f.Source.Value == "yielder");
         Assert.Equal(Optional.Some("Giver"), yielded.NotStackedWith);
         Assert.Empty(yielded.Outcomes);
-        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>())], resolution.State.Buffs);
+        Assert.Equal([new ActiveBuff(Status("bolt-charge"), AtMax: false, Optional.None<StackTally>(), Optional.Some(ElementId.From("giver")))], resolution.State.Buffs);
         Assert.Contains("+1 Bolt Charge [Giver] + doesn't stack with Giver [Yielder]", DescribeTrace(build, resolution));
     }
 

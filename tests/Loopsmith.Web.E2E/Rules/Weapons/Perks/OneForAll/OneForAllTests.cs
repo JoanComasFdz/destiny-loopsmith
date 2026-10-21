@@ -93,6 +93,10 @@ public sealed class OneForAllTests : BaseE2E
           And it reads "Festival Flight 🥊 hit 3 enemies in 3 s"
           And "One for All (enhanced)" fires "One for All (11s)" and "+35% kinetic weapon damage"
           And its WEAPONS show only "One for All · Festival Flight"
+          # keeping step #1: its One for All is what the chip shows
+          When I tap the "One for All · Festival Flight" chip in card #1's WEAPONS
+          Then the item details popup opens, titled "One for All (enhanced)"
+          And its "Right then, after #1" card reads only "11s"
         """)]
     public async Task EnhancedOneForAlls3QuickHitsPowerUpItsWeapon(Screen screen)
     {
@@ -114,6 +118,16 @@ public sealed class OneForAllTests : BaseE2E
             .Reads("Festival Flight 🥊 hit 3 enemies in 3 s")
             .Fires(new WeaponPerk.OneForAllEnhanced(), "One for All (11s)", "+35% kinetic weapon damage")
             .Shows(new StateGroup.Weapons(), "One for All · Festival Flight");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Weapons(), "One for All · Festival Flight");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.OneForAllEnhanced())
+            .HasRightThen("Right then, after #1", "11s");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

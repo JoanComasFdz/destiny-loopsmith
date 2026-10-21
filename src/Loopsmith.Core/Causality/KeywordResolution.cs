@@ -90,6 +90,25 @@ public static class KeywordResolution
             _ => Optional.None<IconRef>(),
             _ => Optional.None<IconRef>());
 
+    /// <summary>
+    /// A status's own element: the element of its id, or that weapon perk's enhanced trait (the enhanced Stats for All gives
+    /// Stats for All, and its stats are the status's own, not something it switches on).
+    /// </summary>
+    public static bool IsOwnElementOf(this RuleCatalog catalog, ElementId element, StatusId status) =>
+        element.IsStatusElement(status)
+        || catalog.EnhancedPerks.Any(pair => pair.Key.IsStatusElement(status) && pair.Value == element);
+
+    /// <summary>
+    /// The element a buff shows (its details, its own effects): the one that gave it when that is its own element (the
+    /// enhanced trait, on the weapon that shot), else the element of its id.
+    /// </summary>
+    public static Optional<ElementId> FindGivingElement(this RuleCatalog catalog, StatusId status, Optional<ElementId> givenBy) =>
+        new[]
+        {
+            givenBy.Bind(giver => catalog.IsOwnElementOf(giver, status) ? Optional.Some(giver) : Optional.None<ElementId>()),
+            catalog.FindStatusElement(status),
+        }.FindFirstSome();
+
     /// <summary>The one rule both lookups follow: a keyword's element is the element of its id — its own effects.</summary>
     public static bool IsStatusElement(this ElementId element, StatusId status) =>
         IsKeywordElement(element, status.Value);

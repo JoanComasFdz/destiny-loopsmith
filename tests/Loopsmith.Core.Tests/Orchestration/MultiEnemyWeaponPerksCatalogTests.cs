@@ -73,6 +73,40 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         Assert.Empty(shown.WeaponEffects);
     }
 
+    [Fact]
+    public void The_enhanced_stats_for_all_shows_one_chip_with_its_own_duration_and_stats()
+    {
+        var session = StartWithKineticPerk("stats-for-all-enhanced");
+
+        var three = Hit(session, WeaponSlot.Kinetic, 3);
+
+        var shown = StepStateShaping.ShapeStepState(session.Build, three.State, three.ActivePassives);
+        var buff = Assert.Single(shown.Weapons);                                                     // one chip, the enhanced trait's
+        Assert.Equal((Optional.Some(ElementId.From("stats-for-all-enhanced")), Optional.Some("11s")), (buff.Element, buff.Facts));
+        Assert.Equal(["Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], buff.OwnEffects);
+        Assert.Empty(buff.SwitchesOn);
+        Assert.Empty(shown.WeaponEffects);
+    }
+
+    [Fact]
+    public void With_both_copies_of_stats_for_all_the_buff_shows_the_copy_on_the_weapon_that_shot()
+    {
+        var session = StartWithPerks("stats-for-all", "stats-for-all-enhanced");
+
+        var enhanced = Hit(session, WeaponSlot.Energy, 3);
+        var shownEnhanced = Assert.Single(StepStateShaping.ShapeStepState(session.Build, enhanced.State, enhanced.ActivePassives).Weapons);
+        var thenBase = Hit(session, WeaponSlot.Kinetic, 3);
+        var shown = StepStateShaping.ShapeStepState(session.Build, thenBase.State, thenBase.ActivePassives);
+        var shownBase = Assert.Single(shown.Weapons);
+
+        Assert.Equal((Optional.Some(ElementId.From("stats-for-all-enhanced")), Optional.Some("11s")), (shownEnhanced.Element, shownEnhanced.Facts));
+        Assert.Equal(["Energy weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], shownEnhanced.OwnEffects);
+        Assert.Equal([1], LoopDesigning.ListWeaponsHolding(session.Build, ElementId.From("stats-for-all-enhanced")));
+        Assert.Equal((Optional.Some(ElementId.From("stats-for-all")), Optional.Some("10s")), (shownBase.Element, shownBase.Facts));
+        Assert.Equal(["Kinetic weapon: +10 Range, +10 Stability, +35 Handling, +35 Reload Speed"], shownBase.OwnEffects);
+        Assert.Empty(shown.WeaponEffects);                                                           // the other copy's stats show nowhere
+    }
+
     [Theory]
     [InlineData(1, null)]
     [InlineData(2, 2)]
@@ -196,7 +230,11 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
     /// An Arc Hunter with <paramref name="perk"/> (one perk id, or several comma-separated) on its Kinetic weapon (Festival
     /// Flight, Strand), an Arc Energy weapon (Crisis Inverted) with none, Gambler's Dodge (it arms Slice) and Strand Siphon.
     /// </summary>
-    private static DesignSession StartWithKineticPerk(string perk)
+    private static DesignSession StartWithKineticPerk(string perk) =>
+        StartWithPerks(perk, "");
+
+    /// <summary>Festival Flight (Kinetic) with one perk, Crisis Inverted (Energy) with another, or none for "".</summary>
+    private static DesignSession StartWithPerks(string kinetic, string energy)
     {
         var text = $$"""
             name: Test
@@ -205,8 +243,8 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
             classAbility: gamblers-dodge
             armorMods: [strand-siphon]
             weapons:
-              - { hash: 4019651319, perks: [{{perk}}] } # Festival Flight
-              - { hash: 2888266564, perks: [] } # Crisis Inverted
+              - { hash: 4019651319, perks: [{{kinetic}}] } # Festival Flight
+              - { hash: 2888266564, perks: [{{energy}}] } # Crisis Inverted
             """;
         return LoopDesigning.StartDesign(Catalog, new SourceText("build.yaml", text), "Test")
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));

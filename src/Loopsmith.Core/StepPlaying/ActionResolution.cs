@@ -343,7 +343,7 @@ public static class ActionResolution
     private static Opening DeclareCriticalHealth(GameState state) =>
         state.HasBuff(DeclaredStatuses.CriticalHealth)
             ? BlockAction(state, $"Already at critical health — declare it ended first (end:{DeclaredStatuses.CriticalHealth}).")
-            : new Opening(state.PutBuff(DeclaredStatuses.CriticalHealth), [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []);
+            : new Opening(state.PutBuff(DeclaredStatuses.CriticalHealth, Optional.None<ElementId>()), [new PendingEvent.Ready(new GameEvent.CriticalHealth())], []);
 
     /// <summary>
     /// "Hit at critical health" (ADRs D3): the player says they are damaged while at critical health, and
