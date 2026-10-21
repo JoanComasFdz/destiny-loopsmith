@@ -23,6 +23,10 @@ public partial record Keyword
     public partial record ArmorCharge;
     public partial record VoidOvershield;
     public partial record StatsForAll;
+    public partial record OneForAll;
+    public partial record Slice;
+    public partial record ReapersTithe;
+    public partial record AllStar;
 
     /// <summary>What the UI shows that no case names yet: a failing assertion names it as the UI shows it.</summary>
     public partial record Unlisted(string Shown);
@@ -47,5 +51,9 @@ public static class KeywordShowing
             armorCharge => "Armor Charge",
             voidOvershield => "Void Overshield",
             statsForAll => "Stats for All",
+            oneForAll => "One for All",
+            slice => "Slice",
+            reapersTithe => "Reaper's Tithe",
+            allStar => "All-Star",
             unlisted => unlisted.Shown);
 }

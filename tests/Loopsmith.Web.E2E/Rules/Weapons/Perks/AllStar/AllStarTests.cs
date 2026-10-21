@@ -53,6 +53,9 @@ public sealed class AllStarTests : BaseE2E
           Then card #1's heading is "#1 Pick up a Heavy ammo brick"
           And "All-Star (enhanced)" fires "All-Star (7s)" and "+35% [PvP 15%] kinetic weapon damage"
           And its WEAPONS show only "All-Star · 1 effect · Battle Scar"
+          # keeping step #1: its All-Star is what the line names
+          When I tap "All-Star" in card #1's "All-Star (7s)"
+          Then the item details popup opens, titled "All-Star (enhanced)"
         """)]
     public async Task EnhancedAllStarsAmmoBrickPickupGivesAllStarFor7S(Screen screen)
     {
@@ -72,6 +75,15 @@ public sealed class AllStarTests : BaseE2E
             .HasHeading("#1 Pick up a Heavy ammo brick")
             .Fires(new WeaponPerk.AllStarEnhanced(), "All-Star (7s)", "+35% [PvP 15%] kinetic weapon damage")
             .Shows(new StateGroup.Weapons(), "All-Star · 1 effect · Battle Scar");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickKeywordAsync(new Keyword.AllStar(), "All-Star (7s)");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.AllStarEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

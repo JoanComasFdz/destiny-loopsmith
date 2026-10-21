@@ -97,6 +97,9 @@ public sealed class OneForAllTests : BaseE2E
           When I tap the "One for All · Festival Flight" chip in card #1's WEAPONS
           Then the item details popup opens, titled "One for All (enhanced)"
           And its "Right then, after #1" card reads only "11s"
+          When I close the item details popup
+          And I tap "One for All" in card #1's "One for All (11s)"
+          Then the item details popup opens, titled "One for All (enhanced)"
         """)]
     public async Task EnhancedOneForAlls3QuickHitsPowerUpItsWeapon(Screen screen)
     {
@@ -128,6 +131,17 @@ public sealed class OneForAllTests : BaseE2E
         Asserting.That(details)
             .IsTitled(new WeaponPerk.OneForAllEnhanced())
             .HasRightThen("Right then, after #1", "11s");
+
+        // When
+        await Frontend.Designer.ItemDetails.ClickCloseAsync();
+        await Frontend.Designer.ItemDetails.WaitUntilClosedAsync();
+        await Frontend.Designer.Loop.Step(1).ClickKeywordAsync(new Keyword.OneForAll(), "One for All (11s)");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var keywordDetails = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(keywordDetails)
+            .IsTitled(new WeaponPerk.OneForAllEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

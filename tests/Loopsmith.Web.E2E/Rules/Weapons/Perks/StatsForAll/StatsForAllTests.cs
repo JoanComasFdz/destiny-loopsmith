@@ -141,6 +141,9 @@ public sealed class StatsForAllTests : BaseE2E
           And it reads "Ogma PR6 🥊 hit 3 enemies in 3 s"
           And "Stats for All (enhanced)" fires "Stats for All (11s)"
           And its WEAPONS show only "Stats for All · 1 effect · Ogma PR6"
+          # keeping step #1: its Stats for All is what the line names
+          When I tap "Stats for All" in card #1's "Stats for All (11s)"
+          Then the item details popup opens, titled "Stats for All (enhanced)"
         """)]
     public async Task EnhancedStatsForAlls3QuickHitsGiveStatsForAll(Screen screen)
     {
@@ -162,6 +165,15 @@ public sealed class StatsForAllTests : BaseE2E
             .Reads("Ogma PR6 🥊 hit 3 enemies in 3 s")
             .Fires(new WeaponPerk.StatsForAllEnhanced(), "Stats for All (11s)")
             .Shows(new StateGroup.Weapons(), "Stats for All · 1 effect · Ogma PR6");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickKeywordAsync(new Keyword.StatsForAll(), "Stats for All (11s)");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.StatsForAllEnhanced());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
