@@ -13,6 +13,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
     <ProjectReference Include="..\Loopsmith.E2ETools.Core\Loopsmith.E2ETools.Core.csproj" />
+    <ProjectReference Include="..\Loopsmith.StaticServer\Loopsmith.StaticServer.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

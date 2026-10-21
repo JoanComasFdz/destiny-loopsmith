@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The static server record.sh serves the published web app with (tools/e2e/README.md): Kestrel on 127.0.0.1, a host
+       only. Its command line is read by Loopsmith.E2ETools.Core; like the e2e tool, it never references Loopsmith.Core. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.StaticServer</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+    <ProjectReference Include="..\Loopsmith.E2ETools.Core\Loopsmith.E2ETools.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -6,7 +6,8 @@ using Loopsmith.Functional;
 namespace Loopsmith.E2ETools.Core;
 
 /// <summary>
-/// The JSON the tool reads: record.sh's <c>scenarios.json</c>, and GitHub's answers through <c>gh api --paginate --slurp</c>
+/// The JSON the tool reads: record.sh's <c>scenarios.json</c>, a recorded run's record, a VS Code for the web runner's
+/// package.json, and GitHub's answers through <c>gh api --paginate --slurp</c>
 /// (one array per page), each to its records; and the JSON bodies it sends. A text that isn't the JSON expected is an error
 /// saying what was being read; a missing or mistyped field is none, never an exception.
 /// </summary>
@@ -35,6 +36,41 @@ public static class JsonReading
 
     public static Result<ImmutableArray<int>, string> ReadPullNumbers(string json) =>
         ReadPages(json, "the open PRs", item => ReadNumber(item, "number").Map(number => (int)number).ToResult(() => "a PR lacks its number"));
+
+    /// <summary>The record a recorded run wrote next to its video; an error saying which field it lacks.</summary>
+    public static Result<RunRecord, string> ReadRunRecord(string json) =>
+        ParseNode(json)
+            .Bind(node => node is JsonObject record ? Optional.Some(record) : Optional.None<JsonObject>())
+            .ToResult(() => "a run's record isn't a JSON object.")
+            .Bind(record =>
+                ReadString(record, "domain").Bind(domain =>
+                ReadString(record, "class").Bind(cls =>
+                ReadString(record, "method").Bind(method =>
+                ReadString(record, "title").Bind(title =>
+                ReadString(record, "screen").Bind(screen =>
+                ReadString(record, "gif").Bind(gif =>
+                ReadFlag(record, "passed").Map(passed =>
+                new RunRecord(domain, cls, method, title, ReadString(record, "gherkin"), screen, gif, ReadDecimal(record, "homeShownSeconds"), passed))))))))
+                .ToResult(() => "a run's record lacks its domain, class, method, title, screen, gif or passed."));
+
+    /// <summary>The VS Code build a VS Code for the web runner's package.json pins: its <c>config.vscodeCommit</c>.</summary>
+    public static Result<string, string> ReadVsCodeCommit(string json) =>
+        ParseNode(json)
+            .Bind(node => node?["config"] is JsonObject config ? ReadText(config, "vscodeCommit") : Optional.None<string>())
+            .ToResult(() => "the package.json has no config.vscodeCommit.");
+
+    /// <summary>
+    /// The files a <c>scenarios.json</c> lists, each once in the order they come: each entry's GIF, then its MP4 (a
+    /// <c>scenarios.json</c> from before the MP4s has none), then its rule's flow (a rule scenario's two screens share it).
+    /// </summary>
+    public static Result<ImmutableArray<string>, string> ReadListedFiles(string json) =>
+        ParseArray(json, "scenarios.json").Map(entries => entries
+            .OfType<JsonObject>()
+            .SelectMany(entry => new[] { "gif", "mp4", "flow" }.Select(name => ReadText(entry, name)))
+            .OfType<Optional<string>.Some>()
+            .Select(some => some.Value)
+            .Distinct()
+            .ToImmutableArray());
 
     /// <summary>
     /// The node ids of these posts already hidden, from GraphQL's answer to <see cref="WriteHiddenQuery"/> (its nodes in the
@@ -98,6 +134,10 @@ public static class JsonReading
 
     private static Optional<long> ReadNumber(JsonNode item, string name) =>
         item[name] is JsonValue value && value.TryGetValue(out long number) ? Optional.Some(number) : Optional.None<long>();
+
+    /// <summary>A number field; none when it is missing, null or not a number.</summary>
+    private static Optional<double> ReadDecimal(JsonNode item, string name) =>
+        item[name] is JsonValue value && value.TryGetValue(out double number) ? Optional.Some(number) : Optional.None<double>();
 
     private static Optional<bool> ReadFlag(JsonNode item, string name) =>
         item[name] is JsonValue value && value.TryGetValue(out bool flag) ? Optional.Some(flag) : Optional.None<bool>();

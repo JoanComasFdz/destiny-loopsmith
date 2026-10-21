@@ -37,7 +37,7 @@ tools/e2e/push-gifs.sh                              # their GIFs, posted on the 
 ```
 
 `record.sh` publishes the web app (Release; `--no-publish` reuses the last one), prepares it for `/destiny-loopsmith/`
-with `tools/web/prepare-pages.sh`, serves it with `python3 -m http.server`, runs the chosen scenarios with `E2E_URL` set
+with `tools/web/prepare-pages.sh`, serves it with the e2e tools' static server (`tools/e2e/Loopsmith.StaticServer`), runs the chosen scenarios with `E2E_URL` set
 and video on, and writes to `out/` (`--out <dir>`; gitignored):
 - `out/<domain folder>/<gif name>.gif`: each run of a scenario from Home on (the manifest's startup screen trimmed
   off), its last frame held 3 s, 20 fps; a desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in

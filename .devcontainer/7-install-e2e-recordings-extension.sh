@@ -17,16 +17,8 @@ if [ "${1:-}" = "--pack-only" ]; then
   vsix="$2"
 fi
 
-python3 - "$source" "$repo/LICENSE" "$vsix" <<'PY'
-import sys, zipfile
-source, license, vsix = sys.argv[1:]
-with zipfile.ZipFile(vsix, "w", zipfile.ZIP_DEFLATED) as package:
-    for name in ("package.json", "extension.js", "README.md"):
-        package.write(f"{source}/{name}", f"extension/{name}")
-    package.write(license, "extension/LICENSE.txt")
-    package.write(f"{source}/vsix/extension.vsixmanifest", "extension.vsixmanifest")
-    package.write(f"{source}/vsix/Content_Types.xml", "[Content_Types].xml")
-PY
+# Packed by the e2e tool's pack-vsix (tools/e2e/README.md); the first attach builds it.
+dotnet run --project "$repo/tools/e2e/Loopsmith.E2ETools" -c Release -v q -- pack-vsix "$source" "$repo/LICENSE" "$vsix"
 if [ $pack_only -eq 1 ]; then
   exit 0
 fi

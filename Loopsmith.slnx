@@ -14,6 +14,7 @@
     <Project Path="tools/e2e/Loopsmith.E2ETools/Loopsmith.E2ETools.csproj" />
     <Project Path="tools/e2e/Loopsmith.E2ETools.Core/Loopsmith.E2ETools.Core.csproj" />
     <Project Path="tools/e2e/Loopsmith.E2ETools.Tests/Loopsmith.E2ETools.Tests.csproj" />
+    <Project Path="tools/e2e/Loopsmith.StaticServer/Loopsmith.StaticServer.csproj" />
     <Project Path="tools/rule-viewer/Loopsmith.RuleViewer/Loopsmith.RuleViewer.csproj" />
     <Project Path="tools/rule-viewer/Loopsmith.RuleViewer.Core/Loopsmith.RuleViewer.Core.csproj" />
     <Project Path="tools/rule-viewer/Loopsmith.RuleViewer.Tests/Loopsmith.RuleViewer.Tests.csproj" />

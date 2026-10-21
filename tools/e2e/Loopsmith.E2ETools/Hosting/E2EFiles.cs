@@ -5,8 +5,8 @@ using Loopsmith.Functional;
 namespace Loopsmith.E2ETools.Hosting;
 
 /// <summary>
-/// Impure boundary: record.sh's output folder (its <c>scenarios.json</c>, <c>what-changed.md</c> and recordings), the
-/// folder each upload is staged in, and the console.
+/// Impure boundary: record.sh's output folder (its <c>scenarios.json</c>, <c>what-changed.md</c>, recordings and flows), the
+/// files the e2e scripts name, the folder each upload is staged in, and the console.
 /// </summary>
 public static class E2EFiles
 {
@@ -26,6 +26,38 @@ public static class E2EFiles
             return new Result<string, string>.Error($"Cannot read {path}: {exception.Message}");
         }
     }
+
+    /// <summary>A file's text; an error naming it when it can't be read.</summary>
+    public static Result<string, string> ReadFile(string path)
+    {
+        try
+        {
+            return new Result<string, string>.Ok(File.ReadAllText(path));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<string, string>.Error($"Cannot read {path}: {exception.Message}");
+        }
+    }
+
+    public static Result<Unit, string> WriteFile(string path, string text)
+    {
+        try
+        {
+            File.WriteAllText(path, text);
+            return new Result<Unit, string>.Ok(new Unit.Value());
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return new Result<Unit, string>.Error($"Cannot write {path}: {exception.Message}");
+        }
+    }
+
+    /// <summary>What is on disk of each rule's flow: whether its PNG is there, and its error file's text if there is one.</summary>
+    public static ImmutableDictionary<FlowToDraw, FlowFiles> FindFlowFiles(string outFolder, ImmutableArray<(FlowToDraw Flow, string Png, string Error)> paths) =>
+        paths.ToImmutableDictionary(path => path.Flow, path => new FlowFiles(
+            File.Exists(Path.Combine(outFolder, path.Png)),
+            ReadFile(Path.Combine(outFolder, path.Error)).Match(read => Optional.Some(read.Value), _ => Optional.None<string>())));
 
     /// <summary>The text a session gave push-gifs.sh <c>--message</c>, as it is; empty when it gave none.</summary>
     public static Result<string, string> ReadWhatChanged(string outFolder)
