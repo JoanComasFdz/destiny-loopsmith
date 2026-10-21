@@ -61,6 +61,10 @@ itself, under `src/Loopsmith.Core/Domain/`.
   `Loopsmith.Functional` (Optional, Result, Unit), or nothing, and still follows these rules (its own Optional/Result,
   the pure/impure split, verb names, immutable records). `Loopsmith.Functional` is a project of its own for that reason:
   it builds in seconds, where Core takes about half a minute on a clean CI runner.
+  **A tool is C#**, a .NET project like the rest ([ADRs D47](ADRs.md)), never Python or another language. A shell
+  script stays thin glue: it installs something, runs `dotnet`, `git`, `ffmpeg` or `gh`, and passes files along; any
+  decision or parsing goes into the tool's C# (its pure `.Core` project), as `tools/e2e/record.sh` hands its steps to
+  the e2e tool.
 
 - **The end-to-end tests have their own rules.** `tests/Loopsmith.Web.E2E` follows
   [`E2E-TEST-CODE-RULES.md`](../tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not this file.
