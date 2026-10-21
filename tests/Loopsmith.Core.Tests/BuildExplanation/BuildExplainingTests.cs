@@ -77,7 +77,7 @@ public class BuildExplainingTests
     {
         var vow = Element("shinobus-vow", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
-        var build = ValidateBuild([vow], keywords: [BoltCharge(), Jolt]);
+        var build = ValidateBuild([vow], keywords: [CreateBoltCharge(), Jolt]);
 
         var sources = BuildExplaining.ExplainBuild(build).SelectMany(group => group.Items).Select(item => item.SourceName).Distinct();
 
@@ -90,7 +90,7 @@ public class BuildExplainingTests
     {
         var vow = Element("shinobus-vow", ElementKind.Fragment,
             [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Buff("bolt-charge"))]);
-        var build = ValidateBuild([vow], keywords: [BoltCharge(Debuff("jolt")), Jolt]);
+        var build = ValidateBuild([vow], keywords: [CreateBoltCharge(Debuff("jolt")), Jolt]);
 
         var sources = BuildExplaining.ExplainBuild(build).SelectMany(group => group.Items).Select(item => item.SourceName).Distinct();
 
@@ -111,7 +111,7 @@ public class BuildExplainingTests
         Assert.Empty(notReading);
     }
 
-    private static BuildElement BoltCharge(params Outcome[] onGain) =>
+    private static BuildElement CreateBoltCharge(params Outcome[] onGain) =>
         Element("bolt-charge", ElementKind.Keyword, [On(new Trigger.BuffGained(Status("bolt-charge")), [Energy(AbilityKind.Melee, new GameValue.Unknown()), .. onGain])]);
 
     private static readonly BuildElement Jolt =

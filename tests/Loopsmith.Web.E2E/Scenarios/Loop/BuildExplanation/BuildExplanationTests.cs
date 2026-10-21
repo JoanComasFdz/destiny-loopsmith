@@ -1,6 +1,7 @@
 using JoanComasFdz.AssertingThat;
 using Loopsmith.Web.E2E.Infrastructure;
 using Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
+using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 
 namespace Loopsmith.Web.E2E.Scenarios.Loop;
 
@@ -83,7 +84,8 @@ public sealed class BuildExplanationTests : BaseE2E
         // Then
         var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
-            .HasNoRowFrom("[Bolt Charge]", "[Jolt]", "[Ionic Trace]", "[Amplified]", "[Guardian]", "[Orb of Power]", "[Unraveling Rounds]", "[Woven Mail]", "[Super]");
+            .HasNoRowFrom(new Keyword.BoltCharge(), new Keyword.Jolt(), new Keyword.IonicTrace(), new Keyword.Amplified(), new Keyword.Guardian(),
+                new Keyword.OrbOfPower(), new Keyword.UnravelingRounds(), new Keyword.WovenMail(), new Keyword.Super());
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
@@ -108,7 +110,7 @@ public sealed class BuildExplanationTests : BaseE2E
         // Then
         var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
-            .HasRowFromUnder("Gain Bolt Charge", "[Bolt Charge]")
-            .HasNoRowFrom("[Jolt]", "[Woven Mail]");
+            .HasRowFromUnder("Gain Bolt Charge", new Keyword.BoltCharge())
+            .HasNoRowFrom(new Keyword.Jolt(), new Keyword.WovenMail());
     }
 }
