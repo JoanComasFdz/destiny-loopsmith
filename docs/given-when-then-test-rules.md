@@ -40,7 +40,9 @@ for a loop scenario ([its document](given-when-then-loop-scenarios.md)), and
    designer. A criterion checked in a file (a doc, a rules YAML, a test, a workflow) stays a plain line.
 2. **Layout is a Gherkin too**, checked from where things are on the screen: a row wraps, two parts don't overlap, a
    button sits at a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
-   colours and spacing are never a Gherkin: nothing checks them but an eye.
+   colours and spacing are never a Gherkin: nothing checks them but an eye, the reviewer's, on the scenarios' GIFs in the
+   PR's e2e post. So a scenario plays the screen as a player or reader sees it: its real icons and fonts, never
+   placeholders.
 3. **Not yet:** what needs a Bungie login (no e2e scenario can reach it yet). Such a criterion stays
    a plain line, checked by hand on the preview, and says why.
 

@@ -39,11 +39,22 @@ folder's name (`Starting`, `Loop`, `Recordings`, …).
 
 The page is drawn from `Fixtures/rules/`, never from `rules/`, so a rule added to the repository changes no scenario:
 copies of `rules/hunter/arc/melees.yaml`, `rules/hunter/arc/supers.yaml` and `rules/mods/arms.yaml` (files that point
-to no element in another file), and `rules/glossary.yaml`. They draw the tree `rules/` → `hunter/` → `arc/` →
+to no element in another file), `rules/glossary.yaml`, and `manifest.yaml`: `rules/manifest.yaml`'s header and small
+sections, and of its `items` only the lines whose hash those files or the glossary name (so each element and keyword
+shows its real icon, as on the real page; without it every icon is an empty dashed square). They draw the tree `rules/` → `hunter/` → `arc/` →
 `melees.yaml` (Combination Blow, Disorienting Blow), `supers.yaml` (Arc Staff, Gathering Storm, Storm's Edge), and
 `mods/` → `arms.yaml` (its arm mods), with enough flows below each item for its name to bring it to the top of the view.
 `FixtureRulesTests` fails when they no longer open against the rules' format; copy the file again from `rules/` (or
-fix the copy) when it does. They are never kept in step with `rules/` otherwise.
+fix the copy; for `manifest.yaml`, take the same lines again from `rules/manifest.yaml`) when it does. They are never kept in step with `rules/` otherwise.
+
+## Icons and fonts
+
+The scenarios are also how the page is judged by eye: their GIFs on the PR show it as a reader sees it, with its
+icons and fonts. Those come from outside (Bungie's icons, named by the manifest excerpt; Google Fonts), so
+`Infrastructure/OutsideRouting.cs` answers them from a local cache, `${E2E_PAGE_CACHE:-~/.cache/loopsmith/rule-viewer-page}`,
+filled once from the network (bungie.net and Google Fonts answer a cloud session) and never committed (Bungie's and
+Google's files). Any other request is refused, which the page logs to its console, so the scenario fails rather than
+showing a page with a missing icon.
 
 ## Isolation and parallelism
 

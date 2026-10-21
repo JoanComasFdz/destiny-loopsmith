@@ -66,9 +66,11 @@ As the web rules' rule a, except:
 `Infrastructure/BaseE2E.cs` owns everything that isn't the scenario, as the web rules' rule b, except:
 - the skip: a scenario is skipped unless `E2E_RULE_VIEWER_URL` points at the rules page the rule viewer drew from
   `Fixtures/rules/` (`tools/e2e/record.sh` draws and serves it: README, "Run and record");
-- **no request leaves the machine:** the page's Google Fonts stylesheet is answered with an empty one, so the page shows
-  the system's fonts on every run;
-- it opens the page and waits until its tree shows and every flow has its wires, noting when and taking a screenshot,
+- **the page looks as it does for a reader, and no run depends on the network:** its icons (Bungie's) and its fonts
+  (Google Fonts) come from a local cache outside the repository, filled once (`OutsideRouting`: README, "Icons and
+  fonts"); any other request is refused, and the page's console error fails the scenario;
+- it opens the page and waits until its tree shows, its icons and fonts are loaded and every flow has its wires, noting
+  when and taking a screenshot,
   so `record.sh` trims the blank start off the video;
 - **a console error fails the scenario:** an error the page logs to its console, or a script error it throws, fails a
   scenario that otherwise passed, naming the errors;
@@ -101,7 +103,8 @@ each of its result boxes (and at its first condition's), where the boxes are now
 ## e. Fixture rules
 
 `Fixtures/rules/` is the rules folder the page is drawn from: copies of real rule files (`hunter/arc/melees.yaml`,
-`hunter/arc/supers.yaml`, `mods/arms.yaml`) and `glossary.yaml`, chosen to need no other file, so the scenarios
+`hunter/arc/supers.yaml`, `mods/arms.yaml`) and `glossary.yaml`, chosen to need no other file, and `manifest.yaml`, an
+excerpt of `rules/manifest.yaml` holding only the items they name, so every element shows its real icon. The scenarios
 don't change when `rules/` does. A scenario needing another kind of item adds its file there (a copy of a real one
 that opens on its own). `FixtureRulesTests` (`dotnet test`, no browser) fails when they no longer draw a tree.
 

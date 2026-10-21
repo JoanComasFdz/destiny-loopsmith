@@ -143,7 +143,8 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
 - `tests/Loopsmith.RuleViewer.E2E/` — end-to-end scenarios of the rule viewer's page (its tree: folding, ticking and the
   dash, selecting and scrolling, beside or above the flows), one per Gherkin, played in Chromium on desktop and mobile on
   the page `record.sh` draws from its `Fixtures/rules/` (copies of real rule files, so a new rule changes no scenario) and
-  serves; a console error fails a scenario; their GIFs post on the PR like the web app's. Binding rules: its
+  serves, with its real icons and fonts from `${E2E_PAGE_CACHE:-~/.cache/loopsmith/rule-viewer-page}` (filled once, never
+  committed); a console error fails a scenario; their GIFs post on the PR like the web app's. Binding rules: its
   [E2E-TEST-CODE-RULES.md](tests/Loopsmith.RuleViewer.E2E/E2E-TEST-CODE-RULES.md); how to run: its
   [README](tests/Loopsmith.RuleViewer.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:

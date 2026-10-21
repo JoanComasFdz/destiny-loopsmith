@@ -14,7 +14,7 @@ public sealed class RulesPage(IPage page)
     /// <summary>Every rule's flows, file by file, element by element.</summary>
     public RuleFlows Flows { get; } = new(page);
 
-    /// <summary>Waits until the page shows its tree and has wired its flows.</summary>
+    /// <summary>Waits until the page shows its tree, has loaded its icons and fonts and has wired its flows.</summary>
     public async Task WaitUntilShownAsync(TimeSpan timeout)
     {
         await page.Locator(".rtree").WaitForAsync(new() { Timeout = (float)timeout.TotalMilliseconds });
@@ -30,9 +30,12 @@ public sealed class RulesPage(IPage page)
     private async Task<RulesPageLayout> ReadLayoutShownAsync() =>
         ShownJson.Read<RulesPageLayout>(await page.EvaluateAsync<string>(LayoutScript));
 
-    // The page draws its wires a frame after layout, once its fonts are ready: every flow has its arrows.
+    // The page draws its wires a frame after layout, and again once its fonts are ready: every icon is loaded, the fonts
+    // are, and every flow has its arrows.
     private const string WiredScript = """
-        () => document.querySelectorAll('.flow').length > 0
+        () => document.fonts.status === 'loaded'
+          && [...document.images].every(image => image.complete && image.naturalWidth > 0)
+          && document.querySelectorAll('.flow').length > 0
           && [...document.querySelectorAll('.flow')].every(flow => flow.querySelector('.wires path.arrow'))
         """;
 

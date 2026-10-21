@@ -15,9 +15,10 @@ namespace Loopsmith.RuleViewer.E2E.Infrastructure;
 /// - opens that context as the screen the scenario is played on (its <c>[PlayInDesktop]</c> / <c>[PlayInMobile]</c>):
 ///   a 1280×800 window with a mouse, its video the same size, or a 390×844 phone with touch, its video at the phone's
 ///   pixels (780×1688: <see cref="BrowserRun"/>);
-/// - answers the page's Google Fonts stylesheet with an empty one, so no run reaches the internet and the page's text is
-///   the same on every run (the system's fonts);
-/// - opens the page on a recorded page and waits until its tree is shown and its flows are wired, noting when, so
+/// - serves the page's icons and fonts from the local cache (<see cref="OutsideRouting"/>), so it looks as it does for a
+///   reader and no run depends on the network;
+/// - opens the page on a recorded page and waits until its tree is shown, its icons and fonts are loaded and its flows
+///   are wired, noting when, so
 ///   record.sh trims the blank start off the video;
 /// - fails a scenario that passed when the page logged an error to its console or threw;
 /// - when the run records (<c>E2E_VIDEO_DIR</c>): draws a ring at each click or tap (and on desktop a big mouse pointer),
@@ -55,7 +56,7 @@ public abstract class BaseE2E : IAsyncLifetime
         videoFolder = E2ERuleViewer.VideoDirectory is { } videos ? Path.Combine(videos, ".raw", Guid.NewGuid().ToString("N")) : null;
         context = await browser.NewContextAsync(OpenAs(screen, videoFolder));
         context.SetDefaultTimeout((float)ActionTimeout.TotalMilliseconds);
-        await context.RouteAsync("https://fonts.googleapis.com/**", route => route.FulfillAsync(new() { Status = 200, ContentType = "text/css", Body = "" }));
+        await OutsideRouting.RouteAsync(context);
         if (videoFolder is not null)
         {
             await context.AddInitScriptAsync(screen == Screen.Mobile
