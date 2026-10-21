@@ -6,26 +6,24 @@ using Loopsmith.Functional;
 namespace Loopsmith.RuleViewer.Core;
 
 /// <summary>
-/// The flows as text (the golden test's: each scope's groups and counts, then every flow of the widest scope, one line
-/// each) and as JSON (what the rules page is drawn from, for whoever reads it next: the e2e scenarios to write). Pure.
+/// The rule tree as text (the golden test's: how many rules and flows, then each file, its elements and every flow, one
+/// line each) and as JSON (what the rules page is drawn from, for whoever reads it next: the e2e scenarios to write). Pure.
 /// </summary>
 public static class RuleFlowRendering
 {
-    public static string RenderText(SubclassRules rules) =>
-        string.Join('\n', new[] { $"# {rules.Title} rules" }
-            .Concat(rules.Scopes.SelectMany(RenderScopeSummary))
-            .Concat(rules.Scopes.IsEmpty ? [] : RenderScopeFlows(rules.Scopes[^1]))) + "\n";
+    public static string RenderText(RuleTree tree)
+    {
+        var rules = RuleTreeDrawing.ListRules(tree.Root).ToImmutableArray();
+        return string.Join('\n', new[] { $"# {tree.Title}: {FormatNumber(rules.Length)} rules, {FormatNumber(rules.Sum(rule => rule.Flows.Length))} flows" }
+            .Concat(RuleTreeDrawing.ListFiles(tree.Root).SelectMany(RenderFileText))) + "\n";
+    }
 
-    private static IEnumerable<string> RenderScopeSummary(RuleScope scope) =>
-        new[] { "", $"## {scope.Name} ({ToCamelCase(scope.Kind.ToString())}): {FormatNumber(scope.Groups.Sum(group => group.Flows.Length))} rules" }
-            .Concat(scope.Groups.Select(group => $"  {group.Name}: {FormatNumber(group.Flows.Length)}"));
+    private static IEnumerable<string> RenderFileText(RuleFile file) =>
+        new[] { "", $"## {file.Path}" }
+            .Concat(file.Elements.SelectMany(element => new[] { "", $"### {element.Box.Name} ({element.Box.Title})" }
+                .Concat(element.Rules.SelectMany(rule => rule.Flows).Select(RenderFlowLine))));
 
-    private static IEnumerable<string> RenderScopeFlows(RuleScope scope) =>
-        new[] { "", $"## Every rule of {scope.Name}" }
-            .Concat(scope.Groups.SelectMany(group => new[] { "", $"### {group.Name} ({FormatNumber(group.Flows.Length)})" }
-                .Concat(group.Flows.Select(RenderFlowLine))));
-
-    /// <summary>"gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Dodge ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)".</summary>
+    /// <summary>"gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)".</summary>
     private static string RenderFlowLine(RuleFlow flow) =>
         $"{flow.Id} {flow.Rule}: {RenderBox(flow.Trigger)} ➜ "
         + (flow.Conditions.IsEmpty ? "always" : string.Join(" + ", flow.Conditions.Select(RenderBox)))
@@ -36,31 +34,48 @@ public static class RuleFlowRendering
         $"[{box.Title}] {box.Name}" + (box.Caption.Length == 0 ? "" : $" ({box.Caption})");
 
     /// <summary>
-    /// <c>{"title", "scopes": [{id, name, groups: [{key, name, icon, flows: [{id, element, rule, file, reason, chance, trigger,
-    /// conditions, results}]}]}]}</c>; a box is <c>{node, title, name, caption, tone, role, icon: {kind, url | text}}</c>.
+    /// <c>{"title", "root": folder}</c>; a folder is <c>{path, name, folders, files}</c>; a file <c>{path, name, elements}</c>;
+    /// an element <c>{id, box, rules}</c>; a rule <c>{name, id, flows}</c>; a flow <c>{id, element, rule, file, reason,
+    /// chance, trigger, conditions, results}</c>; a box <c>{node, title, name, caption, tone, role, icon: {kind, url | text}}</c>.
     /// </summary>
-    public static string RenderJson(SubclassRules rules) =>
+    public static string RenderJson(RuleTree tree) =>
         new JsonObject
         {
-            ["title"] = rules.Title,
-            ["scopes"] = new JsonArray([.. rules.Scopes.Select(ToScopeObject)]),
+            ["title"] = tree.Title,
+            ["root"] = ToFolderObject(tree.Root),
         }.ToJsonString();
 
-    private static JsonNode? ToScopeObject(RuleScope scope) =>
+    private static JsonNode? ToFolderObject(RuleFolder folder) =>
         new JsonObject
         {
-            ["id"] = ToCamelCase(scope.Kind.ToString()),
-            ["name"] = scope.Name,
-            ["groups"] = new JsonArray([.. scope.Groups.Select(ToGroupObject)]),
+            ["path"] = folder.Path,
+            ["name"] = folder.Name,
+            ["folders"] = new JsonArray([.. folder.Folders.Select(ToFolderObject)]),
+            ["files"] = new JsonArray([.. folder.Files.Select(ToFileObject)]),
         };
 
-    private static JsonNode? ToGroupObject(RuleGroup group) =>
+    private static JsonNode? ToFileObject(RuleFile file) =>
         new JsonObject
         {
-            ["key"] = group.Key,
-            ["name"] = group.Name,
-            ["icon"] = ToIconObject(group.Icon),
-            ["flows"] = new JsonArray([.. group.Flows.Select(ToFlowObject)]),
+            ["path"] = file.Path,
+            ["name"] = file.Name,
+            ["elements"] = new JsonArray([.. file.Elements.Select(ToElementObject)]),
+        };
+
+    private static JsonNode? ToElementObject(RuleElement element) =>
+        new JsonObject
+        {
+            ["id"] = element.Id,
+            ["box"] = ToBoxObject(element.Box),
+            ["rules"] = new JsonArray([.. element.Rules.Select(ToRuleObject)]),
+        };
+
+    private static JsonNode? ToRuleObject(RuleEntry rule) =>
+        new JsonObject
+        {
+            ["name"] = rule.Name,
+            ["id"] = rule.Id,
+            ["flows"] = new JsonArray([.. rule.Flows.Select(ToFlowObject)]),
         };
 
     private static JsonNode? ToFlowObject(RuleFlow flow) =>

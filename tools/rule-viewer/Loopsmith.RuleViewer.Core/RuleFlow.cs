@@ -50,12 +50,3 @@ public sealed record RuleFlow(
     bool ByChance,
     Optional<string> File,
     Optional<string> Reason);
-
-/// <summary>The flows one trigger sets off ("Melee", "Bolt Charge", "Always on"), with its icon.</summary>
-public sealed record RuleGroup(string Key, string Name, RuleIcon Icon, ImmutableArray<RuleFlow> Flows);
-
-/// <summary>The flows of one scope of the graph (the subclass alone, with its needs, with what builds on it), grouped by trigger.</summary>
-public sealed record RuleScope(ScopeKind Kind, string Name, ImmutableArray<RuleGroup> Groups);
-
-/// <summary>Every flow of a class's subclass ("Arc Hunter"), per scope.</summary>
-public sealed record SubclassRules(string Title, ImmutableArray<RuleScope> Scopes);

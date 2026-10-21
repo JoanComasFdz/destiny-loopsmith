@@ -5,7 +5,7 @@ namespace Loopsmith.RuleViewer.Page;
 
 /// <summary>
 /// The page of one rule's flows, the one its PNG is taken of: only the flows, stacked, each under the rule's full name
-/// (no title, lede or scope chips), with the rules page's style and script, in its light or dark theme.
+/// (no title, lede or tree), with the rules page's style and script, in its light or dark theme.
 /// </summary>
 public static class RuleFlowPage
 {
@@ -18,9 +18,9 @@ public static class RuleFlowPage
         + $"<link rel=\"stylesheet\" href=\"{RulePage.Fonts}\">\n"
         + $"<style>\n{assets.Style}.shot{{width:max-content;background:var(--bg);padding:4px 16px 12px}}\n.shot .flow:first-child{{border-top:none}}\n</style>\n"
         + RulePage.ArrowheadDefinition
-        + "<div class=\"shot\"><div class=\"rscope\"><div class=\"rgroup\">"
+        + "<div class=\"shot\"><div class=\"rrule\">"
         + string.Concat(flows.Select(RuleFlowView.RenderFlow))
-        + "</div></div></div>\n"
+        + "</div></div>\n"
         + $"<script>\n{assets.Script}</script>\n"
         + "</html>\n";
 }

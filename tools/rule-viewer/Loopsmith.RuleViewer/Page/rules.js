@@ -1,4 +1,4 @@
-// The rules page's behaviour: the scope chips show one scope's flows, and each flow's wires are drawn after layout from
+// The rules page's behaviour: the tree folds, shows or hides and selects (below), and each flow's wires are drawn after layout from
 // where its boxes landed (again on resize and when the theme changes; the arrowhead is the page's one marker): the triggers meet in one arrow into the first
 // condition, the conditions are joined by "and", and from the last condition one line splits into an arrow per result.
 const curve = (x1, y1, x2, y2) => { const k = (x2 - x1) / 2; return `M${x1},${y1} C${x1 + k},${y1} ${x2 - k},${y2} ${x2},${y2}`; };
@@ -34,25 +34,61 @@ function wireFlow(flow){
   res.forEach(r => s += `<path class="w arrow" d="${curve(sx, from.m, r.l - 2, r.m)}"/>`);
   svg.innerHTML = s;
 }
-
+// Only the flows that are shown (a hidden one has no layout); a flow shown again is wired then.
 function wireFlows(){
-  const flows = document.querySelectorAll('.rscope:not([hidden]) .flow');
+  const flows = [...document.querySelectorAll('.flow')].filter(flow => flow.offsetParent !== null);
   flows.forEach(alignResults);
   flows.forEach(wireFlow);
 }
 
-function showScope(id){
-  document.querySelectorAll('[data-scope-chip]').forEach(chip => chip.setAttribute('aria-pressed', chip.dataset.scopeChip === id));
-  document.querySelectorAll('.rscope').forEach(scope => scope.hidden = scope.dataset.scope !== id);
+// The tree, like a folder explorer: an item's arrow folds it; its checkbox shows or hides its flows (and ticks or unticks
+// everything under it; a folder with some ticked shows a dash); its name selects it and brings its flows into view.
+const items = [...document.querySelectorAll('.titem')];
+const section = item => document.querySelector(`.rflows [data-item="${CSS.escape(item.dataset.item)}"]`);
+const childItems = item => [...item.querySelectorAll(':scope > ul > .titem')];
+const box = item => item.querySelector(':scope > .trow > input');
+
+// A rule's flows show when it is ticked; an element's or a file's part shows while any rule in it does.
+function showTicked(){
+  items.filter(item => item.classList.contains('rule')).forEach(item => { const part = section(item); if (part) part.hidden = !box(item).checked; });
+  document.querySelectorAll('.rflows .relem, .rflows .rfile').forEach(part => part.hidden = !part.querySelector('.rrule:not([hidden])'));
   requestAnimationFrame(wireFlows);
 }
 
-document.querySelectorAll('[data-scope-chip]').forEach(chip => chip.onclick = () => showScope(chip.dataset.scopeChip));
+// A folder, file or element is ticked when all under it are, unticked when none are, and shows a dash in between.
+function settle(item){
+  const kids = childItems(item);
+  if (!kids.length) return;
+  kids.forEach(settle);
+  const ticked = kids.filter(kid => box(kid).checked && !box(kid).indeterminate).length, partly = kids.some(kid => box(kid).indeterminate);
+  box(item).checked = ticked === kids.length;
+  box(item).indeterminate = partly || (ticked > 0 && ticked < kids.length);
+}
+
+function select(item){
+  items.forEach(other => other.setAttribute('aria-selected', other === item));
+  document.querySelectorAll('.rflows .hit').forEach(part => part.classList.remove('hit'));
+  // A folder has no part of its own: its first file's stands for it.
+  const part = section(item) ?? section(item.querySelector('.titem.file') ?? item);
+  if (!part || part.hidden) return;
+  part.classList.add('hit');
+  part.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+
+items.forEach(item => {
+  item.querySelector(':scope > .trow > .twisty:not(.none)')?.addEventListener('click', () =>
+    item.setAttribute('aria-expanded', item.getAttribute('aria-expanded') !== 'true'));
+  box(item).addEventListener('change', () => {
+    item.querySelectorAll('input').forEach(input => { input.checked = box(item).checked; input.indeterminate = false; });
+    if (items.length) settle(items[0]);
+    showTicked();
+  });
+  item.querySelector(':scope > .trow > .tname').addEventListener('click', () => select(item));
+});
+
 addEventListener('resize', wireFlows);
 addEventListener('load', wireFlows);
 document.fonts?.ready.then(wireFlows);
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', wireFlows);
 new MutationObserver(wireFlows).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
-// A page of one rule's flows (the PNG's) has no scopes to pick: its flows are all shown.
-const firstChip = document.querySelector('[data-scope-chip]');
-if (firstChip) showScope(firstChip.dataset.scopeChip); else requestAnimationFrame(wireFlows);
+requestAnimationFrame(wireFlows);
