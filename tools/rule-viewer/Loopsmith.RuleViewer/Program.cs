@@ -1,4 +1,3 @@
-using Loopsmith.Core.Domain;
 using Loopsmith.Functional;
 using Loopsmith.RuleViewer.Core;
 using Loopsmith.RuleViewer;
@@ -44,8 +43,8 @@ if (paths.Rule is Optional<string>.Some rule)
         });
 }
 
-var rules = ruleFiles.Bind(files => RuleViewing.DrawRules(files, GuardianClass.Hunter, Subclass.Arc));   // pure
-var pages = rules.Bind(drawn => assets.Map(page => (Json: RuleViewing.RenderRulesJson(drawn), Html: RulePage.RenderPage(drawn, page))));   // pure
+var tree = ruleFiles.Bind(RuleViewing.DrawTree);   // pure
+var pages = tree.Bind(drawn => assets.Map(page => (Json: RuleViewing.RenderTreeJson(drawn), Html: RulePage.RenderPage(drawn, page))));   // pure
 if (pages is Result<(string Json, string Html), string>.Error failed)
 {
     RuleViewerFiles.ReportError(failed.Failure);   // impure
@@ -53,8 +52,8 @@ if (pages is Result<(string Json, string Html), string>.Error failed)
 }
 
 var written = ((Result<(string Json, string Html), string>.Ok)pages).Value;
-var jsonPath = Path.Combine(paths.OutDirectory, "arc-hunter-rules.json");   // pure
-var htmlPath = Path.Combine(paths.OutDirectory, "arc-hunter-rules.html");   // pure
+var jsonPath = Path.Combine(paths.OutDirectory, "rules.json");   // pure
+var htmlPath = Path.Combine(paths.OutDirectory, "rules.html");   // pure
 var saved = RuleViewerFiles.WriteFile(jsonPath, written.Json).Bind(_ => RuleViewerFiles.WriteFile(htmlPath, written.Html));   // impure
 return saved.Match(
     _ =>

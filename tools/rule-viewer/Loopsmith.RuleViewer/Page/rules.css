@@ -1,4 +1,4 @@
-/* The rules page: a header, the scope chips, then each group of flows; a flow is a row of boxes (trigger ➜ conditions ➜ results) joined by wires flows.js draws. */
+/* The rules page: a header, then the rules folder as a tree beside every rule's flows, file by file; a flow is a row of boxes (trigger ➜ conditions ➜ results) joined by wires flows.js draws. */
 :root{
   --bg:#f2f4f7; --surface:#ffffff; --fg:#17202b; --muted:#5b6676; --line:#cfd6df; --focus:#1f77d0;
   --trigger:#46505e; --weapon:#c0620c; --ability:#1f77d0; --super:#5b3fc4; --aspect:#0e8a82; --fragment:#3f8f24;
@@ -20,20 +20,48 @@ body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px
 .wrap{max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
 h1{font-family:var(--display);font-weight:600;font-size:clamp(22px,3.2vw,30px);margin:0;text-wrap:balance}
 .lede{color:var(--muted);margin:0;max-width:78ch}
-.bar{display:flex;gap:6px;flex-wrap:wrap}
-.chip{font:500 13px var(--body);border:1px solid var(--line);background:var(--surface);color:var(--fg);padding:5px 11px;border-radius:999px;cursor:pointer}
-.chip[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
-button:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 svg{display:block}
-.rulesview{display:flex;flex-direction:column;gap:14px}
-.rscroll{overflow-x:auto;display:flex;flex-direction:column;gap:20px;padding-bottom:6px}
-.rgroup{display:flex;flex-direction:column;gap:8px;min-width:max-content}
-.rgroup h3{font:600 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;gap:8px;align-items:center}
-.rgroup h3 img,.rgroup h3 .bmask,.rgroup h3 .emo{width:22px;height:22px;border-radius:3px;background:#1c232c}
-.rgroup h3 .emo{font-size:11px}
-.rgroup h3 .bmask img{inset:4px;width:14px;height:14px}
-.rgroup h3 .bmask svg{width:22px;height:22px}
-.rgroup h3 small{font:500 11px var(--mono);letter-spacing:0}
+.rview{display:grid;grid-template-columns:minmax(240px,360px) minmax(0,1fr);gap:24px;align-items:start}
+.rtree{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 6px;font-size:13px}
+.rtree ul{list-style:none;margin:0;padding:0}
+.rtree ul ul{padding-left:14px}
+.titem[aria-expanded="false"]>ul{display:none}
+.trow{display:flex;align-items:center;gap:4px;border-radius:4px;padding:1px 2px}
+.trow:hover{background:color-mix(in srgb,var(--focus) 8%,transparent)}
+.titem[aria-selected="true"]>.trow{background:color-mix(in srgb,var(--focus) 18%,transparent)}
+.twisty{flex:none;width:18px;height:18px;border:none;background:none;color:var(--muted);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.twisty::before{content:"";border:4.5px solid transparent;border-left:6px solid currentColor;border-right:none;transform:translateX(2px);transition:transform .1s}
+.titem[aria-expanded="true"]>.trow>.twisty::before{transform:translateX(1px) rotate(90deg)}
+.twisty.none::before{display:none}
+.trow input{flex:none;margin:0;width:14px;height:14px;accent-color:var(--focus);cursor:pointer}
+.tname{flex:1;min-width:0;display:flex;align-items:center;gap:6px;border:none;background:none;color:var(--fg);font:inherit;text-align:left;cursor:pointer;padding:2px 4px}
+.tname span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.titem.folder>.trow .tname span,.titem.file>.trow .tname span,.titem.rule>.trow .tname span{font-family:var(--mono);font-size:12px}
+.tname small{margin-left:auto;font:11px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:1.5em;text-align:right}
+.titem.rule .tname span{flex:none}
+.titem.rule .tname small{margin-left:6px;text-align:left;flex:1}
+.tname img,.tname .bmask,.tname .emo,.tname i{width:16px;height:16px;border-radius:2px;flex:none}
+.tname .emo{font-size:7px}
+.tname .bmask img{inset:3px;width:10px;height:10px}
+.tname .bmask svg{width:16px;height:16px}
+.tname i{border:1px dashed var(--line)}
+@media (max-width:760px){
+  .rview{grid-template-columns:minmax(0,1fr)}
+  .rtree{position:static;max-height:45vh}
+}
+.rflows{min-width:0;overflow-x:auto;display:flex;flex-direction:column;gap:28px;padding-bottom:6px}
+.rfile{display:flex;flex-direction:column;gap:14px;min-width:max-content}
+.rfile h2{font:500 13px var(--mono);color:var(--fg);margin:0;padding:6px 0;border-bottom:2px solid var(--line);position:sticky;left:0;width:max-content}
+.relem{display:flex;flex-direction:column;gap:8px;scroll-margin-top:12px}
+.relem h3{font:600 13px var(--display);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0;display:flex;gap:8px;align-items:center}
+.relem h3 img,.relem h3 .bmask,.relem h3 .emo{width:22px;height:22px;border-radius:3px;background:#1c232c}
+.relem h3 .emo{font-size:11px}
+.relem h3 .bmask img{inset:4px;width:14px;height:14px}
+.relem h3 .bmask svg{width:22px;height:22px}
+.relem h3 small{font:500 11px var(--mono);letter-spacing:0;text-transform:none}
+.rrule{display:flex;flex-direction:column;gap:8px;min-width:max-content;scroll-margin-top:12px}
+.rfile.hit h2,.relem.hit h3,.rrule.hit .flow .rname{color:var(--focus)}
 .flow{position:relative;display:flex;align-items:center;gap:52px;padding:26px 2px 10px;border-top:1px solid var(--line);width:max-content}
 .flow .rname{position:absolute;top:6px;left:2px;font:500 11px var(--mono);color:var(--muted)}
 .flow .seg{position:relative;z-index:1;display:flex;gap:8px}

@@ -676,6 +676,11 @@ deploys or ships a tool. **Consequence.** The flow mapping is unit-tested and go
 (`tools/rule-viewer/Loopsmith.RuleViewer.Tests`, `ArcHunterRulesGoldenTests`), so a rules change shows its flows in the
 PR diff; Core holds only what the web designer, the only host a player uses, needs.
 
+Amended (2026-10-21): the page holds every rule in `rules/`, not only a subclass's: a tree laid out like the folder
+(D40), each rule drawn as written (what it needs from the build, such as "a weapon of your Super's element", is never
+resolved to one element), beside each rule's flows; the subclass scopes are gone from the page, and `RuleTreeGoldenTests`
+replaces `ArcHunterRulesGoldenTests`.
+
 ### D40 — The rules are grouped by class, subclass and area; every rule has an id
 
 **Context.** `rules/` was grouped by where an element comes from, with one file per class and subclass

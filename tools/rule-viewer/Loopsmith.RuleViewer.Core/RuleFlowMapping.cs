@@ -7,11 +7,8 @@ using Loopsmith.Core.Phrasing;
 
 namespace Loopsmith.RuleViewer.Core;
 
-/// <summary>A flow and the trigger group it goes in: its key (the trigger's node, or its text) and name.</summary>
-internal sealed record MappedFlow(RuleFlow Flow, string GroupKey, string GroupName);
-
-/// <summary>A flow's trigger before the split: its node (none: "Any", "This weapon", "Always"), its text and its group's name.</summary>
-internal sealed record TriggerPart(Optional<GraphNode> Node, string Text, string GroupName);
+/// <summary>A flow's trigger before the split: its node (none: "Any", "This weapon", "Always") and its text.</summary>
+internal sealed record TriggerPart(Optional<GraphNode> Node, string Text);
 
 /// <summary>
 /// Reads an element's rules and passives as flows, one claim each: what sets it off ➜ what must be in place ➜ what it
@@ -21,8 +18,6 @@ internal sealed record TriggerPart(Optional<GraphNode> Node, string Text, string
 /// </summary>
 internal static class RuleFlowMapping
 {
-    private const string AlwaysKey = "always";
-
     /// <summary>What the manifest has no icon for, drawn as an emoji (Orb of Power, Armor Charge), by node.</summary>
     private static readonly ImmutableDictionary<string, string> EmojiIcons = new Dictionary<string, string>
     {
@@ -32,20 +27,25 @@ internal static class RuleFlowMapping
         ["rule:armor-charge"] = "🟨🔳🔳",
     }.ToImmutableDictionary();
 
-    public static ImmutableArray<MappedFlow> MapFlows(GraphContext context, BuildElement element)
+    public static ImmutableArray<RuleFlow> MapFlows(GraphContext context, BuildElement element) =>
+        [.. MapRules(context, element).SelectMany(rule => rule.Flows)];
+
+    /// <summary>Each rule, then each passive, of an element, in its order, with the flows it makes.</summary>
+    public static ImmutableArray<RuleEntry> MapRules(GraphContext context, BuildElement element)
     {
         var owner = DependencyMapping.ToElementNode(context, element);
         var equipped = element.Kind == ElementKind.Keyword ? [] : ImmutableArray.Create(ToBox(context, owner, "equipped", BoxRole.Condition));
         var facts = owner.Element.Bind(found => found.File);
-        var rules = element.Rules.SelectMany((rule, place) => MapRule(context, element, owner, equipped, facts, rule, place));
-        var passives = element.Passives.Select((passive, place) => MapPassive(context, element, owner, equipped, facts, passive, place));
+        var rules = element.Rules.Select((rule, place) => new RuleEntry(element.ToRuleName(rule.Id), rule.Id.Value, [.. MapRule(context, element, owner, equipped, facts, rule, place)]));
+        var passives = element.Passives.Select((passive, place) => new RuleEntry(element.ToRuleName(passive.Id), passive.Id.Value, [MapPassive(context, element, owner, equipped, facts, passive, place)]));
         return [.. rules, .. passives];
     }
 
-    /// <summary>Whether a group is the flows that are always on (the passives'), which comes last.</summary>
-    public static bool IsAlwaysGroup(string key) => key == AlwaysKey;
+    /// <summary>An element as a box of its own, with no caption: its kind title ("Subclass aspect", "Armor mod"), name, colour and icon.</summary>
+    public static RuleBox MapElementBox(GraphContext context, BuildElement element) =>
+        ToBox(context, DependencyMapping.ToElementNode(context, element), "", BoxRole.Condition);
 
-    private static IEnumerable<MappedFlow> MapRule(
+    private static IEnumerable<RuleFlow> MapRule(
         GraphContext context, BuildElement element, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, Rule rule, int place)
     {
         var triggers = ListTriggerParts(context, rule.On);
@@ -53,36 +53,30 @@ internal static class RuleFlowMapping
         var conditions = equipped.Concat(onTarget).Concat(rule.When.Select(condition => ToConditionBox(context, condition))).ToImmutableArray();
         var results = OrderResults(rule.Then.SelectMany(outcome => DependencyMapping.ListOutcomeEffects(context, outcome)).Select(effect => ToResultBox(context, effect)));
         var id = $"{owner.Id}#{place.ToString(CultureInfo.InvariantCulture)}";
-        return triggers.Select((trigger, at) => new MappedFlow(
-            new RuleFlow(
-                triggers.Length == 1 ? id : $"{id}.{at.ToString(CultureInfo.InvariantCulture)}",
-                owner.Id,
-                element.ToRuleName(rule.Id),
-                ToTriggerBox(context, trigger),
-                conditions,
-                results,
-                rule.Likelihood == Likelihood.Chance,
-                file,
-                rule.Reason),
-            trigger.Node.Map(node => node.Id).UnwrapOr($"text:{trigger.GroupName}"),
-            trigger.GroupName));
+        return triggers.Select((trigger, at) => new RuleFlow(
+            triggers.Length == 1 ? id : $"{id}.{at.ToString(CultureInfo.InvariantCulture)}",
+            owner.Id,
+            element.ToRuleName(rule.Id),
+            ToTriggerBox(context, trigger),
+            conditions,
+            results,
+            rule.Likelihood == Likelihood.Chance,
+            file,
+            rule.Reason));
     }
 
-    private static MappedFlow MapPassive(
+    private static RuleFlow MapPassive(
         GraphContext context, BuildElement element, GraphNode owner, ImmutableArray<RuleBox> equipped, Optional<string> file, PassiveRule passive, int place) =>
         new(
-            new RuleFlow(
-                $"{owner.Id}#p{place.ToString(CultureInfo.InvariantCulture)}",
-                owner.Id,
-                element.ToRuleName(passive.Id),
-                ToTriggerBox(context, new TriggerPart(Optional.None<GraphNode>(), "Always", "Always on")),
-                [.. equipped, .. passive.When.Select(condition => ToConditionBox(context, condition))],
-                OrderResults(DependencyMapping.ListPassiveEffects(context, passive.Modifier).Select(effect => ToResultBox(context, effect))),
-                false,
-                file,
-                passive.Reason),
-            AlwaysKey,
-            "Always on");
+            $"{owner.Id}#p{place.ToString(CultureInfo.InvariantCulture)}",
+            owner.Id,
+            element.ToRuleName(passive.Id),
+            ToTriggerBox(context, new TriggerPart(Optional.None<GraphNode>(), "Always")),
+            [.. equipped, .. passive.When.Select(condition => ToConditionBox(context, condition))],
+            OrderResults(DependencyMapping.ListPassiveEffects(context, passive.Modifier).Select(effect => ToResultBox(context, effect))),
+            false,
+            file,
+            passive.Reason);
 
     /// <summary>
     /// What sets a rule off, as the player says it: an ability cast ("Grenade thrown", "Class ability"), a hit or kill by each source
@@ -119,7 +113,7 @@ internal static class RuleFlowMapping
         ListActionParts(context, trigger, name => kind == AbilityKind.ClassAbility ? name : DomainPhrasing.DescribeCast(kind, input));
 
     private static ImmutableArray<TriggerPart> ListActionParts(GraphContext context, Trigger trigger, Func<string, string> describe) =>
-        [.. DependencyMapping.ListActionNodes(context, trigger).Select(node => new TriggerPart(Optional.Some(node), describe(node.Name), node.Name))];
+        [.. DependencyMapping.ListActionNodes(context, trigger).Select(node => new TriggerPart(Optional.Some(node), describe(node.Name)))];
 
     /// <summary>
     /// A hit or kill by a source: one part per node the source stands for (any ability: each ability that deals damage;
@@ -131,8 +125,8 @@ internal static class RuleFlowMapping
         var nodes = DependencyMapping.ListSourceNodes(context, via);
         var unnamed = NameUnnamedSource(via);
         return nodes.IsEmpty
-            ? [new TriggerPart(Optional.None<GraphNode>(), $"{unnamed} {word}", unnamed)]
-            : [.. nodes.Select(node => new TriggerPart(Optional.Some(node), $"{node.Name} {word}", node.Name))];
+            ? [new TriggerPart(Optional.None<GraphNode>(), $"{unnamed} {word}")]
+            : [.. nodes.Select(node => new TriggerPart(Optional.Some(node), $"{node.Name} {word}"))];
     }
 
     private static string NameUnnamedSource(DamageSource via) =>

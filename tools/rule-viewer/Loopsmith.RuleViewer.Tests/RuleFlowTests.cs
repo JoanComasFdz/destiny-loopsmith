@@ -8,8 +8,7 @@ using static Loopsmith.RuleViewer.Tests.Support.TestCatalog;
 namespace Loopsmith.RuleViewer.Tests;
 
 /// <summary>
-/// The rules as flows, one claim each: what sets a rule off ➜ what must be in place ➜ what it gives, grouped by what
-/// sets it off. A flow is one scenario to write, so a rule that names several triggers is one flow per trigger.
+/// The rules as flows, one claim each: what sets a rule off ➜ what must be in place ➜ what it gives. A flow is one scenario to write, so a rule that names several triggers is one flow per trigger.
 /// </summary>
 public sealed class RuleFlowTests
 {
@@ -18,19 +17,14 @@ public sealed class RuleFlowTests
     private static BuildElement Fragment(string id, params Rule[] rules) =>
         Element(id, ElementKind.Fragment, [.. rules]) with { Class = Optional.Some(GuardianClass.Hunter) };
 
-    private static SubclassRules Draw(params BuildElement[] elements) =>
-        RuleViewing.DrawRules(
-            RepoCatalog.Catalog with { Glossary = Glossary, Elements = elements.ToImmutableDictionary(element => element.Id) },
-            GuardianClass.Hunter,
-            Subclass.Arc);
+    private static RuleTree Draw(params BuildElement[] elements) =>
+        RuleViewing.DrawTree(RepoCatalog.Catalog with { Glossary = Glossary, Elements = elements.ToImmutableDictionary(element => element.Id) });
 
-    private static RuleScope FindScope(SubclassRules rules, ScopeKind kind = ScopeKind.WithDependents) => rules.Scopes.Single(scope => scope.Kind == kind);
+    private static ImmutableArray<RuleFlow> ListFlows(RuleTree rules) => [.. RuleTreeDrawing.ListFlows(rules)];
 
-    private static ImmutableArray<RuleFlow> ListFlows(SubclassRules rules) => [.. FindScope(rules).Groups.SelectMany(group => group.Flows)];
+    private static RuleFlow FindFlow(RuleTree rules, string id) => ListFlows(rules).Single(flow => flow.Id == id);
 
-    private static RuleFlow FindFlow(SubclassRules rules, string id) => ListFlows(rules).Single(flow => flow.Id == id);
-
-    private static ImmutableArray<string> ListTriggers(SubclassRules rules) => [.. ListFlows(rules).Select(flow => flow.Trigger.Name)];
+    private static ImmutableArray<string> ListTriggers(RuleTree rules) => [.. ListFlows(rules).Select(flow => flow.Trigger.Name)];
 
     private static string Describe(RuleBox box) => box.Caption.Length == 0 ? box.Name : $"{box.Name} ({box.Caption})";
 
@@ -72,7 +66,7 @@ public sealed class RuleFlowTests
     {
         var rules = Draw(Fragment("spark", On(new Trigger.KillAny(new DamageSource.AnyAbility()), Buff("amplified"))));
 
-        Assert.Equal(["Melee kill", "Sliding melee kill", "Grenade kill", "Super kill"], ListTriggers(rules));
+        Assert.Equal(["Grenade kill", "Melee kill", "Sliding melee kill", "Super kill"], ListTriggers(rules));
         Assert.Equal(["spark#0.0", "spark#0.1", "spark#0.2", "spark#0.3"], ListFlows(rules).Select(flow => flow.Id).Order(StringComparer.Ordinal));
     }
 
@@ -239,50 +233,16 @@ public sealed class RuleFlowTests
         };
         var catalog = RepoCatalog.Catalog with { Glossary = Glossary, Elements = ImmutableDictionary<ElementId, BuildElement>.Empty.Add(element.Id, element) };
 
-        var rules = RuleViewing.DrawRules(catalog, guardianClass, Subclass.Arc);
-        var group = Assert.Single(FindScope(rules).Groups);
-        var trigger = Assert.Single(group.Flows).Trigger;
+        var trigger = Assert.Single(ListFlows(RuleViewing.DrawTree(catalog))).Trigger;
 
-        Assert.Equal("Class ability", group.Name);
         Assert.Equal(("Trigger", "Class ability", word), (trigger.Title, trigger.Name, trigger.Caption));
         Assert.Equal(new RuleIcon.Picture("https://www.bungie.net" + catalog.FindElementItem(element.Id).Bind(item => item.Icon).Match(icon => icon.Value, _ => "")), trigger.Icon);
     }
 
     [Fact]
-    public void Groups_go_by_what_sets_them_off_with_the_passives_last()
-    {
-        var spark = Fragment(
-            "spark",
-            OnGrenadeCast(Buff("amplified")),
-            On(new Trigger.AbilityCast(AbilityKind.ClassAbility), Buff("amplified")),
-            On(new Trigger.CriticalHealth(), Buff("amplified")),
-            On(new Trigger.KillAny(new DamageSource.WeaponOfType(DamageType.Arc)), Buff("amplified")),
-            On(new Trigger.BuffGained(Status("amplified")), Debuff("jolt")),
-            On(new Trigger.KillAny(AnySource), Buff("amplified")),
-            OnHit(new DamageSource.AbilityUsedAs(AbilityKind.Melee, AbilityInput.Slide), Buff("amplified")),
-            On(new Trigger.AbilityCast(AbilityKind.Super), Buff("amplified"))) with
-        {
-            Passives = [Always(new Passive.ModifyStat(StatKind.Grenade, new GameValue.Known(20m)))],
-        };
-
-        var groups = FindScope(Draw(spark)).Groups.Select(group => $"{group.Name} {group.Flows.Length}");
-
-        Assert.Equal(["Class ability 1", "Sliding melee 1", "Grenade 1", "Super 1", "Arc weapon 1", "Critical health 1", "Amplified 1", "Any 1", "Always on 1"], groups);
-    }
-
-    [Fact]
-    public void A_flow_that_needs_a_weapon_is_only_in_the_scopes_with_the_weapon_in_view()
-    {
-        var rules = Draw(Fragment("beacon", On(new Trigger.KillAny(new DamageSource.WeaponOfType(DamageType.Arc)), Debuff("jolt"))));
-
-        Assert.Equal("Arc weapon kill", Assert.Single(FindScope(rules, ScopeKind.Subclass).Groups.SelectMany(group => group.Flows)).Trigger.Name);
-        Assert.Equal(["Arc subclass", "+ what it needs from outside", "+ what builds on it"], rules.Scopes.Select(scope => scope.Name));
-    }
-
-    [Fact]
     public void The_kind_titles_carry_no_keyword_suffix()
     {
-        var rules = RuleViewing.DrawRules(RepoCatalog.Catalog, GuardianClass.Hunter, Subclass.Arc);
+        var rules = RuleViewing.DrawTree(RepoCatalog.Catalog);
 
         var titles = ListFlows(rules).SelectMany(flow => flow.Conditions.Concat(flow.Results).Append(flow.Trigger)).Select(box => box.Title).ToImmutableHashSet();
 
@@ -292,12 +252,12 @@ public sealed class RuleFlowTests
     }
 
     [Fact]
-    public void The_json_holds_the_scopes_groups_flows_and_boxes()
+    public void The_json_holds_the_folders_files_elements_rules_flows_and_boxes()
     {
-        var json = RuleViewing.RenderRulesJson(Draw(Fragment("spark", OnGrenadeCast(Buff("amplified")))));
+        var json = RuleViewing.RenderTreeJson(Draw(Fragment("spark", OnGrenadeCast(Buff("amplified")))));
 
-        Assert.StartsWith("""{"title":"Arc Hunter","scopes":[{"id":"subclass","name":"Arc subclass","groups":[{"key":"trigger:grenade","name":"Grenade",""", json);
-        Assert.Contains(""""flows":[{"id":"spark#0","element":"spark","rule":"test-rule-1","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade thrown","""", json);
+        Assert.StartsWith("""{"title":"Loopsmith rules","root":{"path":"","name":"rules","folders":[],"files":[{"path":"","name":"","elements":[{"id":"spark","box":{"node":"spark","title":"Subclass fragment","name":"Spark",""", json);
+        Assert.Contains(""""rules":[{"name":"test-rule-1","id":"test-rule-1","flows":[{"id":"spark#0","element":"spark","rule":"test-rule-1","file":null,"reason":null,"chance":false,"trigger":{"node":"trigger:grenade","title":"Trigger","name":"Grenade thrown","""", json);
         Assert.Contains(""""tone":"fragment","role":"condition","icon":{"kind":"blank"}"""", json);
     }
 }
