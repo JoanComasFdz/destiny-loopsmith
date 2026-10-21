@@ -275,21 +275,23 @@ works the PR records them; CI doesn't run, record or build anything for them.
   draw it (a name no rule has, rules that don't parse, or no Chromium), its `"flowError"`,
   the viewer's last line; a missing flow never stops the recording. A scenario with no `# Rule` line (the loop scenarios,
   the extension's) has none of them.
-- **The posts:** every version, V1 included, is a new comment on the PR, `## Scenarios (V<N>)`, that starts with
+- **The posts:** every version, V1 included, is a new comment on the PR, `## ✅ Scenarios (V<N>) · 12 scenarios`,
+  or `## ❌ Scenarios (V<N>) · 12 scenarios · 1 failed` when any scenario failed, so the count and the failures show
+  before a scenario is opened (a heading from before them, `## Scenarios (V<N>)`, still reads as its version); it starts with
   **What changed**: `push-gifs.sh --message "<text>"`'s text, word for word, or else the body of the PR head's commit
   message without its trailers (a session writes a short plain description of the round in its body), or its subject
   when it has no body. `--message` travels as `e2e-gifs/what-changed.md`, posted as it is, not in the commit message:
   there a one-paragraph text like `AFTER: …` looks like a trailer (`Key: value`) and was dropped, so the post fell back
   to the subject (PR #106's V2). Each post reads only its own push's commit, so two posts from the same head commit,
   or posts on several PRs at once, each show their own text. Each scenario shows once, as a closed `<details>` whose
-  summary is its Gherkin's title in bold, so the owner opens only the scenarios they want to see (PR #177 posted 24
+  summary is its Gherkin's title in bold after ✅ (every run passed) or ❌ (one failed), so the owner opens only the scenarios they want to see (PR #177 posted 24
   scenarios, each with two GIFs, all open one after another). Inside it: for a rule scenario, its rule's flow PNG (from its release), or *No flow drawn for `<rule>`: <why>* when
   there was none; its Gherkin in a `gherkin` block; then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
   on, desktop first) with that run's GIF below, and below it **▶ Play MP4**. The GIF and that line both link to the
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
   on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
-  does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
-  title in the summary, so it shows while closed. A re-recorded scenario's line naming its fixtures is the first thing
+  does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle too, so the screen that
+  failed shows. A re-recorded scenario's line naming its fixtures is the first thing
   inside its `<details>`. The scenarios the PR added or changed come first; those only re-recorded because a fixture they use changed
   (`"selected": "fixtures"`) follow under `### Re-recorded: their fixtures changed`, each with a line naming its changed
   fixtures, so the owner can check that the fixture change left their behaviour as it was (PR #113's post listed the

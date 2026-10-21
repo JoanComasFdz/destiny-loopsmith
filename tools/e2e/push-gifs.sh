@@ -5,7 +5,7 @@
 # (already pushed) plus one commit that adds <out>/scenarios.json and its GIFs, MP4s and rules' flow PNGs under e2e-gifs/ (and, with
 # --message, e2e-gifs/what-changed.md holding it as it is). The workflow
 # uploads them to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources; any other
-# to prs-resources), posts them on the PR as "## Scenarios (V<N>)" (each GIF with a link to its MP4 in the site's player
+# to prs-resources), posts them on the PR as "## ✅ Scenarios (V<N>) · <count>" (❌ and "· <n> failed" when any failed; each GIF with a link to its MP4 in the site's player
 # page) and deletes that branch.
 # The PR is the open one of the current branch unless given. "What changed" in the post is --message, word for word, or
 # else the body of the head commit's message without its trailers (its subject when it has none). An empty

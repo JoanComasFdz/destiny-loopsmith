@@ -23,7 +23,8 @@ public static partial class PostVersioning
     private const string Collapsed = "<details>";
     private const int MaxHiddenReads = 100;
 
-    [GeneratedRegex(@"^## Scenarios \(V([0-9]+)\)[ \t]*$", RegexOptions.Multiline)]
+    /// <summary>The heading, with or without its ✅ / ❌ and its counts (a post from before them had neither).</summary>
+    [GeneratedRegex(@"^## (?:✅ |❌ )?Scenarios \(V([0-9]+)\)(?: · [^\n]*)?[ \t]*$", RegexOptions.Multiline)]
     private static partial Regex CreateHeadingPattern();
 
     /// <summary>A shrunk post has no heading left: its version is in its one line.</summary>
@@ -147,7 +148,7 @@ public static partial class PostVersioning
     private static int FindNextVersion(int version, ImmutableArray<int> versions) =>
         versions.Where(next => next > version).DefaultIfEmpty(version + 1).Min();
 
-    private static string DescribeCount(int count) => $"{count} scenario{(count == 1 ? "" : "s")}";
+    public static string DescribeCount(int count) => $"{count} scenario{(count == 1 ? "" : "s")}";
 
     private static string ReplaceFirst(string text, string old, string replacement)
     {

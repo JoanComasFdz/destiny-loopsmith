@@ -4,9 +4,9 @@ using Loopsmith.Functional;
 namespace Loopsmith.E2ETools.Core;
 
 /// <summary>
-/// The post of a PR's recorded scenarios. It starts with what changed; each scenario shows once, as a closed
-/// &lt;details&gt; whose summary is its bold title (so the owner opens only the ones to look at), holding the flow PNG of the
-/// rule its Gherkin names (or a line saying why none was drawn), its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile"
+/// The post of a PR's recorded scenarios. Its heading counts the scenarios and the failed ones, and it starts with what
+/// changed; each scenario shows once, as a closed &lt;details&gt; whose summary is its bold title after ✅ or ❌ (so the
+/// owner opens only the ones to look at), holding the flow PNG of the rule its Gherkin names (or a line saying why none was drawn), its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile"
 /// subtitle with that screen's GIF and, below it, "▶ Play MP4": both link to the site's player page, since GitHub shows
 /// no player for a video it didn't store itself (a tap on a bare GIF would only download it).
 /// </summary>
@@ -24,7 +24,7 @@ public static class PostWriting
         var groups = GroupByScenario(runs);
         var own = groups.Where(group => !IsRerecorded(group[0])).ToImmutableArray();
         var rerecorded = groups.Where(group => IsRerecorded(group[0])).ToImmutableArray();
-        IEnumerable<string> lines = [$"## Scenarios (V{version})", "", "**What changed**", "", changed, ""];
+        IEnumerable<string> lines = [WriteHeading(version, groups), "", "**What changed**", "", changed, ""];
         if (rerecorded.IsEmpty)
         {
             lines = lines.Concat(own.SelectMany(group => WriteScenario(repo, group, "")));
@@ -43,6 +43,21 @@ public static class PostWriting
 
         return string.Join('\n', lines.Concat(["---", PostVersioning.Footer, ""]));
     }
+
+    /// <summary>
+    /// "## ✅ Scenarios (V2) · 12 scenarios" when every scenario passed; "## ❌ Scenarios (V2) · 12 scenarios · 1 failed"
+    /// when any failed, so the count and the failures show before a scenario is opened.
+    /// </summary>
+    private static string WriteHeading(int version, ImmutableArray<ImmutableArray<PlannedRun>> groups)
+    {
+        var failed = groups.Count(group => !HasPassed(group));
+        var heading = $"## {MarkResult(failed == 0)} Scenarios (V{version}) · {PostVersioning.DescribeCount(groups.Length)}";
+        return failed == 0 ? heading : $"{heading} · {failed} failed";
+    }
+
+    private static bool HasPassed(ImmutableArray<PlannedRun> runs) => runs.All(run => run.Entry.Passed);
+
+    private static string MarkResult(bool passed) => passed ? "✅" : "❌";
 
     /// <summary>The site's player page: GitHub Pages serves &lt;owner&gt;/&lt;repo&gt; at https://&lt;owner, lowercase&gt;.github.io/&lt;repo&gt;/.</summary>
     public static string FindPlayer(string repo)
@@ -82,8 +97,7 @@ public static class PostWriting
     private static IEnumerable<string> WriteScenario(string repo, ImmutableArray<PlannedRun> runs, string why)
     {
         var first = runs[0];
-        var mark = runs.Any(run => !run.Entry.Passed) ? "❌ " : "";
-        IEnumerable<string> lines = [$"<details><summary><b>{mark}{EscapeHtml(first.Entry.Title)}</b></summary>", ""];
+        IEnumerable<string> lines = [$"<details><summary><b>{MarkResult(HasPassed(runs))} {EscapeHtml(first.Entry.Title)}</b></summary>", ""];
         if (why.Length > 0)
         {
             lines = lines.Concat([why, ""]);

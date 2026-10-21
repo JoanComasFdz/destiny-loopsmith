@@ -19,12 +19,12 @@ public sealed class PostWritingTests
         var own = post.IndexOf("### Added or changed by this PR", StringComparison.Ordinal);
         var rerecorded = post.IndexOf("### Re-recorded: their fixtures changed", StringComparison.Ordinal);
         var fixtures = "_`Scenarios/Loop/Weapons/a.build.yaml`, `Scenarios/Loop/Weapons/b.build.yaml` changed._";
-        Assert.True(own < post.IndexOf("<b>Imports title</b>", StringComparison.Ordinal));
-        Assert.True(post.IndexOf("<b>Imports title</b>", StringComparison.Ordinal) < rerecorded);
-        Assert.True(rerecorded < post.IndexOf("<b>Counts title</b>", StringComparison.Ordinal));
+        Assert.True(own < post.IndexOf("<b>✅ Imports title</b>", StringComparison.Ordinal));
+        Assert.True(post.IndexOf("<b>✅ Imports title</b>", StringComparison.Ordinal) < rerecorded);
+        Assert.True(rerecorded < post.IndexOf("<b>✅ Counts title</b>", StringComparison.Ordinal));
         Assert.Contains("\n#### 🖥️ Desktop\n", post);
         Assert.Contains("\n#### 📱 Mobile\n", post);
-        Assert.True(post.IndexOf("<b>Counts title</b>", StringComparison.Ordinal) < post.IndexOf(fixtures, StringComparison.Ordinal));
+        Assert.True(post.IndexOf("<b>✅ Counts title</b>", StringComparison.Ordinal) < post.IndexOf(fixtures, StringComparison.Ordinal));
         Assert.DoesNotContain("### Imports title", post);
     }
 
@@ -33,11 +33,11 @@ public sealed class PostWritingTests
     {
         var post = WritePost(RunOf("EnemyCountTests", "Counts", "desktop", Fixtures("f.yaml")), RunOf("BuildImportTests", "Imports", "desktop"));
 
-        var imports = post[post.IndexOf("<b>Imports title</b>", StringComparison.Ordinal)..post.IndexOf("### Re-recorded", StringComparison.Ordinal)];
+        var imports = post[post.IndexOf("<b>✅ Imports title</b>", StringComparison.Ordinal)..post.IndexOf("### Re-recorded", StringComparison.Ordinal)];
         Assert.Equal(2, CountOf(post, "<details><summary>"));
         Assert.Equal(2, CountOf(post, "\n</details>\n"));
         Assert.DoesNotContain("<details open", post);
-        Assert.Contains("\n<details><summary><b>Imports title</b></summary>\n\n```gherkin\nScenario: Imports\n```", post);
+        Assert.Contains("\n<details><summary><b>✅ Imports title</b></summary>\n\n```gherkin\nScenario: Imports\n```", post);
         Assert.EndsWith("</details>", imports.TrimEnd());
         Assert.Contains("#### 🖥️ Desktop", imports);
         Assert.True(post.IndexOf("### Added or changed by this PR", StringComparison.Ordinal) < post.IndexOf("<details>", StringComparison.Ordinal));
@@ -51,7 +51,7 @@ public sealed class PostWritingTests
 
         var post = WritePost(run with { Entry = run.Entry with { Title = "Keeps <b> & <i> as text" } });
 
-        Assert.Contains("<summary><b>Keeps &lt;b&gt; &amp; &lt;i&gt; as text</b></summary>", post);
+        Assert.Contains("<summary><b>✅ Keeps &lt;b&gt; &amp; &lt;i&gt; as text</b></summary>", post);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public sealed class PostWritingTests
 
         Assert.DoesNotContain("Added or changed by this PR", post);
         Assert.Contains("### Re-recorded: their fixtures changed", post);
-        Assert.Contains("<details><summary><b>Lens title</b></summary>", post);
+        Assert.Contains("<details><summary><b>✅ Lens title</b></summary>", post);
         Assert.Contains("_`Workspace/x.cs` changed._", post);
     }
 
@@ -72,7 +72,7 @@ public sealed class PostWritingTests
 
         Assert.DoesNotContain("Added or changed by this PR", post);
         Assert.DoesNotContain("Re-recorded", post);
-        Assert.Contains("\n<details><summary><b>Imports title</b></summary>\n", post);
+        Assert.Contains("\n<details><summary><b>✅ Imports title</b></summary>\n", post);
         Assert.Contains("\n#### 🖥️ Desktop\n", post);
     }
 
@@ -82,7 +82,7 @@ public sealed class PostWritingTests
         var post = WritePost(RunOf("ReloadTests", "Reloads", "mobile"));
 
         Assert.DoesNotContain("Re-recorded", post);
-        Assert.Contains("\n<details><summary><b>Reloads title</b></summary>\n", post);
+        Assert.Contains("\n<details><summary><b>✅ Reloads title</b></summary>\n", post);
         Assert.Contains("\n#### 📱 Mobile\n", post);
     }
 
@@ -96,6 +96,43 @@ public sealed class PostWritingTests
         Assert.Contains("<details><summary><b>❌ Imports title</b></summary>", post);
         Assert.Contains("<details><summary><b>❌ Reloads title</b></summary>", post);
         Assert.Equal(2, CountOf(post, "#### ❌ 🖥️ Desktop"));
+    }
+
+    [Fact]
+    public void The_heading_counts_the_scenarios_once_each_and_marks_them_all_passed()
+    {
+        var post = WritePost(
+            RunOf("BuildImportTests", "Imports", "desktop"),
+            RunOf("BuildImportTests", "Imports", "mobile"),
+            RunOf("ReloadTests", "Reloads", "desktop", Fixtures("f.yaml")));
+
+        Assert.StartsWith("## ✅ Scenarios (V1) · 2 scenarios\n\n**What changed**", post);
+    }
+
+    [Fact]
+    public void The_heading_counts_the_failed_scenarios_and_one_reads_singular()
+    {
+        var post = WritePost(
+            RunOf("BuildImportTests", "Imports", "desktop"),
+            RunOf("BuildImportTests", "Imports", "mobile", passed: false),
+            RunOf("ReloadTests", "Reloads", "desktop"));
+
+        Assert.StartsWith("## ❌ Scenarios (V1) · 2 scenarios · 1 failed\n", post);
+        Assert.StartsWith("## ✅ Scenarios (V1) · 1 scenario\n", WritePost(RunOf("ReloadTests", "Reloads", "desktop")));
+    }
+
+    [Fact]
+    public void Each_scenario_is_marked_passed_or_failed_and_only_a_failed_screen_is_marked()
+    {
+        var post = WritePost(
+            RunOf("BuildImportTests", "Imports", "desktop"),
+            RunOf("BuildImportTests", "Imports", "mobile", passed: false),
+            RunOf("ReloadTests", "Reloads", "desktop"));
+
+        Assert.Contains("<details><summary><b>❌ Imports title</b></summary>", post);
+        Assert.Contains("<details><summary><b>✅ Reloads title</b></summary>", post);
+        Assert.Contains("\n#### 🖥️ Desktop\n", post);
+        Assert.Contains("\n#### ❌ 📱 Mobile\n", post);
     }
 
     [Fact]
@@ -138,7 +175,7 @@ public sealed class PostWritingTests
         var flow = "![Flow of hunter-arc-aspects-lethal-current-2](https://github.com/Owner/repo/releases/download/"
             + "rules-hunter-arc-aspects-resources/pr-1-v1-hunter-arc-aspects-lethal-current-2.png)";
         Assert.Equal(1, CountOf(post, flow));
-        Assert.True(post.IndexOf("<b>Arms title</b>", StringComparison.Ordinal) < post.IndexOf(flow, StringComparison.Ordinal));
+        Assert.True(post.IndexOf("<b>✅ Arms title</b>", StringComparison.Ordinal) < post.IndexOf(flow, StringComparison.Ordinal));
         Assert.True(post.IndexOf(flow, StringComparison.Ordinal) < post.IndexOf("```gherkin", StringComparison.Ordinal));
         Assert.True(post.IndexOf("```gherkin", StringComparison.Ordinal) < post.IndexOf("#### 🖥️ Desktop", StringComparison.Ordinal));
         Assert.True(post.IndexOf("#### 🖥️ Desktop", StringComparison.Ordinal) < post.IndexOf("#### 📱 Mobile", StringComparison.Ordinal));
@@ -160,7 +197,7 @@ public sealed class PostWritingTests
 
         var line = "_No flow drawn for `all-classes-arc-fragments-spark-of-shock-1`: No rule is named 'all-classes-arc-fragments-spark-of-shock-1'._";
         Assert.Contains(line, post);
-        Assert.True(post.IndexOf("<b>Jolts title</b>", StringComparison.Ordinal) < post.IndexOf(line, StringComparison.Ordinal));
+        Assert.True(post.IndexOf("<b>✅ Jolts title</b>", StringComparison.Ordinal) < post.IndexOf(line, StringComparison.Ordinal));
         Assert.True(post.IndexOf(line, StringComparison.Ordinal) < post.IndexOf("```gherkin", StringComparison.Ordinal));
         Assert.DoesNotContain("![Flow", post);
     }
@@ -179,7 +216,7 @@ public sealed class PostWritingTests
     {
         var post = PostWriting.WritePost(Repo, 3, [RunOf("ReloadTests", "Reloads", "desktop")], "Ported the poster.");
 
-        Assert.StartsWith("## Scenarios (V3)\n\n**What changed**\n\nPorted the poster.\n\n", post);
+        Assert.StartsWith("## ✅ Scenarios (V3) · 1 scenario\n\n**What changed**\n\nPorted the poster.\n\n", post);
         Assert.EndsWith($"\n---\n{PostVersioning.Footer}\n", post);
     }
 }
