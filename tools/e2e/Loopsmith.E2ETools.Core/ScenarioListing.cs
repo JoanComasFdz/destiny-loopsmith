@@ -81,13 +81,34 @@ public static partial class ScenarioListing
     /// <summary>The rule the run's Gherkin names and its flow PNG, or why there is none; nothing when it names no rule.</summary>
     private static ImmutableArray<KeyValuePair<string, JsonNode?>> WriteFlowFields(RunRecord record, ImmutableDictionary<FlowToDraw, DrawnFlow> flows) =>
         FindRule(record).Match<ImmutableArray<KeyValuePair<string, JsonNode?>>>(
-            rule => [new("rule", rule.Value), WriteFlow(record.Domain, rule.Value, flows.GetValueOrDefault(new FlowToDraw(record.Domain, rule.Value)))],
+            rule => [new("rule", rule.Value), WriteFlow(record.Domain, rule.Value, FindDrawnFlow(flows, new FlowToDraw(record.Domain, rule.Value)))],
             _ => []);
 
-    private static KeyValuePair<string, JsonNode?> WriteFlow(string domain, string rule, DrawnFlow? flow) =>
-        flow is { HasPng: true }
-            ? new("flow", FindFlowPath(domain, rule))
-            : new("flowError", (flow?.Error ?? Optional.None<string>()).UnwrapOr("not drawn"));
+    private static KeyValuePair<string, JsonNode?> WriteFlow(string domain, string rule, DrawnFlow flow) =>
+        flow.Match<KeyValuePair<string, JsonNode?>>(
+            _ => new("flow", FindFlowPath(domain, rule)),
+            failed => new("flowError", failed.Error),
+            _ => new("flowError", "not drawn"));
+
+    private static DrawnFlow FindDrawnFlow(ImmutableDictionary<FlowToDraw, DrawnFlow> flows, FlowToDraw flow) =>
+        flows.TryGetValue(flow, out var drawn) ? drawn : new DrawnFlow.NotDrawn();
+
+    /// <summary>What became of a flow, from what the host found: its PNG, else the rule viewer's error (trimmed), else not drawn.</summary>
+    public static DrawnFlow ReadDrawnFlow(FlowFiles files) =>
+        files.HasPng
+            ? new DrawnFlow.Drawn()
+            : files.ErrorText.Match<DrawnFlow>(error => new DrawnFlow.Failed(error.Value.Trim()), _ => new DrawnFlow.NotDrawn());
+
+    /// <summary>The files the host checks for each flow: its PNG and the rule viewer's error, relative to the output folder.</summary>
+    public static ImmutableArray<(FlowToDraw Flow, string Png, string Error)> PlanFlowFiles(ImmutableArray<FlowToDraw> flows) =>
+        [.. flows.Select(flow => (flow, FindFlowPath(flow.Domain, flow.Rule), FindFlowErrorPath(flow.Rule)))];
+
+    /// <summary>What became of each flow, from what the host found of it.</summary>
+    public static ImmutableDictionary<FlowToDraw, DrawnFlow> ReadDrawnFlows(ImmutableDictionary<FlowToDraw, FlowFiles> files) =>
+        files.ToImmutableDictionary(pair => pair.Key, pair => ReadDrawnFlow(pair.Value));
+
+    /// <summary>Where the rule viewer's error for a rule is kept, relative to the output folder.</summary>
+    public static string FindFlowErrorPath(string rule) => $".flow-errors/{rule}.txt";
 
     /// <summary>The fixtures that alone picked a run's class; none when the class changed itself (changed wins) or was named.</summary>
     private static Optional<ImmutableArray<string>> FindFixtures(RunRecord record, ClassSelection selection) =>
@@ -106,8 +127,8 @@ public static partial class ScenarioListing
     }
 
     private static IEnumerable<string> FindRules(Optional<string> gherkin) =>
-        RuleLines().Matches(gherkin.UnwrapOr("")).Select(found => found.Groups[1].Value);
+        CreateRuleLinePattern().Matches(gherkin.UnwrapOr("")).Select(found => found.Groups[1].Value);
 
     [GeneratedRegex(@"^\s*# Rule ([a-z0-9-]+):", RegexOptions.Multiline)]
-    private static partial Regex RuleLines();
+    private static partial Regex CreateRuleLinePattern();
 }

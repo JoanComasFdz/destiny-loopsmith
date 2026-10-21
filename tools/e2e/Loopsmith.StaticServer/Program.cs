@@ -22,6 +22,7 @@ if (!Directory.Exists(given.Root))   // impure
 var server = StaticSiteServing.BuildServer(given);   // impure
 await server.StartAsync();   // impure
 var address = StaticSiteServing.FindAddress(server);   // impure
-Console.WriteLine(ServerOptionsReading.WriteListeningLine(address));   // impure
+var line = ServerOptionsReading.WriteListeningLine(address);   // pure
+Console.WriteLine(line);   // impure
 await server.WaitForShutdownAsync();   // impure
 return 0;

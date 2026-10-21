@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using Dunet;
 using Loopsmith.Functional;
 
 namespace Loopsmith.E2ETools.Core;
@@ -25,8 +26,17 @@ public sealed record TestRun(string Name, string Outcome, double Seconds);
 /// <summary>A rule a recorded run's Gherkin names, and the domain folder its flow PNG is drawn in.</summary>
 public sealed record FlowToDraw(string Domain, string Rule);
 
-/// <summary>What became of a rule's flow: its PNG is in the domain folder, or the rule viewer's error (none: not drawn).</summary>
-public sealed record DrawnFlow(bool HasPng, Optional<string> Error);
+/// <summary>What became of a rule's flow: its PNG is in the domain folder, the rule viewer said why it couldn't draw it, or neither.</summary>
+[Union]
+public partial record DrawnFlow
+{
+    partial record Drawn();
+    partial record Failed(string Error);
+    partial record NotDrawn();
+}
+
+/// <summary>What the host found of a rule's flow: whether its PNG is there, and the error file's text if there is one.</summary>
+public sealed record FlowFiles(bool HasPng, Optional<string> ErrorText);
 
 /// <summary>The scenario classes record.sh picked with --changed-since: those that changed, and those only a fixture file selected.</summary>
 public sealed record ClassSelection(ImmutableHashSet<string> Changed, ImmutableDictionary<string, ImmutableArray<string>> Fixtures);

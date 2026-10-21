@@ -1,4 +1,5 @@
 using Loopsmith.E2ETools.Core;
+using Loopsmith.Functional;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -22,7 +23,7 @@ public static class StaticSiteServing
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.Logging.SetMinimumLevel(LogLevel.Warning);
-        builder.WebHost.UseUrls($"http://127.0.0.1:{options.Port}");
+        builder.WebHost.UseUrls($"http://127.0.0.1:{options.Port.UnwrapOr(0)}");
         var server = builder.Build();
         var files = new PhysicalFileProvider(Path.GetFullPath(options.Root));
         server.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });

@@ -39,7 +39,7 @@ public sealed class ScenarioListingTests
     {
         var selection = ScenarioListing.ReadSelection("LethalCurrentTests\tfixtures\tScenarios/a.build.yaml\n");
         var flows = ImmutableDictionary<FlowToDraw, DrawnFlow>.Empty
-            .Add(new FlowToDraw("Rules/Hunter/Arc/Aspects", "hunter-arc-aspects-lethal-current-2"), new DrawnFlow(true, Optional.None<string>()));
+            .Add(new FlowToDraw("Rules/Hunter/Arc/Aspects", "hunter-arc-aspects-lethal-current-2"), new DrawnFlow.Drawn());
 
         var json = ScenarioListing.WriteScenarios([Rule, Loop], selection, flows);
 
@@ -86,7 +86,7 @@ public sealed class ScenarioListingTests
     public void Scenarios_json_is_what_post_reads()
     {
         var flows = ImmutableDictionary<FlowToDraw, DrawnFlow>.Empty
-            .Add(new FlowToDraw("Rules/Hunter/Arc/Aspects", "hunter-arc-aspects-lethal-current-2"), new DrawnFlow(false, Optional.Some("No rule is named 'x'")));
+            .Add(new FlowToDraw("Rules/Hunter/Arc/Aspects", "hunter-arc-aspects-lethal-current-2"), new DrawnFlow.Failed("No rule is named 'x'"));
 
         var entries = Assert.IsType<Result<ImmutableArray<ScenarioEntry>, string>.Ok>(
             JsonReading.ReadScenarios(ScenarioListing.WriteScenarios([Rule, Loop], ScenarioListing.ReadSelection(""), flows))).Value;
@@ -95,6 +95,17 @@ public sealed class ScenarioListingTests
         Assert.Equal(Optional.None<string>(), entries[0].Flow);
         Assert.Equal(Optional.Some("Starting/opens-mobile.mp4"), entries[1].Mp4);
         Assert.IsType<RunSelection.Changed>(entries[1].Selection);
+    }
+
+    [Fact]
+    public void A_flow_is_its_png_else_its_trimmed_error_else_not_drawn()
+    {
+        Assert.IsType<DrawnFlow.Drawn>(ScenarioListing.ReadDrawnFlow(new FlowFiles(true, Optional.Some("old error"))));
+        Assert.Equal(new DrawnFlow.Failed("No rule is named 'x'"), ScenarioListing.ReadDrawnFlow(new FlowFiles(false, Optional.Some("No rule is named 'x'\n"))));
+        Assert.IsType<DrawnFlow.NotDrawn>(ScenarioListing.ReadDrawnFlow(new FlowFiles(false, Optional.None<string>())));
+        Assert.Equal(
+            [(new FlowToDraw("R", "rule-1"), "R/rule-1.png", ".flow-errors/rule-1.txt")],
+            ScenarioListing.PlanFlowFiles([new FlowToDraw("R", "rule-1")]));
     }
 
     [Fact]

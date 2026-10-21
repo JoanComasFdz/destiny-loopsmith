@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
@@ -19,15 +20,16 @@ public static class RecordingSteps
     {
         using var listener = new TcpListener(IPAddress.Loopback, 0);   // impure
         listener.Start();   // impure
-        E2EFiles.Report(((IPEndPoint)listener.LocalEndpoint).Port.ToString(System.Globalization.CultureInfo.InvariantCulture));   // impure
-        return new Result<Unit, string>.Ok(new Unit.Value());
+        var port = ((IPEndPoint)listener.LocalEndpoint).Port;   // impure
+        var line = port.ToString(CultureInfo.InvariantCulture);   // pure
+        return Report(line);   // impure
     }
 
     public static Result<Unit, string> ReadVsCodeCommit(ToolCommand.ReadVsCodeCommit command)
     {
         var json = E2EFiles.ReadFile(command.PackageJson);   // impure
         var commit = json.Bind(JsonReading.ReadVsCodeCommit).MapError(failure => $"{command.PackageJson}: {failure}");   // pure
-        return commit.Map(Report);   // impure
+        return commit.Bind(Report);   // impure
     }
 
     /// <summary>The unrecorded runs' table; an error when a results file is missing or no run passed or failed.</summary>
@@ -39,14 +41,16 @@ public static class RecordingSteps
             return new Result<Unit, string>.Error($"No test results were written ({Path.GetFileName(missing[0])}).");
         }
 
-        var read = command.TestResults.Select(path => E2EFiles.ReadFile(path).Bind(trx => RunReporting.ReadTestRuns(trx, path))).ToImmutableArray();   // impure
-        var runs = read.CombineAll().MapError(failures => failures[0]).Map(each => each.SelectMany(fileRuns => fileRuns).ToImmutableArray());   // pure
+        var texts = command.TestResults.Select(path => (Path: path, Text: E2EFiles.ReadFile(path))).ToImmutableArray();   // impure
+        var runs = texts.Select(file => file.Text.Bind(trx => RunReporting.ReadTestRuns(trx, file.Path))).CombineAll()
+            .MapError(failures => failures[0]).Map(each => each.SelectMany(fileRuns => fileRuns).ToImmutableArray());   // pure
         if (runs is not Result<ImmutableArray<TestRun>, string>.Ok all)
         {
             return new Result<Unit, string>.Error(((Result<ImmutableArray<TestRun>, string>.Error)runs).Failure);
         }
 
-        E2EFiles.ReportAll(RunReporting.WriteReport(all.Value));   // impure
+        var report = RunReporting.WriteReport(all.Value);   // pure
+        E2EFiles.ReportAll(report);   // impure
         return RunReporting.HasRunAny(all.Value)
             ? new Result<Unit, string>.Ok(new Unit.Value())
             : new Result<Unit, string>.Error("No scenario ran.");
@@ -55,7 +59,8 @@ public static class RecordingSteps
     /// <summary>A recorded run's "&lt;domain&gt; &lt;gif&gt; &lt;screen&gt; &lt;second Home shows in its video&gt;".</summary>
     public static Result<Unit, string> FindHome(ToolCommand.FindHome command)
     {
-        var read = E2EFiles.ReadFile(command.Record).Bind(JsonReading.ReadRunRecord).MapError(failure => $"{command.Record}: {failure}");   // impure
+        var json = E2EFiles.ReadFile(command.Record);   // impure
+        var read = json.Bind(JsonReading.ReadRunRecord).MapError(failure => $"{command.Record}: {failure}");   // pure
         if (read is not Result<RunRecord, string>.Ok record)
         {
             return new Result<Unit, string>.Error(((Result<RunRecord, string>.Error)read).Failure);
@@ -64,17 +69,22 @@ public static class RecordingSteps
         var noted = record.Value.HomeShownSeconds.UnwrapOr(0);   // pure
         var probe = HomeFinding.WriteProbeArguments(HomeFinding.FindVideo(command.Record), HomeFinding.FindProbeStart(noted));   // pure
         var answer = ChildProcesses.RunCommand("ffmpeg", probe, Optional.None<string>());   // impure
+        if (answer.ExitCode != 0)
+        {
+            return new Result<Unit, string>.Error($"ffmpeg couldn't read {HomeFinding.FindVideo(command.Record)}:\n{answer.Errors.Trim()}");
+        }
+
         var home = HomeFinding.FindHome(noted, answer.Errors);   // pure
-        E2EFiles.Report(HomeFinding.WriteHomeLine(record.Value, home));   // impure
-        return new Result<Unit, string>.Ok(new Unit.Value());
+        var line = HomeFinding.WriteHomeLine(record.Value, home);   // pure
+        return Report(line);   // impure
     }
 
     /// <summary>Each rule to draw, "&lt;domain&gt; &lt;rule&gt;" a line.</summary>
     public static Result<Unit, string> ListFlows(ToolCommand.ListFlows command)
     {
-        var records = ReadRecords(command.Records);   // impure
-        var flows = records.Map(ScenarioListing.ListFlows);   // pure
-        return flows.Map(each => ReportAll(each.Select(ScenarioListing.WriteFlowLine)));   // impure
+        var texts = ReadTexts(command.Records);   // impure
+        var lines = ReadRecords(texts).Map(records => ScenarioListing.ListFlows(records).Select(ScenarioListing.WriteFlowLine).ToImmutableArray());   // pure
+        return lines.Bind(ReportAll);   // impure
     }
 
     /// <summary>
@@ -83,7 +93,8 @@ public static class RecordingSteps
     /// </summary>
     public static Result<Unit, string> WriteScenarios(ToolCommand.WriteScenarios command)
     {
-        var read = ReadRecords(command.Records);   // impure
+        var texts = ReadTexts(command.Records);   // impure
+        var read = ReadRecords(texts);   // pure
         if (read is not Result<ImmutableArray<RunRecord>, string>.Ok records)
         {
             return new Result<Unit, string>.Error(((Result<ImmutableArray<RunRecord>, string>.Error)read).Failure);
@@ -96,11 +107,12 @@ public static class RecordingSteps
         }
 
         var selection = ScenarioListing.ReadSelection(selectionText.Value);   // pure
-        var flows = ScenarioListing.ListFlows(records.Value);   // pure
-        var drawn = E2EFiles.FindDrawnFlows(command.Out, flows);   // impure
-        var json = ScenarioListing.WriteScenarios(records.Value, selection, drawn);   // pure
+        var paths = ScenarioListing.PlanFlowFiles(ScenarioListing.ListFlows(records.Value));   // pure
+        var found = E2EFiles.FindFlowFiles(command.Out, paths);   // impure
+        var json = ScenarioListing.WriteScenarios(records.Value, selection, ScenarioListing.ReadDrawnFlows(found));   // pure
+        var summary = ScenarioListing.WriteSummary(records.Value, selection);   // pure
         var written = E2EFiles.WriteFile(Path.Combine(command.Out, "scenarios.json"), json);   // impure
-        return written.Map(_ => ReportAll(ScenarioListing.WriteSummary(records.Value, selection)));   // impure
+        return written.Bind(_ => ReportAll(summary));   // impure
     }
 
     /// <summary>The files a scenarios.json lists, a path a line.</summary>
@@ -108,7 +120,7 @@ public static class RecordingSteps
     {
         var json = E2EFiles.ReadFile(command.Scenarios);   // impure
         var files = json.Bind(JsonReading.ReadListedFiles).MapError(failure => $"{command.Scenarios}: {failure}");   // pure
-        return files.Map(each => ReportAll(each));   // impure
+        return files.Bind(ReportAll);   // impure
     }
 
     /// <summary>The extension packed as a .vsix (deflated), replacing one already there.</summary>
@@ -132,20 +144,23 @@ public static class RecordingSteps
         }
     }
 
-    private static Result<ImmutableArray<RunRecord>, string> ReadRecords(ImmutableArray<string> paths) =>
-        paths.Select(path => E2EFiles.ReadFile(path).Bind(JsonReading.ReadRunRecord).MapError(failure => $"{path}: {failure}"))
+    private static ImmutableArray<(string Path, Result<string, string> Text)> ReadTexts(ImmutableArray<string> paths) =>
+        [.. paths.Select(path => (path, E2EFiles.ReadFile(path)))];
+
+    private static Result<ImmutableArray<RunRecord>, string> ReadRecords(ImmutableArray<(string Path, Result<string, string> Text)> texts) =>
+        texts.Select(file => file.Text.Bind(JsonReading.ReadRunRecord).MapError(failure => $"{file.Path}: {failure}"))
             .CombineAll()
             .MapError(failures => failures[0]);
 
-    private static Unit Report(string line)
+    private static Result<Unit, string> Report(string line)
     {
         E2EFiles.Report(line);
-        return new Unit.Value();
+        return new Result<Unit, string>.Ok(new Unit.Value());
     }
 
-    private static Unit ReportAll(IEnumerable<string> lines)
+    private static Result<Unit, string> ReportAll(ImmutableArray<string> lines)
     {
         E2EFiles.ReportAll(lines);
-        return new Unit.Value();
+        return new Result<Unit, string>.Ok(new Unit.Value());
     }
 }

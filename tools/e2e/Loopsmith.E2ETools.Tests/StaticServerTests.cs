@@ -15,9 +15,10 @@ public sealed class StaticServerTests : IAsyncLifetime
         Directory.CreateDirectory(Path.Combine(_root, "destiny-loopsmith", "_framework"));   // impure
         await File.WriteAllTextAsync(Path.Combine(_root, "destiny-loopsmith", "index.html"), "<html>home</html>");   // impure
         await File.WriteAllTextAsync(Path.Combine(_root, "destiny-loopsmith", "_framework", "icudt.dat"), "bytes");   // impure
-        _server = StaticSiteServing.BuildServer(new ServerOptions(_root, 0));   // impure
+        _server = StaticSiteServing.BuildServer(new ServerOptions(_root, Loopsmith.Functional.Optional.None<int>()));   // impure
         await _server.StartAsync();   // impure
-        _client.BaseAddress = new Uri(StaticSiteServing.FindAddress(_server));
+        var address = StaticSiteServing.FindAddress(_server);   // impure
+        _client.BaseAddress = new Uri(address);
     }
 
     public async ValueTask DisposeAsync()
@@ -32,9 +33,11 @@ public sealed class StaticServerTests : IAsyncLifetime
     {
         var answer = await _client.GetAsync("/destiny-loopsmith/", TestContext.Current.CancellationToken);   // impure
 
+        var body = await answer.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);   // impure
+
         Assert.Equal(System.Net.HttpStatusCode.OK, answer.StatusCode);
         Assert.Equal("text/html", answer.Content.Headers.ContentType?.MediaType);
-        Assert.Equal("<html>home</html>", await answer.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));   // impure
+        Assert.Equal("<html>home</html>", body);
     }
 
     [Fact]

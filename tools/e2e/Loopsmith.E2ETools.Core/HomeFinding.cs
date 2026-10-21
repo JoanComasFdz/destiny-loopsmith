@@ -27,8 +27,8 @@ public static partial class HomeFinding
     public static double FindHome(double noted, string probe)
     {
         var start = FindProbeStart(noted);
-        var times = FrameTimes().Matches(probe).Select(found => ReadNumber(found.Groups[1].Value));
-        var scores = SceneScores().Matches(probe).Select(found => ReadNumber(found.Groups[1].Value));
+        var times = CreateFrameTimePattern().Matches(probe).Select(found => ReadNumber(found.Groups[1].Value));
+        var scores = CreateSceneScorePattern().Matches(probe).Select(found => ReadNumber(found.Groups[1].Value));
         var cuts = times.Zip(scores).Where(frame => frame.Second >= BigChange).Select(frame => start + frame.First + 0.1);
         return cuts.DefaultIfEmpty(noted + 0.2).First();
     }
@@ -46,8 +46,8 @@ public static partial class HomeFinding
     private static double ReadNumber(string text) => double.Parse(text, CultureInfo.InvariantCulture);
 
     [GeneratedRegex(@"pts_time:([0-9]+(?:\.[0-9]*)?)")]
-    private static partial Regex FrameTimes();
+    private static partial Regex CreateFrameTimePattern();
 
     [GeneratedRegex(@"scene_score=([0-9]+(?:\.[0-9]*)?)")]
-    private static partial Regex SceneScores();
+    private static partial Regex CreateSceneScorePattern();
 }

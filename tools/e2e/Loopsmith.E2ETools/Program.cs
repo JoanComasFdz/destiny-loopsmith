@@ -14,20 +14,18 @@ if (command is Result<ToolCommand, string>.Error badCommand)
     return 2;
 }
 
-var done = ((Result<ToolCommand, string>.Ok)command).Value switch
-{
-    ToolCommand.Post { Options.Command: E2ECommand.PostScenarios post } given => ScenarioPosting.PostScenarios(given.Options, post),
-    ToolCommand.Post given => PrClosing.ClosePr(given.Options, (E2ECommand.ClosePr)given.Options.Command),
-    ToolCommand.FindFreePort => RecordingSteps.FindFreePort(),
-    ToolCommand.ReadVsCodeCommit read => RecordingSteps.ReadVsCodeCommit(read),
-    ToolCommand.ReportRuns report => RecordingSteps.ReportRuns(report),
-    ToolCommand.FindHome find => RecordingSteps.FindHome(find),
-    ToolCommand.ListFlows list => RecordingSteps.ListFlows(list),
-    ToolCommand.WriteScenarios write => RecordingSteps.WriteScenarios(write),
-    ToolCommand.ListFiles list => RecordingSteps.ListFiles(list),
-    ToolCommand.PackVsix pack => RecordingSteps.PackVsix(pack),
-    _ => new Result<Unit, string>.Error("Unknown command."),
-};   // impure
+var done = ((Result<ToolCommand, string>.Ok)command).Value.Match(
+    post => post.Options.Command is E2ECommand.PostScenarios scenarios
+        ? ScenarioPosting.PostScenarios(post.Options, scenarios)
+        : PrClosing.ClosePr(post.Options, (E2ECommand.ClosePr)post.Options.Command),
+    _ => RecordingSteps.FindFreePort(),
+    RecordingSteps.ReadVsCodeCommit,
+    RecordingSteps.ReportRuns,
+    RecordingSteps.FindHome,
+    RecordingSteps.ListFlows,
+    RecordingSteps.WriteScenarios,
+    RecordingSteps.ListFiles,
+    RecordingSteps.PackVsix);   // impure
 if (done is Result<Unit, string>.Error failed)
 {
     E2EFiles.ReportError(failed.Failure);   // impure

@@ -20,7 +20,7 @@ public static partial class RunReporting
     /// <summary>The runs a TRX file holds; an error naming <paramref name="file"/> when it isn't one.</summary>
     public static Result<ImmutableArray<TestRun>, string> ReadTestRuns(string trx, string file) =>
         ParseXml(trx).Match<Result<ImmutableArray<TestRun>, string>>(
-            document => new Result<ImmutableArray<TestRun>, string>.Ok([.. document.Value.Descendants(TeamTest + "UnitTestResult").Select(ReadTestRun)]),
+            document => document.Value.Descendants(TeamTest + "UnitTestResult").Select(ReadTestRun).CombineAll().MapError(failures => $"{file}: {failures[0]}"),
             _ => new Result<ImmutableArray<TestRun>, string>.Error($"{file} isn't a test results file."));
 
     /// <summary>The table, its runs by name: outcome, seconds, name.</summary>
@@ -32,8 +32,14 @@ public static partial class RunReporting
     /// <summary>Whether a run passed or failed: one that ran.</summary>
     public static bool HasRunAny(ImmutableArray<TestRun> runs) => runs.Any(run => run.Outcome is "Passed" or "Failed");
 
-    private static TestRun ReadTestRun(XElement result) =>
-        new(DecodeName((string?)result.Attribute("testName") ?? ""), (string?)result.Attribute("outcome") ?? "", ReadSeconds((string?)result.Attribute("duration") ?? "0:0:0"));
+    /// <summary>A run: its name and outcome, which every TRX result has; its time is 0 when it has none (a run not executed).</summary>
+    private static Result<TestRun, string> ReadTestRun(XElement result) =>
+        (Optional.FromNullable((string?)result.Attribute("testName")), Optional.FromNullable((string?)result.Attribute("outcome"))) switch
+        {
+            (Optional<string>.Some name, Optional<string>.Some outcome) =>
+                new Result<TestRun, string>.Ok(new TestRun(DecodeName(name.Value), outcome.Value, ReadSeconds((string?)result.Attribute("duration") ?? "0:0:0"))),
+            _ => new Result<TestRun, string>.Error("a test result lacks its testName or outcome"),
+        };
 
     private static string DescribeOutcome(string outcome) =>
         outcome switch
@@ -55,7 +61,7 @@ public static partial class RunReporting
 
     /// <summary>The screen in a run's name ("[📱 Mobile]") comes escaped ("📱"): decoded back.</summary>
     private static string DecodeName(string name) =>
-        EscapedChars().Replace(name, found => DecodeEscapes(found.Value));
+        CreateEscapedCharsPattern().Replace(name, found => DecodeEscapes(found.Value));
 
     private static string DecodeEscapes(string escapes) =>
         new StringBuilder().AppendJoin("", escapes.Split(@"\u", StringSplitOptions.RemoveEmptyEntries)
@@ -75,5 +81,5 @@ public static partial class RunReporting
     }
 
     [GeneratedRegex(@"(?:\\u[0-9a-fA-F]{4})+")]
-    private static partial Regex EscapedChars();
+    private static partial Regex CreateEscapedCharsPattern();
 }

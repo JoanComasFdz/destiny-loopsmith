@@ -49,6 +49,11 @@ public sealed class RunReportingTests
         Assert.False(RunReporting.HasRunAny([new TestRun("A", "NotExecuted", 0)]));
 
     [Fact]
+    public void A_result_without_its_name_is_an_error_naming_the_file() =>
+        Assert.StartsWith("web.trx: ", Assert.IsType<Result<System.Collections.Immutable.ImmutableArray<TestRun>, string>.Error>(RunReporting.ReadTestRuns(
+            """<TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010"><UnitTestResult outcome="Passed" /></TestRun>""", "web.trx")).Failure);
+
+    [Fact]
     public void A_file_that_isnt_test_results_is_an_error_naming_it() =>
         Assert.Equal("web.trx isn't a test results file.", Assert.IsType<Result<System.Collections.Immutable.ImmutableArray<TestRun>, string>.Error>(RunReporting.ReadTestRuns("not xml", "web.trx")).Failure);
 }

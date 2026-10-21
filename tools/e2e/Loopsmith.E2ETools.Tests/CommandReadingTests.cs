@@ -47,8 +47,8 @@ public sealed class CommandReadingTests
     [Fact]
     public void The_static_server_takes_a_folder_and_a_port_that_is_0_by_default()
     {
-        Assert.Equal(new ServerOptions("site", 0), Assert.IsType<Result<ServerOptions, string>.Ok>(ServerOptionsReading.ReadServerOptions(["site"])).Value);
-        Assert.Equal(new ServerOptions("site", 8080), Assert.IsType<Result<ServerOptions, string>.Ok>(ServerOptionsReading.ReadServerOptions(["site", "--port", "8080"])).Value);
+        Assert.Equal(new ServerOptions("site", Optional.None<int>()), Assert.IsType<Result<ServerOptions, string>.Ok>(ServerOptionsReading.ReadServerOptions(["site"])).Value);
+        Assert.Equal(new ServerOptions("site", Optional.Some(8080)), Assert.IsType<Result<ServerOptions, string>.Ok>(ServerOptionsReading.ReadServerOptions(["site", "--port", "8080"])).Value);
         Assert.IsType<Result<ServerOptions, string>.Error>(ServerOptionsReading.ReadServerOptions(["site", "--port", "web"]));
         Assert.IsType<Result<ServerOptions, string>.Error>(ServerOptionsReading.ReadServerOptions([]));
         Assert.Equal("http://127.0.0.1:5000/", ServerOptionsReading.WriteListeningLine("http://127.0.0.1:5000"));

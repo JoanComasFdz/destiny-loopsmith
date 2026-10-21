@@ -53,15 +53,11 @@ public static class E2EFiles
         }
     }
 
-    /// <summary>
-    /// What became of each rule's flow: its PNG in its domain folder, or the rule viewer's error record.sh kept in
-    /// <c>&lt;out&gt;/.flow-errors/&lt;rule&gt;.txt</c> (none when neither is there).
-    /// </summary>
-    public static ImmutableDictionary<FlowToDraw, DrawnFlow> FindDrawnFlows(string outFolder, ImmutableArray<FlowToDraw> flows) =>
-        flows.ToImmutableDictionary(flow => flow, flow => new DrawnFlow(
-            File.Exists(Path.Combine(outFolder, ScenarioListing.FindFlowPath(flow.Domain, flow.Rule))),
-            ReadFile(Path.Combine(outFolder, ".flow-errors", $"{flow.Rule}.txt")).Match(
-                read => Optional.Some(read.Value.Trim()), _ => Optional.None<string>())));
+    /// <summary>What is on disk of each rule's flow: whether its PNG is there, and its error file's text if there is one.</summary>
+    public static ImmutableDictionary<FlowToDraw, FlowFiles> FindFlowFiles(string outFolder, ImmutableArray<(FlowToDraw Flow, string Png, string Error)> paths) =>
+        paths.ToImmutableDictionary(path => path.Flow, path => new FlowFiles(
+            File.Exists(Path.Combine(outFolder, path.Png)),
+            ReadFile(Path.Combine(outFolder, path.Error)).Match(read => Optional.Some(read.Value), _ => Optional.None<string>())));
 
     /// <summary>The text a session gave push-gifs.sh <c>--message</c>, as it is; empty when it gave none.</summary>
     public static Result<string, string> ReadWhatChanged(string outFolder)
