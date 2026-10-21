@@ -80,7 +80,7 @@ public sealed class CompendiumCheckingTests
             []);
         var finisher = Element("testing-finisher", "Testing Finisher", "compendium/2026-01-01/Armor Mods#2") with
         {
-            Rules = [TestCatalog.On(new Trigger.Finisher(), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(1m)), false))],
+            Rules = [TestCatalog.On(new Trigger.Finisher(), new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(1m)), false, 1))],
         };
 
         var check = Check(aliases,

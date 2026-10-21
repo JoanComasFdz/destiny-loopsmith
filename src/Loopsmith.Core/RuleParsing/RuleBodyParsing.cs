@@ -622,14 +622,18 @@ internal static class RuleBodyParsing
                 ? Succeed<Outcome>(new Outcome.WeaponStrike(strike.weapon, strike.type, strike.hit))
                 : map.FailAtKey<Outcome>("via", $"{map.Label}.via: only this weapon strikes (write \"weapon:this\")"));
 
-    /// <summary><c>{ amount: "40%" }</c> (a share of your health) or <c>{ hp: 65 }</c> (HP), and <c>allies</c>: exactly one amount.</summary>
+    /// <summary>
+    /// <c>{ amount: "40%" }</c> (a share of your health) or <c>{ hp: 65 }</c> (HP), and <c>allies</c>: exactly one amount;
+    /// <c>pulses</c> (default 1): how many times it restores that amount.
+    /// </summary>
     private static Result<Outcome, Errors> ReadRestoreHealth(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["amount", "hp", "allies"]),
+                map.CheckKeys(["amount", "hp", "allies", "pulses"]),
                 map.ReadOptional("amount", ReadGameValue),
                 map.ReadOptional("hp", ReadGameValue),
                 map.ReadOrDefault("allies", ReadBoolean, false),
-                (_, amount, hp, allies) => (amount, hp, allies))
+                map.ReadOrDefault("pulses", ReadPositiveInteger, 1),
+                (_, amount, hp, allies, pulses) => (amount, hp, allies, pulses))
             .Bind(heal => (heal.amount.IsSome(), heal.hp.IsSome()) switch
             {
                 (true, true) => map.FailAt<Outcome>($"{map.Label} takes amount or hp, not both"),
@@ -638,7 +642,8 @@ internal static class RuleBodyParsing
                     heal.amount.Match<HealAmount>(
                         share => new HealAmount.Share(share.Value),
                         _ => heal.hp.Match<HealAmount>(points => new HealAmount.Points(points.Value), _ => new HealAmount.Share(new GameValue.Unknown()))),
-                    heal.allies)),
+                    heal.allies,
+                    heal.pulses)),
             }));
 
     /// <summary>

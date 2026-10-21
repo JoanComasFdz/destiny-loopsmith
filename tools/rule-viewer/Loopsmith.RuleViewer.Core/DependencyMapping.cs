@@ -315,7 +315,8 @@ internal static class DependencyMapping
         $"{FormatSigned(change, percent: true)}{pvp.Map(value => $" [PvP {value.ToPercentText()}]").UnwrapOr("")} vs {context.Catalog.Glossary.DescribeDamageSource(against, Optional.None<DamageType>())}";
 
     private static string DescribeHeal(Outcome.RestoreHealth heal) =>
-        heal.Amount.Match(share => share.Value.ToPercentText(), points => $"{points.Value.ToNumberText()} HP")
+        (heal.Pulses > 1 ? $"{heal.Pulses} × " : "")
+        + heal.Amount.Match(share => share.Value.ToPercentText(), points => $"{points.Value.ToNumberText()} HP")
         + (heal.IncludesAllies ? " + allies" : "");
 
     /// <summary>"+20", "-10", "+12% | +17% | +20%", "?": a change as the game shows it, each copy's figure signed.</summary>

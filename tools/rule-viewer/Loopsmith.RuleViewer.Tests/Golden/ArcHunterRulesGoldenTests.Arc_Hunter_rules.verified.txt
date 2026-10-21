@@ -222,7 +222,7 @@ oryxs-memory-4pc#0 armor-sets-oryxs-memory-oryxs-memory-4pc-1: [Trigger] Any kil
 dielectric#0 artifact-current-dielectric-1: [Trigger] Any kill ➜ [Artifact perk] Dielectric (equipped) + [Debuff] Jolt (on the target) ➜ [Buff] Bolt Charge
 iron-panoply-4pc#1 armor-sets-iron-panoply-iron-panoply-4pc-2: [Trigger] Any kill ➜ [Armor set bonus] Iron Conviction (equipped) + [Buff] Iron Conviction (on you) ➜ [Buff] Iron Conviction (7s)
 luminopotent-4pc#0 armor-sets-luminopotent-luminopotent-4pc-1: [Trigger] Any kill ➜ [Armor set bonus] Shock and Clear (equipped) + [Debuff] Jolt (on the target) ➜ [Pickup] Ionic Trace
-to-shreds#1 artifact-current-to-shreds-2: [Trigger] Any kill ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Effect] Health (? + allies), [Buff] Woven Mail (10s)
+to-shreds#1 artifact-current-to-shreds-2: [Trigger] Any kill ➜ [Artifact perk] To Shreds (equipped) + [Debuff] Sever (on the target) ➜ [Effect] Health (3 × 15 HP + allies), [Buff] Woven Mail (10s)
 
 ### Bolt Charge (4)
 rule:bolt-charge#1 keywords-arc-bolt-charge-2: [Trigger] Bolt Charge gained ➜ always ➜ [Effect] Melee energy (2.5%)

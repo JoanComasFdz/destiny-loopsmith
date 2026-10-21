@@ -628,6 +628,7 @@ public static class DomainPhrasing
             strike => $"{glossary.DescribeStatus(strike.Via)} strike" + (strike.Hit == HitOutcome.Kill ? " (kills)" : ""),
             modify => DescribeDamageChange(glossary, modify.Against, modify.Change, modify.Pvp, superType),
             heal => (heal.IncludesAllies ? "heals you and allies" : "heals you")
+                + (heal.Pulses > 1 ? $" {heal.Pulses} ×" : "")
                 + heal.Amount.Match(
                     share => share.Value is GameValue.Unknown ? $" {Unknown}" : $" {share.Value.FormatPercent()}",
                     points => $" {points.Value.FormatNumber()} HP"),

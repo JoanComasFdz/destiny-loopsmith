@@ -77,7 +77,7 @@ public sealed class ToShredsTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: To Shreds heals and weaves mail when a severed target dies
-          # Rule artifact-current-to-shreds-2: Any kill ➜ To Shreds equipped and Sever on the target ➜ Health (? + allies), Woven Mail (10s)
+          # Rule artifact-current-to-shreds-2: Any kill ➜ To Shreds equipped and Sever on the target ➜ Health (3 × 15 HP + allies), Woven Mail (10s)
           Given the build "to-shreds-marksmans-dodge-slice" is imported, with no steps
           When I tap "Marksman's Dodge" in the trigger panel
           Then card #1's heading is "#1 Class ability"
@@ -91,8 +91,7 @@ public sealed class ToShredsTests : BaseE2E
           When I tap "Festival Flight" in the trigger panel
           And I tap "💀 kill"
           Then card #3's heading is "#3 Festival Flight (💀 kill)"
-          # The heal's amount is unknown ("?" in the rules), so its line shows "?".
-          And "To Shreds" fires "Woven Mail (10s)" and "heals you and allies ?"
+          And "To Shreds" fires "Woven Mail (10s)" and "heals you and allies 3 × 15 HP"
           And its BUFFS show only "Woven Mail"
         """)]
     public async Task ToShredsHealsAndWeavesMailWhenASeveredTargetDies(Screen screen)
@@ -130,11 +129,10 @@ public sealed class ToShredsTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(3);
 
         // Then
-        // The heal's amount is unknown ("?" in the rules), so its line shows "?".
         var killed = await Frontend.Designer.Loop.Step(3).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#3 Festival Flight (💀 kill)")
-            .Fires(new ArtifactPerk.ToShreds(), "Woven Mail (10s)", "heals you and allies ?")
+            .Fires(new ArtifactPerk.ToShreds(), "Woven Mail (10s)", "heals you and allies 3 × 15 HP")
             .Shows(new StateGroup.Buffs(), "Woven Mail");
     }
 }

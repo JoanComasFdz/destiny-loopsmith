@@ -171,7 +171,7 @@ public partial record Outcome
     partial record SpawnSummon(SummonId Summon, int Count);
     partial record StrikeTarget(StatusId Via, HitOutcome Hit);   // keyword damage: lightning strike, jolt chain…
     partial record ModifyDamage(DamageSource Against, GameValue Change, Optional<GameValue> Pvp);   // Pvp: the "[…]" of "+100% [10%]", when the source gives one
-    partial record RestoreHealth(HealAmount Amount, bool IncludesAllies);
+    partial record RestoreHealth(HealAmount Amount, bool IncludesAllies, int Pulses);   // Pulses: how many times it restores Amount (To Shreds' 3 pulses), a fact never added up
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
     partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact

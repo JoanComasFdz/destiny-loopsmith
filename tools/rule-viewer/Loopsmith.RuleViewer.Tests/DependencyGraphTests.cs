@@ -169,7 +169,7 @@ public sealed class DependencyGraphTests
                 new Outcome.ConvertStacksToEnergy(Status("armor-charge"), AbilityKind.Melee, new StackEnergy.PerStack(new GameValue.Known(0.05m))),
                 new Outcome.SpendStacks(Status("armor-charge"), StackCount.From(2)),
                 new Outcome.RemoveBuff(Status("amplified")),
-                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.4m)), true),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.4m)), true, 1),
                 new Outcome.ModifyDamage(new DamageSource.AbilityOf(AbilityKind.Melee), new GameValue.Known(0.25m), Optional.None<GameValue>()),
                 new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.None<DamageType>(), HitOutcome.Kill),
                 new Outcome.ReloadWeapon(new DamageSource.ThisWeapon()),
