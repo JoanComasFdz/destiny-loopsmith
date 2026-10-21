@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The e2e tools (tools/e2e/README.md): posts a PR's recorded scenarios and cleans the releases, with the gh CLI. A host:
+       its logic is Loopsmith.E2ETools.Core. It never references Loopsmith.Core, so a CI runner builds it in seconds. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.E2ETools</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+    <ProjectReference Include="..\Loopsmith.E2ETools.Core\Loopsmith.E2ETools.Core.csproj" />
+  </ItemGroup>
+</Project>

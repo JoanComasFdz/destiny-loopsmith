@@ -25,7 +25,7 @@ release that doesn't exist yet (the workflow creates it on its first upload) rea
 
 It finds a scenario's assets by their names: `pr-<n>-v<version>-<GIF name>.gif` / `.mp4`, the GIF name being the method's
 name kebab-cased (Humanizer's rules) and its screen, shortened with a hash past 200 characters
-(`tools/e2e/post-scenarios.py`, `name_asset`). It reads each release from GitHub's API (two requests and one per 100
+(`tools/e2e/Loopsmith.E2ETools.Core/ReleaseNaming.cs`, `NameAsset`). It reads each release from GitHub's API (two requests and one per 100
 assets, the first time a file needs it): 60 requests an hour without a
 sign-in, 5,000 with one. It asks VS Code for a GitHub sign-in silently, never with a prompt: VS Code hands an extension a
 sign-in only once you have let it use one, so until then it reads the release without one. To let it, run **Loopsmith:

@@ -218,8 +218,9 @@ works the PR records them; CI doesn't run, record or build anything for them.
   (the name is `e2e-gifs/pr-<n>-<hex>`; PR #n is open and from this repository; the commit sits on a commit of the PR
   and only adds `e2e-gifs/scenarios.json`, `e2e-gifs/what-changed.md`, real GIFs (they start with `GIF8`), real MP4s (an
   `ftyp` box first) and real PNGs (the 8-byte PNG signature first)), then
-  `tools/e2e/post-scenarios.py --out e2e-gifs` uploads the GIFs, MP4s and PNGs, each to its release (below), and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
-  the checks uploads and posts nothing. No `dotnet`, no Chromium, no ffmpeg: a run takes seconds.
+  the e2e tool (`dotnet run --project tools/e2e/Loopsmith.E2ETools -- post … --out e2e-gifs`, [its README](../tools/e2e/README.md)) uploads the GIFs, MP4s and PNGs, each to its release (below), and posts them, and the branch is deleted whatever happened (the run's log says why one failed). A push that fails
+  the checks uploads and posts nothing. The runner's own .NET 10 SDK builds the tool (no setup step; it needs only
+  `Loopsmith.Functional`, not Core, so it builds in seconds); no Chromium, no ffmpeg.
 - **Where the GIFs and MP4s go:** assets of a pre-release, never committed anywhere. Which one is the run's GIF's folder
   (its scenario's domain folder):
   - **a rule scenario's** (`tests/Loopsmith.Web.E2E/Rules/<…>/`, one scenario per rule claim, its GIF under `Rules/<…>/`)
@@ -297,18 +298,18 @@ works the PR records them; CI doesn't run, record or build anything for them.
   `<details>`, and a section with no scenarios isn't shown. With only the PR's own (or a `scenarios.json` from before
   `selected`), there are no section headings. A screen's subtitle is `####` either way. The scenario counts in the
   collapsed and shrunk lines below count the scenarios' `<details>` (not the collapse's own, told apart by its
-  summary), or, in a post written before them, the title headings (`###`, `####` under a section). `tools/e2e/test_post_scenarios.py` tests the layout
-  (`python3 -m unittest tools/e2e/test_post_scenarios.py`; CI doesn't run it). Every post ends with `---` and
+  summary), or, in a post written before them, the title headings (`###`, `####` under a section). `tools/e2e/Loopsmith.E2ETools.Tests` tests the layout
+  (`PostWritingTests`, `PostVersioningTests`; `dotnet test` runs them, in CI too). Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.
-- **Earlier versions collapse:** once a new post is up, `post-scenarios.py` edits each earlier post still open into a
+- **Earlier versions collapse:** once a new post is up, the tool edits each earlier post still open into a
   closed `<details>` block holding it unchanged, whose summary reads **Scenarios (V1)** · 12 scenarios · replaced by V2,
   so the newest version is the only one open and the owner doesn't scroll past an old version's GIFs to reach it (PR
   #113). A post already collapsed is left alone: V1 keeps "replaced by V2" when V3 arrives. Only the workflow's own
   posts (`github-actions[bot]`, with its footer) are edited. An edit GitHub refuses (a body past 65,536 characters) is
   a warning in the run's log: the new post is up all the same. The `## Scenarios (V<N>)` heading stays inside the
   block, so the versions count on.
-- **And are hidden as Outdated:** after collapsing them, `post-scenarios.py` hides every earlier post as Outdated
+- **And are hidden as Outdated:** after collapsing them, the tool hides every earlier post as Outdated
   (GraphQL's `minimizeComment` with `classifier: OUTDATED`, on the comment's REST `node_id`): the timeline shows "This
   comment was marked as outdated" with "Show comment", and the post is collapsed inside. GitHub streams a new post into
   an open PR page but doesn't redraw an edited one until a reload, so on PR #155 V1 still looked open next to V2; a
@@ -325,7 +326,7 @@ works the PR records them; CI doesn't run, record or build anything for them.
   can't post the same version. GitHub keeps one waiting job per group: a post that is still waiting when a newer one
   arrives is skipped (its branch is deleted all the same), so push the GIFs once per round.
 - **Cleanup:** when the PR is closed or merged, the workflow deletes any `e2e-gifs/pr-<n>-…` branch left behind, then runs
-  main's `post-scenarios.py --closed` (with `--merged` for a merged PR), which cleans the releases and shrinks the posts:
+  main's e2e tool, `post --closed` (with `--merged` for a merged PR), which cleans the releases and shrinks the posts:
   - **`prs-resources`:** it keeps every GIF and MP4 of the PR's newest version and
   deletes its older versions' (`pr-<n>-v1-…` to `pr-<n>-v<N-1>-…`), so the PR's last `## Scenarios (V<N>)` post keeps
   showing its GIFs and playing its MP4s for good.
@@ -349,13 +350,13 @@ works the PR records them; CI doesn't run, record or build anything for them.
   `prs-resources` and any other name or release are never touched. A reopened PR carries on from its last version, so
   closing it again keeps only its newest version's GIFs and MP4s and shrinks the post it replaced. The job's log names
   each deleted asset (with its release), how many of the PR's it kept and how many assets each release holds.
-  `tools/e2e/test_post_scenarios.py` tests what each release keeps.
+  `ReleaseCleaningTests` (`tools/e2e/Loopsmith.E2ETools.Tests`) tests what each release keeps.
 - **The releases' limit:** GitHub sets no total size limit on a release, but a release holds at most 1,000 assets (a
   run takes two: its GIF and its MP4). This is why rule recordings have a release per rule file: a rule played on both
   screens takes four assets, so even a file of 100 rules leaves room for open PRs' recordings, and the cleanup keeps one
   recording per rule. The cleanup's log says how many each release holds, with a warning above 900. Near the limit:
-  - `prs-resources`: the owner creates a new pre-release (e.g. `prs-resources-2`) and points `RELEASE` in
-    `tools/e2e/post-scenarios.py` and the `release` setting's default in `src/Loopsmith.VsCodeExtension`
+  - `prs-resources`: the owner creates a new pre-release (e.g. `prs-resources-2`) and points `PrsRelease` in
+    `tools/e2e/Loopsmith.E2ETools.Core/ReleaseNaming.cs` and the `release` setting's default in `src/Loopsmith.VsCodeExtension`
     and the default `release` in `src/Loopsmith.Web/wwwroot/e2e-player.html` at it. The old release stays, so the posts
     that embed its GIFs keep showing them; their player links look in the new release, so their MP4s no longer play.
     Nothing does this automatically yet.

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The e2e tools' logic (tools/e2e/README.md): pure, follows docs/CODING_RULES.md; uses only Loopsmith.Functional, never Core. -->
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.E2ETools.Core</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Loopsmith.E2ETools.Tests" />
+  </ItemGroup>
+</Project>

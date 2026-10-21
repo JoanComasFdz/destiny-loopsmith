@@ -94,6 +94,12 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   be in place ➜ what it gives, one per trigger when a rule names several), using only Core's kernel and `Orchestration`;
   `Loopsmith.RuleViewer.Tests` its unit, golden and architecture tests ([tools/rule-viewer/README.md](tools/rule-viewer/README.md)).
   `tools/rule-viewer/prototype/` is the page the owner designed, kept as the reference the tool reproduces.
+- `tools/e2e/` — the e2e recording scripts (`record.sh`, `push-gifs.sh`) and the e2e tool, run by `e2e-videos.yml`:
+  `dotnet run --project tools/e2e/Loopsmith.E2ETools -- post --pr <n> --commit <sha> --out <dir>` posts a PR's recorded
+  scenarios on it and `… post --pr <n> --closed [--merged]` cleans the releases when it closes (`--dry-run` prints
+  instead). `Loopsmith.E2ETools` is the host (it calls `gh`); `Loopsmith.E2ETools.Core` its pure logic (the post, its
+  versions, the releases' names and what they keep); `Loopsmith.E2ETools.Tests` their tests. Neither references Core,
+  only `Loopsmith.Functional`, so a runner builds it in seconds ([tools/e2e/README.md](tools/e2e/README.md)).
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
   play button and a panel beside the code show each e2e scenario's recordings from its release (`prs-resources`, or a rule
   scenario's `rules-<group>-resources`), in vscode.dev
@@ -233,8 +239,8 @@ pull request:
    one line there, its title and test class, never its full text: the PR's e2e comment shows it in
    full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR gets
    **no build** when every path it changes (a rename's old path too) is a Markdown file or under
-   `docs/`, `.github/`, `.claude/`, `.devcontainer/`, `tools/e2e/`, `tools/compendium/` or
-   `tools/manifest/` (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
+   `docs/`, `.github/`, `.claude/`, `.devcontainer/`, `tools/compendium/` or `tools/manifest/`, or a script directly in
+   `tools/e2e/` (not its .NET projects, which are built and tested) (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
    **no preview** when every path is on that list or under `tests/` (nothing the published site is
    built from: `ci.yml` neither publishes it nor calls `pr-preview.yml`; a test or e2e fixture change still builds and tests). A
    PR with no preview leaves the preview out of its description and messages. Then rename

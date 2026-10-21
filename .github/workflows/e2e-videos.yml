@@ -104,7 +104,8 @@ jobs:
         with:
           ref: ${{ github.sha }}
       - name: Upload the GIFs, MP4s and flow PNGs and post them on the pull request
-        run: python3 tools/e2e/post-scenarios.py --pr "$PR" --commit "$GITHUB_SHA" --out e2e-gifs
+        # The runner's .NET 10 SDK builds the tool (tools/e2e/Loopsmith.E2ETools, which needs only Loopsmith.Functional) in seconds.
+        run: dotnet run --project tools/e2e/Loopsmith.E2ETools -c Release -- post --pr "$PR" --commit "$GITHUB_SHA" --out e2e-gifs
 
   delete-branch:
     # Whatever happened, the throwaway branch goes (its log says why a run failed).
@@ -141,11 +142,14 @@ jobs:
             echo "Deleting ${ref#refs/heads/}"
             gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/$ref"
           done
-      # main's script, not the PR's: its branch may predate the cleanup, or be gone.
+      # main's tool, not the PR's: its branch may predate the cleanup, or be gone. The tool builds from tools/e2e and
+      # src/Loopsmith.Functional, with the root's Directory.*.props and global.json (a sparse checkout always has the root's files).
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.repository.default_branch }}
-          sparse-checkout: tools/e2e
+          sparse-checkout: |
+            tools/e2e
+            src/Loopsmith.Functional
       # prs-resources keeps the PR's newest version; each rule release keeps the latest recording of every rule (merged:
       # the PR's replace closed PRs'; closed without merging: the PR's go). Then the posts whose recordings went shrink.
       - name: Clean the releases and shrink the PR's posts whose recordings were deleted
@@ -153,4 +157,4 @@ jobs:
           MERGED: ${{ github.event.pull_request.merged }}
         run: |
           if [ "$MERGED" = true ]; then merged=--merged; else merged=; fi
-          python3 tools/e2e/post-scenarios.py --pr "$PR" --closed $merged
+          dotnet run --project tools/e2e/Loopsmith.E2ETools -c Release -- post --pr "$PR" --closed $merged
