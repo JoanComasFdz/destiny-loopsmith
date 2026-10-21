@@ -74,9 +74,10 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
 
-    // A keyword's name in a line the card reads exactly as given, white space collapsed.
+    // A keyword's name in a line the card reads exactly as given: its words in order, whatever white space the markup puts
+    // between them (the name's button and the text after it are on lines of their own).
     private ILocator FindKeyword(Keyword keyword, string line) =>
-        Card.Locator("[data-testid=outcome-line]").Filter(new() { HasTextRegex = new Regex($"^\\s*{Regex.Escape(line)}\\s*$") })
+        Card.Locator("[data-testid=outcome-line]").Filter(new() { HasTextRegex = new Regex($"^\\s*{string.Join("\\s*", line.Split(' ').Select(Regex.Escape))}\\s*$") })
             .GetByRole(AriaRole.Button, new() { Name = keyword.ToShownText(), Exact = true });
 
     // A chip by its name, the part of its text before the first " · " (its effects and weapons come after).
