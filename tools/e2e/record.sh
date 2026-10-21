@@ -178,8 +178,15 @@ if [ $video -eq 1 ]; then
   mkdir -p "$videos"
 fi
 
-free_port() {
-  python3 -c 'import socket; s=socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()'
+# The e2e tool and the static server (tools/e2e/README.md), built once: every step below runs the built tool, the
+# conversions several at a time.
+tools="$repo/tools/e2e"
+echo "Building the e2e tool and the static server…"
+for project in Loopsmith.E2ETools Loopsmith.StaticServer; do
+  dotnet build "$tools/$project" -c Release --nologo -v q > "$out/.tools-build.log" 2>&1 || { cat "$out/.tools-build.log" >&2; exit 1; }
+done
+e2e_tool() {
+  dotnet "$tools/Loopsmith.E2ETools/bin/Release/net10.0/Loopsmith.E2ETools.dll" "$@"
 }
 servers=()
 trap 'for pid in "${servers[@]}"; do kill "$pid" 2>/dev/null || true; done' EXIT
@@ -194,14 +201,17 @@ if [ -n "$web_filter" ]; then
     cp -r "$site/publish/wwwroot" "$site/root/destiny-loopsmith"
     "$repo/tools/web/prepare-pages.sh" "$site/root/destiny-loopsmith" /destiny-loopsmith/ --root
   fi
-  port="$(free_port)"
-  python3 -m http.server "$port" --bind 127.0.0.1 --directory "$site/root" > "$out/.server.log" 2>&1 &
+  # The static server picks a free port and prints its address first.
+  dotnet "$tools/Loopsmith.StaticServer/bin/Release/net10.0/Loopsmith.StaticServer.dll" "$site/root" > "$out/.server.log" 2>&1 &
   servers+=($!)
-  for _ in $(seq 50); do
-    curl -sf "http://127.0.0.1:$port/destiny-loopsmith/" > /dev/null && break
+  site_url=""
+  for _ in $(seq 100); do
+    site_url="$(grep -m1 '^http://' "$out/.server.log" || true)"
+    [ -n "$site_url" ] && curl -sf "${site_url}destiny-loopsmith/" > /dev/null && break
     sleep 0.2
   done
-  web_url="http://127.0.0.1:$port/destiny-loopsmith/"
+  [ -n "$site_url" ] || { echo "The static server didn't start: see $out/.server.log" >&2; exit 1; }
+  web_url="${site_url}destiny-loopsmith/"
 fi
 
 vscode_url=""
@@ -212,10 +222,10 @@ if [ -n "$vscode_filter" ]; then
     npm ci --prefix "$runner" --silent --no-audit --no-fund
     touch "$runner/node_modules"
   fi
-  commit="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["config"]["vscodeCommit"])' "$runner/package.json")"
+  commit="$(e2e_tool vscode-commit "$runner/package.json")"
   cache="${E2E_VSCODE_CACHE:-$HOME/.cache/loopsmith/vscode-web}"
   mkdir -p "$cache"
-  vport="$(free_port)"
+  vport="$(e2e_tool free-port)"
   echo "Serving VS Code for the web (build ${commit:0:7}) with the extension…"
   "$runner/node_modules/.bin/vscode-test-web" --browser=none --quality stable --commit "$commit" --port "$vport" \
     --testRunnerDataDir "$cache" --extensionDevelopmentPath="$repo/src/Loopsmith.VsCodeExtension" \
@@ -252,30 +262,7 @@ if [ $video -eq 0 ]; then
   fi
   # Each run's result and time, from the test results: without a recording no scenario writes its record.
   # It fails when no run passed or failed (none matched, or all skipped), like a recording with no record.
-  PYTHONIOENCODING=utf-8 python3 - "${trx[@]}" <<'PY' || status=1
-import json, os, re, sys, xml.etree.ElementTree as ET
-ns = {"t": "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"}
-runs = []
-for path in sys.argv[1:]:
-    if not os.path.exists(path):
-        print(f"No test results were written ({os.path.basename(path)}).", file=sys.stderr)
-        sys.exit(1)
-    runs += ET.parse(path).getroot().findall(".//t:UnitTestResult", ns)
-def seconds(duration):
-    h, m, s = duration.split(":")
-    return int(h) * 3600 + int(m) * 60 + float(s)
-# The screen in a run's name ("[📱 Mobile]") comes escaped: decoded back.
-def name_of(run):
-    return re.sub(r"(?:\\u[0-9a-fA-F]{4})+", lambda m: json.loads(f'"{m.group(0)}"'), run.get("testName", ""))
-print()
-print("Runs (unrecorded):")
-for r in sorted(runs, key=name_of):
-    outcome = {"Passed": "passed", "Failed": "FAILED", "NotExecuted": "skipped"}.get(r.get("outcome"), r.get("outcome"))
-    print(f'  {outcome:>7}  {seconds(r.get("duration", "0:0:0")):5.1f} s  {name_of(r)}')
-if not any(r.get("outcome") in ("Passed", "Failed") for r in runs):
-    print("No scenario ran.", file=sys.stderr)
-    sys.exit(1)
-PY
+  e2e_tool report-runs "${trx[@]}" || status=1
   if [ -n "$web_filter" ]; then
     if [ -s "$bungie_log" ]; then
       echo "Requests that left for bungie.net, or were refused ($(wc -l < "$bungie_log")):"
@@ -299,25 +286,6 @@ if [ -n "$vscode_filter" ]; then
     dotnet test "$vscode_project" -c Release --nologo --filter "$vscode_filter" --logger "console;verbosity=normal" || status=$?
 fi
 
-# When Home shows in a video: the video's clock runs up to a second apart from the test's, so the time the test noted
-# only says where to look. The first big change of picture from a second before it to three after (the startup screen
-# giving way to Home; the click comes at least two seconds after Home) is where Home starts; without one, the noted time.
-find_home_in_video() {
-  local video="$1" noted="$2"
-  python3 - "$video" "$noted" <<'PY'
-import re, subprocess, sys
-video, noted = sys.argv[1], float(sys.argv[2])
-start = max(0.0, noted - 1.0)
-probe = subprocess.run(
-    ["ffmpeg", "-nostdin", "-hide_banner", "-ss", f"{start:.3f}", "-t", "4", "-i", video,
-     "-vf", "select='gte(scene,0)',metadata=print:key=lavfi.scene_score", "-f", "null", "-"],
-    capture_output=True, text=True).stderr
-times = [float(t) for t in re.findall(r"pts_time:([0-9.]+)", probe)]
-scores = [float(s) for s in re.findall(r"scene_score=([0-9.]+)", probe)]
-cut = next((start + t for t, score in zip(times, scores) if score >= 0.08), None)
-print(f"{(cut + 0.1) if cut is not None else noted + 0.2:.3f}")
-PY
-}
 
 # Each recorded run: trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's
 # others (20 fps; a desktop window scaled to 800 px wide, a phone to its 390 CSS pixels) and as an MP4 (H.264 at the
@@ -330,10 +298,11 @@ palette_at() {
 for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 rm -rf "${out:?}/Rules"
 convert_run() {
-  local record="$1" video="${1%.json}.webm" domain gif screen noted width=800 offset
-  read -r domain gif screen noted < <(python3 -c 'import json,sys; r=json.load(open(sys.argv[1])); s=r["homeShownSeconds"]; print(r["domain"], r["gif"], r["screen"], 0 if s is None else s)' "$record") || return 1
+  local record="$1" video="${1%.json}.webm" domain gif screen offset width=800
+  # When Home shows in the video (the e2e tool's find-home: tools/e2e/README.md), where it is trimmed from.
+  read -r domain gif screen offset < <(e2e_tool find-home "$record") || return 1
+  [ -n "$offset" ] || return 1
   if [ "$screen" = mobile ]; then width=390; fi
-  offset="$(find_home_in_video "$video" "$noted")" || return 1
   mkdir -p "$out/$domain" || return 1
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$(palette_at $width)" "$out/$domain/$gif.gif" || return 1
   ffmpeg -nostdin -loglevel error -y -ss "$offset" -i "$video" -vf "$hold_end" -an \
@@ -369,16 +338,7 @@ if [ ${#converting[@]} -gt 0 ]; then wait "${converting[@]}" || true; fi
 flow_errors="$out/.flow-errors"
 rm -rf "$flow_errors"
 mkdir -p "$flow_errors"
-flows="$(python3 -c '
-import json, re, sys
-seen = set()
-for path in sys.argv[1:]:
-    r = json.load(open(path))
-    for rule in re.findall(r"^\s*# Rule ([a-z0-9-]+):", r.get("gherkin") or "", re.M):
-        if (r["domain"], rule) not in seen:
-            seen.add((r["domain"], rule))
-            print(r["domain"], rule)
-' "${records[@]}")"
+flows="$(e2e_tool list-flows "${records[@]}")"
 if [ -n "$flows" ]; then
   echo "Drawing the rules' flows ($(wc -l <<< "$flows"))…"
   viewer="$repo/tools/rule-viewer/Loopsmith.RuleViewer"
@@ -398,60 +358,8 @@ if [ -n "$flows" ]; then
   fi
 fi
 
-python3 - "$out" "$selection" "${records[@]}" <<'PY'
-import json, os, re, sys
-out, selection, records = sys.argv[1], sys.argv[2], sys.argv[3:]
-# A class changed itself, or only a fixture it uses changed (and which ones); changed wins over fixtures.
-fixtures, changed = {}, set()
-for line in open(selection, encoding="utf-8").read().splitlines():
-    parts = line.split("\t")
-    if len(parts) >= 2 and parts[1] == "changed":
-        changed.add(parts[0])
-    elif len(parts) == 3 and parts[1] == "fixtures":
-        fixtures.setdefault(parts[0], []).append(parts[2])
-def select(entry, cls):
-    if cls in fixtures and cls not in changed:
-        entry["selected"] = "fixtures"
-        entry["fixtures"] = sorted(set(fixtures[cls]))
-    else:
-        entry["selected"] = "changed"
-    return entry
-# The flow of the rule its Gherkin names, drawn above: its PNG, or why there is none.
-def add_flow(entry):
-    found = re.search(r"^\s*# Rule ([a-z0-9-]+):", entry["gherkin"] or "", re.M)
-    if not found:
-        return entry
-    rule = entry["rule"] = found.group(1)
-    png = f'{entry["domain"]}/{rule}.png'
-    error = os.path.join(out, ".flow-errors", f"{rule}.txt")
-    if os.path.exists(os.path.join(out, png)):
-        entry["flow"] = png
-    else:
-        entry["flowError"] = open(error, encoding="utf-8").read().strip() if os.path.exists(error) else "not drawn"
-    return entry
-entries = []
-for path in records:
-    r = json.load(open(path))
-    entries.append(add_flow(select({
-        "domain": r["domain"],
-        "class": r["class"],
-        "method": r["method"],
-        "title": r["title"],
-        "gherkin": r["gherkin"],
-        "screen": r["screen"],
-        "gif": f'{r["domain"]}/{r["gif"]}.gif',
-        "mp4": f'{r["domain"]}/{r["gif"]}.mp4',
-        "startupSeconds": None if r["homeShownSeconds"] is None else round(r["homeShownSeconds"], 1),
-        "passed": r["passed"],
-    }, r["class"])))
-json.dump(entries, open(os.path.join(out, "scenarios.json"), "w"), indent=2)
-print()
-print("Scenarios:")
-for e in entries:
-    startup = "Home never shown" if e["startupSeconds"] is None else f'startup {e["startupSeconds"]} s'
-    why = "" if e["selected"] == "changed" else f'  (re-recorded: {", ".join(e["fixtures"])} changed)'
-    print(f'  {"passed" if e["passed"] else "FAILED"}  {startup:>16}  {e["gif"]}{why}')
-PY
+# scenarios.json, which push-gifs.sh pushes and the e2e tool's post reads, and the summary (tools/e2e/README.md).
+e2e_tool write-scenarios "$out" "$selection" "${records[@]}" || status=1
 
 log="$videos/bungie-requests.log"
 if [ -s "$log" ]; then

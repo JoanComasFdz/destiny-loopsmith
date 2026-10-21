@@ -37,8 +37,8 @@ if [ ! -f "$scenarios" ]; then
   exit 2
 fi
 # Each run's GIF, then its MP4 (a scenarios.json from before the MP4s has none), and each rule's flow once (a rule
-# scenario's two screens share it).
-files="$(python3 -c 'import json,sys; [print(f) for f in dict.fromkeys(e[k] for e in json.load(open(sys.argv[1])) for k in ("gif", "mp4", "flow") if e.get(k))]' "$scenarios")"
+# scenario's two screens share it): the e2e tool's list-files (tools/e2e/README.md).
+files="$(dotnet run --project "$repo_dir/tools/e2e/Loopsmith.E2ETools" -c Release -v q -- list-files "$scenarios")"
 if [ -z "$files" ]; then
   echo "No scenario recorded ($scenarios is empty): nothing to push."
   exit 0

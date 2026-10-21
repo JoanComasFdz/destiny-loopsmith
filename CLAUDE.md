@@ -98,8 +98,11 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   `dotnet run --project tools/e2e/Loopsmith.E2ETools -- post --pr <n> --commit <sha> --out <dir>` posts a PR's recorded
   scenarios on it and `… post --pr <n> --closed [--merged]` cleans the releases when it closes (`--dry-run` prints
   instead). `Loopsmith.E2ETools` is the host (it calls `gh`); `Loopsmith.E2ETools.Core` its pure logic (the post, its
-  versions, the releases' names and what they keep); `Loopsmith.E2ETools.Tests` their tests. Neither references Core,
-  only `Loopsmith.Functional`, so a runner builds it in seconds ([tools/e2e/README.md](tools/e2e/README.md)).
+  versions, the releases' names and what they keep, and the steps the e2e scripts hand it: `record.sh`'s TRX report,
+  Home in a video, rules' flows and `scenarios.json`, `push-gifs.sh`'s files, the dev container's `.vsix`);
+  `Loopsmith.StaticServer` the Kestrel server `record.sh` serves the published site with; `Loopsmith.E2ETools.Tests` their
+  tests. None references Core, only `Loopsmith.Functional`, so a runner builds it in seconds, and no script runs Python
+  ([tools/e2e/README.md](tools/e2e/README.md)).
 - `src/Loopsmith.VsCodeExtension/` — the VS Code extension (plain JavaScript, no build, no dependencies): a CodeLens, a
   play button and a panel beside the code show each e2e scenario's recordings from its release (`prs-resources`, or a rule
   scenario's `rules-<group>-resources`), in vscode.dev

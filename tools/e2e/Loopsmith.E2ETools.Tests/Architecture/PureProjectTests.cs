@@ -6,7 +6,8 @@ namespace Loopsmith.E2ETools.Tests.Architecture;
 
 /// <summary>
 /// docs/CODING_RULES.md: the e2e tools' logic is a pure project. It touches no files, processes, network or console (its
-/// host does), and it never uses Loopsmith.Core: a development tool needs only Loopsmith.Functional, and CI builds it in seconds.
+/// hosts do: the e2e tool and the static server), and none of them uses Loopsmith.Core: a development tool needs only
+/// Loopsmith.Functional, and CI builds it in seconds.
 /// </summary>
 public sealed class PureProjectTests
 {
@@ -24,6 +25,16 @@ public sealed class PureProjectTests
     public void The_host_references_only_Functional_and_the_pure_project()
     {
         var project = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Loopsmith.E2ETools", "Loopsmith.E2ETools.csproj"));   // impure
+
+        var references = Regex.Matches(project, "ProjectReference Include=\"([^\"]+)\"").Select(found => Path.GetFileName(found.Groups[1].Value.Replace('\\', '/')));   // pure
+
+        Assert.Equal(["Loopsmith.Functional.csproj", "Loopsmith.E2ETools.Core.csproj"], references);
+    }
+
+    [Fact]
+    public void The_static_server_references_only_Functional_and_the_pure_project()
+    {
+        var project = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "Loopsmith.StaticServer", "Loopsmith.StaticServer.csproj"));   // impure
 
         var references = Regex.Matches(project, "ProjectReference Include=\"([^\"]+)\"").Select(found => Path.GetFileName(found.Groups[1].Value.Replace('\\', '/')));   // pure
 

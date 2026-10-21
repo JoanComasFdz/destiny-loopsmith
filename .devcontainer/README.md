@@ -46,4 +46,5 @@ Without one, the prompt still works, with boxes in place of its icons. A phone's
 - `5-install-zsh-config.sh`: zsh, Oh My Zsh, Spaceship, the plugins, zoxide, eza and `~/.zshrc`.
 - `6-install-tmux.sh`: tmux, `~/.tmux.conf` and the aliases in `~/.zshrc` (after step 5, which writes it).
 - `7-install-e2e-recordings-extension.sh`: runs each time VS Code attaches (`postAttachCommand`): packs the extension's
-  `.vsix` as `Loopsmith.Web.csproj` packs the site's and installs it in the VS Code attached.
+  `.vsix` as `Loopsmith.Web.csproj` packs the site's (the e2e tool's `pack-vsix`: [tools/e2e/README.md](../tools/e2e/README.md);
+  the first attach builds the tool) and installs it in the VS Code attached.
