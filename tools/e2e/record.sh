@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Records the end-to-end scenarios as GIFs and MP4s: one of each per screen a scenario is played on ([PlayInDesktop] /
-# [PlayInMobile]). Two projects hold scenarios: tests/Loopsmith.Web.E2E (the web app: its Scenarios/, and its Rules/, one
-# scenario per rule claim) and tests/Loopsmith.VsCodeExtension.E2E (the VS Code extension, played in VS Code for the web).
+# [PlayInMobile]). Three projects hold scenarios: tests/Loopsmith.Web.E2E (the web app: its Scenarios/, and its Rules/, one
+# scenario per rule claim), tests/Loopsmith.VsCodeExtension.E2E (the VS Code extension, played in VS Code for the web) and
+# tests/Loopsmith.RuleViewer.E2E (the rule viewer's page, drawn from that project's Fixtures/rules).
 #   tools/e2e/record.sh [all | <domain folder> | <TestClass> ...] [--changed-since <git ref>] [--action-gap <seconds>]
 #                       [--out <dir>] [--no-publish] [--no-video]
 # A domain folder is a folder under a project's Scenarios/ (Starting, Build/Subclass, Recordings), or the web project's
@@ -9,7 +10,8 @@
 # scenario's GIF lands under <out>/Rules/<…>/ and the "E2E videos" workflow keeps it in its rule group's release
 # (docs/hosting.md, "E2E videos on pull requests").
 # --changed-since <ref>: the scenario classes added or changed since <ref> (from where the branch left it, working tree
-# included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/):
+# included), plus those that use a changed fixture file (for the extension's scenarios, any file of its Workspace/; for
+# the rule viewer's, any file of its Fixtures/):
 # "this PR's scenarios" with origin/main. scenarios.json says why each was picked ("selected": "changed", or "fixtures"
 # with the changed "fixtures", each a path in its project: Scenarios/Loop/Weapons/…, Workspace/…); a class that changed
 # and uses a changed fixture, and a class or domain folder named here, is "changed".
@@ -18,8 +20,9 @@
 # and serves it locally. For the extension's scenarios it serves VS Code for the web (@vscode/test-web, pinned with the
 # VS Code build in tests/Loopsmith.VsCodeExtension.E2E/vscode-web/package.json; the build is cached in
 # ${E2E_VSCODE_CACHE:-~/.cache/loopsmith/vscode-web}) with src/Loopsmith.VsCodeExtension, opened on that project's
-# Workspace/. It runs the chosen scenarios with video on, trims each video from when Home (or VS Code's workbench) was
-# shown (the startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
+# Workspace/. For the rule viewer's scenarios it draws the rules page from tests/Loopsmith.RuleViewer.E2E/Fixtures/rules
+# with the rule viewer (tools/rule-viewer) and serves it locally. It runs the chosen scenarios with video on, trims each
+# video from when Home (or VS Code's workbench, or the rules page) was shown (the startup screen left out) and turns it into a GIF under <out>/<domain folder>/<gif name>.gif (20 fps; a
 # desktop run 800 px wide, a phone run at its 390 CSS pixels; the GIF name ends in -desktop or -mobile) and an MP4 next to
 # it, <gif name>.mp4 (H.264 at the video's own size: 1280×800, a phone's 780×1688). Both hold their last frame 3 s
 # before they end. The videos are converted one per core at a time. It prints each
@@ -40,7 +43,8 @@ set -euo pipefail
 repo="$(cd "$(dirname "$0")/../.." && pwd)"
 web_project="$repo/tests/Loopsmith.Web.E2E"
 vscode_project="$repo/tests/Loopsmith.VsCodeExtension.E2E"
-projects=("$web_project" "$vscode_project")
+ruleviewer_project="$repo/tests/Loopsmith.RuleViewer.E2E"
+projects=("$web_project" "$vscode_project" "$ruleviewer_project")
 # The folders a project's scenario classes live in, relative to it: the web project's rule scenarios sit in Rules/.
 scenario_roots() {
   if [ "$1" = "$web_project" ]; then echo Scenarios Rules; else echo Scenarios; fi
@@ -59,26 +63,28 @@ while [ $# -gt 0 ]; do
     --out) out="$2"; shift 2 ;;
     --no-publish) publish=0; shift ;;
     --no-video) video=0; shift ;;
-    -h|--help) sed -n '2,38p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,40p' "$0"; exit 0 ;;
     *) chosen+=("$1"); shift ;;
   esac
 done
 mkdir -p "$out"
 out="$(cd "$out" && pwd)"
 
-# The project (web, vscode) whose Scenarios/ (or Rules/, the web project's) holds a scenario class's file, or nothing.
+# The project (web, vscode, ruleviewer) whose Scenarios/ (or Rules/, the web project's) holds a scenario class's file, or nothing.
 find_class_project() {
   if [ -n "$(find "$web_project/Scenarios" "$web_project/Rules" -name "$1.cs" -print -quit 2> /dev/null)" ]; then echo web; fi
   if [ -n "$(find "$vscode_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo vscode; fi
+  if [ -n "$(find "$ruleviewer_project/Scenarios" -name "$1.cs" -print -quit)" ]; then echo ruleviewer; fi
 }
 
-# The scenario classes changed since a ref, and those whose fixture files changed, in both projects, each on a line with
+# The scenario classes changed since a ref, and those whose fixture files changed, in every project, each on a line with
 # why it was picked: "<class>\tchanged", or "<class>\tfixtures\t<the fixture's path in its project>" (one line per
 # changed fixture). A class uses a fixture when it names its whole file name in double quotes
 # (ImportBuildAsync("arc-staff.build.yaml")), so a fixture whose name ends another's (arc-staff.build.yaml,
 # thunderous-retort-disorienting-blow-arc-staff.build.yaml) selects only its own classes; FixtureNamingTests keeps every
 # fixture named that way. The extension's scenarios all open the files of its project's Workspace/: a change there selects
-# every one of them.
+# every one of them, and the rule viewer's all open the page drawn from its Fixtures/: a change there selects every one of
+# them too.
 list_changed_classes() {
   local base
   base="$(git -C "$repo" merge-base "$1" HEAD)"
@@ -111,15 +117,29 @@ list_changed_classes() {
       printf '%s\tfixtures\t%s\n' "$class" "${file#"${vscode_project#"$repo"/}"/}"
     done
   done
+  local page_fixtures="${ruleviewer_project#"$repo"/}/Fixtures"
+  local changed_page_fixtures
+  changed_page_fixtures="$( { git -C "$repo" diff --name-only "$base" -- "$page_fixtures";
+                              git -C "$repo" ls-files --others --exclude-standard -- "$page_fixtures"; } | sort -u)"
+  for file in $changed_page_fixtures; do
+    for class in $(find "$ruleviewer_project/Scenarios" -name '*Tests.cs' -exec basename {} .cs \;); do
+      printf '%s\tfixtures\t%s\n' "$class" "${file#"${ruleviewer_project#"$repo"/}"/}"
+    done
+  done
 }
 
 # Each project's filters, joined into one ('|' is "or" to dotnet test); a project with none doesn't run.
 web_filters=()
 vscode_filters=()
+ruleviewer_filters=()
 add_class() {
   local where
   for where in $(find_class_project "$1"); do
-    if [ "$where" = web ]; then web_filters+=("FullyQualifiedName~.$1."); else vscode_filters+=("FullyQualifiedName~.$1."); fi
+    case "$where" in
+      web) web_filters+=("FullyQualifiedName~.$1.") ;;
+      vscode) vscode_filters+=("FullyQualifiedName~.$1.") ;;
+      *) ruleviewer_filters+=("FullyQualifiedName~.$1.") ;;
+    esac
   done
 }
 everything=0
@@ -132,7 +152,7 @@ if [ -n "$changed_since" ]; then
   while IFS= read -r class; do
     if [ -n "$class" ]; then add_class "$class"; fi
   done < <(cut -f1 "$selection" | sort -u)
-  if [ ${#web_filters[@]} -eq 0 ] && [ ${#vscode_filters[@]} -eq 0 ] && [ ${#chosen[@]} -eq 0 ]; then
+  if [ ${#web_filters[@]} -eq 0 ] && [ ${#vscode_filters[@]} -eq 0 ] && [ ${#ruleviewer_filters[@]} -eq 0 ] && [ ${#chosen[@]} -eq 0 ]; then
     echo "No scenario changed since $changed_since."
     if [ $video -eq 1 ]; then echo "[]" > "$out/scenarios.json"; fi
     exit 0
@@ -144,17 +164,20 @@ for choice in "${chosen[@]}"; do
     everything=1
   elif [[ $choice == Rules || $choice == Rules/* ]] && [ -d "$web_project/$choice" ]; then
     web_filters+=("FullyQualifiedName~Loopsmith.Web.E2E.${choice//\//.}.")
-  elif [ -d "$web_project/Scenarios/$choice" ] || [ -d "$vscode_project/Scenarios/$choice" ]; then
+  elif [ -d "$web_project/Scenarios/$choice" ] || [ -d "$vscode_project/Scenarios/$choice" ] || [ -d "$ruleviewer_project/Scenarios/$choice" ]; then
     if [ -d "$web_project/Scenarios/$choice" ]; then
       web_filters+=("FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.${choice//\//.}.")
     fi
     if [ -d "$vscode_project/Scenarios/$choice" ]; then
       vscode_filters+=("FullyQualifiedName~Loopsmith.VsCodeExtension.E2E.Scenarios.${choice//\//.}.")
     fi
+    if [ -d "$ruleviewer_project/Scenarios/$choice" ]; then
+      ruleviewer_filters+=("FullyQualifiedName~Loopsmith.RuleViewer.E2E.Scenarios.${choice//\//.}.")
+    fi
   elif [ -n "$(find_class_project "$choice")" ]; then
     add_class "$choice"
   else
-    echo "No domain folder or scenario class named '$choice' under $web_project/Scenarios, $web_project/Rules or $vscode_project/Scenarios" >&2
+    echo "No domain folder or scenario class named '$choice' under $web_project/Scenarios, $web_project/Rules, $vscode_project/Scenarios or $ruleviewer_project/Scenarios" >&2
     exit 2
   fi
 done
@@ -163,12 +186,15 @@ if [ -z "$changed_since" ] && [ ${#chosen[@]} -eq 0 ]; then
 fi
 web_filter=""
 vscode_filter=""
+ruleviewer_filter=""
 if [ $everything -eq 1 ]; then
   web_filter="FullyQualifiedName~Loopsmith.Web.E2E.Scenarios.|FullyQualifiedName~Loopsmith.Web.E2E.Rules."
   vscode_filter="FullyQualifiedName~Loopsmith.VsCodeExtension.E2E.Scenarios."
+  ruleviewer_filter="FullyQualifiedName~Loopsmith.RuleViewer.E2E.Scenarios."
 else
   if [ ${#web_filters[@]} -gt 0 ]; then web_filter="$(IFS='|'; echo "${web_filters[*]}")"; fi
   if [ ${#vscode_filters[@]} -gt 0 ]; then vscode_filter="$(IFS='|'; echo "${vscode_filters[*]}")"; fi
+  if [ ${#ruleviewer_filters[@]} -gt 0 ]; then ruleviewer_filter="$(IFS='|'; echo "${ruleviewer_filters[*]}")"; fi
 fi
 
 site="$out/.site"
@@ -239,6 +265,29 @@ if [ -n "$vscode_filter" ]; then
   vscode_url="http://localhost:$vport/"
 fi
 
+ruleviewer_url=""
+if [ -n "$ruleviewer_filter" ]; then
+  # The rules page drawn from the project's fixture rules (the rule viewer's own output, not out/rule-viewer/), served
+  # like the web app by the static server.
+  page="$out/.rule-viewer-page"
+  rm -rf "$page"
+  echo "Drawing the rules page from the rule viewer's fixture rules…"
+  viewer="$repo/tools/rule-viewer/Loopsmith.RuleViewer"
+  dotnet build "$viewer" -c Release --nologo -v q > "$out/.rule-viewer-build.log" 2>&1 || { cat "$out/.rule-viewer-build.log" >&2; exit 1; }
+  (cd "$repo" && dotnet run --no-build -c Release --project "$viewer" -- --rules "$ruleviewer_project/Fixtures/rules" --out "$page") \
+    || { echo "The rule viewer couldn't draw the fixture rules." >&2; exit 1; }
+  dotnet "$tools/Loopsmith.StaticServer/bin/Release/net10.0/Loopsmith.StaticServer.dll" "$page" > "$out/.rule-viewer-server.log" 2>&1 &
+  servers+=($!)
+  page_url=""
+  for _ in $(seq 100); do
+    page_url="$(grep -m1 '^http://' "$out/.rule-viewer-server.log" || true)"
+    [ -n "$page_url" ] && curl -sf "${page_url}rules.html" > /dev/null && break
+    sleep 0.2
+  done
+  [ -n "$page_url" ] || { echo "The static server didn't start: see $out/.rule-viewer-server.log" >&2; exit 1; }
+  ruleviewer_url="${page_url}rules.html"
+fi
+
 status=0
 if [ $video -eq 0 ]; then
   results="$out/.results"
@@ -259,6 +308,13 @@ if [ $video -eq 0 ]; then
       dotnet test "$vscode_project" -c Release --nologo --filter "$vscode_filter" --results-directory "$results" \
         --logger "trx;LogFileName=vscode.trx" --logger "console;verbosity=normal" || status=$?
     trx+=("$results/vscode.trx")
+  fi
+  if [ -n "$ruleviewer_filter" ]; then
+    echo "Running the rule viewer's scenarios, unrecorded ($ruleviewer_filter)…"
+    env -u E2E_VIDEO_DIR -u E2E_ACTION_GAP E2E_RULE_VIEWER_URL="$ruleviewer_url" \
+      dotnet test "$ruleviewer_project" -c Release --nologo --filter "$ruleviewer_filter" --results-directory "$results" \
+        --logger "trx;LogFileName=ruleviewer.trx" --logger "console;verbosity=normal" || status=$?
+    trx+=("$results/ruleviewer.trx")
   fi
   # Each run's result and time, from the test results: without a recording no scenario writes its record.
   # It fails when no run passed or failed (none matched, or all skipped), like a recording with no record.
@@ -285,6 +341,11 @@ if [ -n "$vscode_filter" ]; then
   E2E_VSCODE_URL="$vscode_url" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
     dotnet test "$vscode_project" -c Release --nologo --filter "$vscode_filter" --logger "console;verbosity=normal" || status=$?
 fi
+if [ -n "$ruleviewer_filter" ]; then
+  echo "Running the rule viewer's scenarios ($ruleviewer_filter)…"
+  E2E_RULE_VIEWER_URL="$ruleviewer_url" E2E_VIDEO_DIR="$videos" E2E_ACTION_GAP="$action_gap" \
+    dotnet test "$ruleviewer_project" -c Release --nologo --filter "$ruleviewer_filter" --logger "console;verbosity=normal" || status=$?
+fi
 
 
 # Each recorded run: trimmed from when Home was shown, its last frame held 3 s, as a GIF next to its domain folder's
@@ -295,7 +356,7 @@ palette_at() {
   echo "$hold_end,fps=20,scale=$1:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=128:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle"
 }
 # The last run's GIFs go (only the folders named like the projects' Scenarios/ domain folders, and Rules/).
-for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
+for folder in "$web_project/Scenarios"/*/ "$vscode_project/Scenarios"/*/ "$ruleviewer_project/Scenarios"/*/; do rm -rf "${out:?}/$(basename "$folder")"; done
 rm -rf "${out:?}/Rules"
 convert_run() {
   local record="$1" video="${1%.json}.webm" domain gif screen offset width=800

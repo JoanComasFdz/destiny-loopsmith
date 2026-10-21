@@ -11,7 +11,9 @@ work out on their own. These rules apply to every Gherkin a session writes. A Gh
   play button and recording panel) is one scenario in `tests/Loopsmith.VsCodeExtension.E2E`, played in VS Code for the web on
   the desktop only (its
   [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md)), and its PR shows its GIFs
-  the same way.
+  the same way. So does the rule viewer's page (`tools/rule-viewer`): each Gherkin about how its tree behaves is one
+  scenario in `tests/Loopsmith.RuleViewer.E2E`, played on the page drawn from that project's fixture rules (its
+  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.RuleViewer.E2E/E2E-TEST-CODE-RULES.md)).
 
 The PR's e2e comment shows each scenario's title, closed until it is opened, and inside it the flow of the rule it names (a rule scenario's `# Rule` line,
 drawn by the rule viewer), its Gherkin, and a GIF of it played on each screen its tags name

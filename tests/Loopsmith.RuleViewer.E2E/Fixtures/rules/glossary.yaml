@@ -1,0 +1,238 @@
+# Keyword vocabulary, subclass items and class finishers (docs/rule-format.md § Glossary).
+#
+# Semantics: maxStacks (>= 2) means the status stacks, up to that cap (a fact shown with the buff,
+# "up to x10"), and can be declared at max (`max:<status>`, ADRs D3). A status without it doesn't
+# stack: applying it while it is active changes nothing. The stacking statuses are bolt-charge,
+# armor-charge, combination-blow, slice and frost-armor. A duration is a fact shown on the outcome, given only
+# where a source states it. A status ends when a rule removes or consumes it, or when the player
+# declares it ended (`end:<status>`). `trait` is Bungie's trait for the keyword (the manifest's
+# DestinyTraitDefinition: the game's own keyword, as its tooltips name it): the manifest excerpt's
+# `keywordTraits` give its icon, which shows next to the keyword's name. A keyword without one has none.
+# `adjective` (a debuff) is the word for a target that has it, where adding "ed" to the name gets it wrong
+# (Freeze → Frozen); without one the name takes "ed" (Jolted, Severed).
+# Sources: the Destiny Data Compendium snapshot of 2026-10-09 ("compendium/2026-10-09/<Tab>#<row>"
+# below; it has glossary rows for the Arc and Strand keywords) and Clarity 2.0625, which has no
+# status entries and only mentions them inside other entries. The Stasis keywords and Suspend come from the snapshot
+# of 2026-10-17 ("compendium/2026-10-17/<Tab>#<row>").
+
+statuses:
+  # ---------------------------------------------------------------- buffs (on the player; weaponBuff: on your weapons)
+
+  # maxStacks 10: compendium/2026-10-09/Arc#5 (10 stacks are needed to discharge). Agrees with the
+  # creator ("those 10 stacks of bolt charge") and with Clarity's New Tricks trigger ("x10").
+  # No duration is stated.
+  - { id: bolt-charge, name: Bolt Charge, kind: buff, affinity: arc, maxStacks: 10, trait: 2935077680 }
+
+  # 15 s: compendium/2026-10-09/Arc#4 (the intrinsic Arc buff; Flashover's Artifact Perks#43 also
+  # says 15 s). The artifact perk Amped Up (Artifact Perks#109, not in the skip-grenade build) raises
+  # it to 20 s. Its 15% damage resistance against combatants is the amplified keyword element
+  # (keywords/arc.yaml), which says what else of Arc#4 isn't encoded.
+  - { id: amplified, name: Amplified, kind: buff, affinity: arc, duration: 15s, trait: 3291013836 }
+
+  # You are in your Super: casting it puts you in it (the super keyword element, keywords/super.yaml)
+  # and the player declares it over (`end:super`, ADRs D3). No duration: a roaming Super's lasts until
+  # its energy runs out (Arc Staff's 20 s base, compendium/2026-10-13/Arc#44), a thrown one's until
+  # its last cast; while it lasts, the Super's damage resistance counts (ADRs D29).
+  - { id: super, name: Super, kind: buff, affinity: neutral }
+
+  # You are at critical health: your shields are broken (0 Shield HP, which the Compendium calls
+  # Critical Health: compendium/2026-10-19/Weapon Perks#91, Eye of the Storm; the Game Mechanics tab
+  # uses the term but defines it in no row). The player declares reaching it (`health:critical`) and
+  # its end, shields full again (`end:critical-health`, ADRs D3); the engine puts it on you, no rule
+  # does. Being damaged while at it is the `health:hit` step. No duration: it lasts until you heal.
+  - { id: critical-health, name: Critical health, kind: buff, affinity: neutral }
+
+  # Spark of Recharge's buff: on reaching critical health your grenade and melee regenerate faster,
+  # and the buff lasts until your shields are full again (compendium/2026-10-19/Arc#22; Bungie,
+  # Update 8.0.0.1: "persists until the player returns to full shields"), so it ends with Critical
+  # health (`endsWith`). Bungie's manifest has it as a perk of its own (sandbox perk 111808813).
+  - { id: spark-of-recharge, name: Spark of Recharge, kind: buff, affinity: arc, endsWith: critical-health }
+
+  # Iron Panoply's 4-piece buff: 7 s on reaching critical health, kills while it lasts refresh it
+  # (compendium/2026-10-19/Armor Perks#50). No stacks are stated.
+  - { id: iron-conviction, name: Iron Conviction, kind: buff, affinity: neutral, duration: 7s }
+
+  # Mechaneer's Tricksleeves's damage buff (Bungie's perk name; the Compendium calls it "Damage
+  # Buff", compendium/2026-10-19/Exotic Armors#52): no timer while at critical health, 5 s once
+  # shields recover, +3 s per Sidearm kill. No time is counted (ADRs D1): the player declares its
+  # end (`end:spring-loaded-mounting`).
+  - { id: spring-loaded-mounting, name: Spring-Loaded Mounting, kind: buff, affinity: neutral }
+
+  # Oryx's Memory's 4-piece buff (compendium/2026-10-19/Armor Perks#66): from an Elite+ kill, used up by
+  # the invisibility it gives at critical health. No duration is stated. Bungie's manifest shows it as the
+  # set's perk (846599598).
+  - { id: ascendant-escape, name: Ascendant Escape, kind: buff, affinity: neutral }
+
+  # Invisibility: enemies lose track of you. Each source gives its own duration (Ascendant Escape's 6+? s,
+  # Armor Perks#66), so the glossary gives none.
+  - { id: invisible, name: Invisible, kind: buff, affinity: neutral }
+
+  # Base maximum 3: compendium/2026-10-09/Game Mechanics#94. Charged Up raises a build's cap to
+  # 4|5|6 by copies (the `charged-up` mod's raiseMaxStacks passive; Clarity 2577472338 agrees). Its
+  # decay (1 stack every 10 s while a passive mod is equipped, same row) is a fact of the game:
+  # Armor Charge ends when a rule consumes it (Grenade Kickstart) or the player declares it ended.
+  # Counted (ADRs D33): the engine counts its stacks, sure and chance ones, up to the cap; the decay
+  # (Game Mechanics#94, with Time Dilation's 15 | 18 | 20 s from Armor Mods#18, Class Item) is a fact
+  # shown with the count, never applied.
+  - id: armor-charge
+    name: Armor Charge
+    kind: buff
+    affinity: neutral
+    maxStacks: 3
+    counted: true
+    decay: "1 stack every 10 s while a passive Armor Charge mod is equipped (every 15 | 18 | 20 s with 1 | 2 | 3 Time Dilation)"
+
+
+  # Duration 10 s: compendium/2026-10-09/Strand#7 (generic Woven Mail; To Shreds' Artifact Perks#51
+  # also says 10 s). Clarity mentions other durations for other sources (5 s, 2-20 s); a rule can
+  # override it. Its 45% [25%] damage resistance and its removal on a Super cast are the woven-mail
+  # keyword element (keywords/strand.yaml).
+  - { id: woven-mail, name: Woven Mail, kind: buff, affinity: strand, duration: 10s, trait: 3173573497 }
+
+  # Duration depends on the source (Clarity: 11 s Facet of Bravery, 8 s Thread of Propagation;
+  # Compendium Artifact Perks#45: 14 s from Unraveling Orbs, set in that rule). No generic duration.
+  # A weapon buff (kind weaponBuff): your Strand weapons fire Unraveling Rounds; the state shows it with the weapons.
+  # No trait: Bungie's manifest has no icon for it (2026-10-12: no trait, perk or item by that name). The game draws
+  # it in your buffs as a triangle around a round (drawnIcon: rounds), which the designer draws in its affinity.
+  - { id: unraveling-rounds, name: Unraveling Rounds, kind: weaponBuff, affinity: strand, drawnIcon: rounds }
+
+  # Combination Blow melee damage stacks: up to 3, each lasting 20 s (compendium/2026-10-09/Arc#41;
+  # the creator also says "times three stacks"). Clarity has no melee-ability entries.
+  - { id: combination-blow, name: Combination Blow, kind: buff, affinity: arc, maxStacks: 3, duration: 20s }
+
+  # Shinobu's Vow: the next thrown Skip Grenade is enhanced. Lasts until that grenade is thrown.
+  - { id: new-tricks, name: New Tricks, kind: buff, affinity: arc }
+
+  # Slice weapon perk window: 8 s (9 s enhanced), ends after 5 severs. compendium/2026-10-09/
+  # Weapon Perks#198 (5 severing hits, each within 8 s of the last); Clarity 923806249 agrees (the
+  # buff ends at 5 stacks). In weapons/perks.yaml the player declares the 5 hits done (`max:slice`).
+  # A weapon buff (kind weaponBuff): the perk's window is on the weapon that rolls it.
+  - { id: slice, name: Slice, kind: weaponBuff, affinity: strand, maxStacks: 5, duration: 8s }
+
+  # The weapon perks that need several enemies in one action (weapons/perks.yaml; compendium/2026-10-14/Weapon Perks).
+  # One for All (#153) and Stats for All (#206): 10 s (11 s enhanced), not refreshed while active. Reaper's Tithe
+  # (#175): x2 to x4 by the enemies killed at once, 15 s (17 s enhanced). Weapon buffs: the perk's buff is on the
+  # weapon that rolls it.
+  - { id: one-for-all, name: One for All, kind: weaponBuff, affinity: neutral, duration: 10s }
+  - { id: stats-for-all, name: Stats for All, kind: weaponBuff, affinity: neutral, duration: 10s }
+  - { id: reapers-tithe, name: Reaper's Tithe, kind: weaponBuff, affinity: neutral, maxStacks: 4, duration: 15s }
+
+  # The weapon perks an ammo brick sets off (weapons/perks.yaml; compendium/2026-10-19/Weapon Perks). All-Star (#14):
+  # 35% [15%] more damage and +100? Reload Speed for 6 s (7 s enhanced; 9 s, 10 s enhanced, from a Heavy brick). Sticky
+  # Bomb (Adhesive Ordnance, #9): the next shot's bomb, until that shot; no duration is stated. Weapon buffs: on the
+  # weapon that rolls the perk. No trait: Bungie's manifest has none by either name (2026-10-19).
+  - { id: all-star, name: All-Star, kind: weaponBuff, affinity: neutral, duration: 6s }
+  - { id: sticky-bomb, name: Sticky Bomb, kind: weaponBuff, affinity: kinetic }
+
+  # Reaper armed: the next weapon kill within 10 s of a class ability use (compendium/2026-10-09/
+  # Armor Mods#14; Clarity 40751621 agrees).
+  - { id: reaper, name: Reaper, kind: buff, affinity: neutral, duration: 10s }
+
+  # An overshield on you: Proximity Ward's 200 HP one during a finisher (compendium/2026-10-09/
+  # Armor Mods#13, Class Item). Its HP is a fact of the source. No generic duration.
+  - { id: overshield, name: Overshield, kind: buff, affinity: neutral }
+
+  # Void Overshield on you: Bulwark Finisher's lasts 8 | 10 | 12 | 14 s at x3 | x4 | x5 | x6 Armor
+  # Charge consumed (compendium/2026-10-09/Armor Mods#4, Class Item), a fact of that source. No
+  # generic duration. Trait: Bungie's "Overshield" keyword (2485406866), whose description is the Void one ("a
+  # protective barrier of Void Light"); the plain overshield above is Proximity Ward's neutral one and doesn't take it.
+  - { id: void-overshield, name: Void Overshield, kind: buff, affinity: void, trait: 2485406866 }
+
+  # Emergency Reinforcement's damage resistance on you, from reaching critical health with x3 or more
+  # Armor Charge (the mod of that name, mods/chest.yaml; compendium/2026-10-13/Armor Mods#4). It lasts
+  # 6 | 9 | 12 | 15 s by the charges spent, which the state doesn't count (ADRs D1), so no generic
+  # duration: the player declares it ended (`end:emergency-reinforcement`, ADRs D3).
+  - { id: emergency-reinforcement, name: Emergency Reinforcement, kind: buff, affinity: neutral }
+
+  # Lethal Current armed: the next melee hit within 10 s of a class ability use jolts and sets off an
+  # aftershock (compendium/2026-10-13/Arc#50). No trait: the game shows it as no keyword.
+  - { id: lethal-current, name: Lethal Current, kind: buff, affinity: arc, duration: 10s }
+
+  # Frost Armor: damage resistance per stack, up to x5 (compendium/2026-10-17/Stasis#6; x7 with Whisper of Rime, a
+  # fragment no rule names yet). It loses 1 stack every 5 s: not encoded, since only a counted status shows its decay
+  # (ADRs D33) and the player declares it ended (`end:frost-armor`). No duration is stated.
+  - { id: frost-armor, name: Frost Armor, kind: buff, affinity: stasis, maxStacks: 5, trait: 106947924 }
+
+  # ---------------------------------------------------------------- debuffs (on the target)
+  # Durations against combatants (PvE) from the Compendium 2026-10-09:
+  #  - jolt 10 s [PvP 5 s]: Arc#8 (refreshed by re-jolting);
+  #  - sever 10 s [5 s] (+5 s with Thread of Continuity): Strand#8. The note's "5s sever" is not
+  #    encoded: 5 s is only the PvP figure, and the note may mean the Slice window (8 s);
+  #  - unravel: no generic duration (Strand#10: it depends on the source);
+  #  - blind 10 s against combatants (3 s on Guardians): Arc#7.
+  # Not encoded: what these debuffs do to the enemy (Sever cuts its damage by 40% [15%], Strand#8;
+  # Blind stops it attacking, Arc#7), since the rules describe no enemy behaviour; and Unravel's
+  # threads (Strand#10: after taking 40 damage an unraveled enemy sends out 3 threads of 26 [4]
+  # damage that spread Unravel, 1.2 s cooldown): no rule reacts to thread damage and the pack they
+  # would spread to is the one already unraveled (ADRs D7), so they would only add trace lines.
+  - { id: jolt, name: Jolt, kind: debuff, affinity: arc, duration: 10s, trait: 3221118171 }
+  - { id: sever, name: Sever, kind: debuff, affinity: strand, duration: 10s, trait: 2519102437 }
+  - { id: unravel, name: Unravel, kind: debuff, affinity: strand, trait: 945613349 }
+  - { id: blind, name: Blind, kind: debuff, affinity: arc, duration: 10s, trait: 500183315 }
+  # Exhaust: the enemies' damage cut by 25% (Veteran's Wisdom, compendium/2026-10-14/Weapon Perks#416). No generic
+  # duration: it depends on the source (compendium/2026-10-19/Weapon Perks: 10 s from Veteran's Wisdom, #416, set in its
+  # rules; 5 s from Problem Solver, #391; ? from Psychohack, #392; none stated for Adhesive Ordnance, #9). No trait:
+  # Bungie's manifest has none by that name (2026-10-14).
+  - { id: exhaust, name: Exhaust, kind: debuff, affinity: neutral }
+  # The Stasis debuffs (compendium/2026-10-17/Stasis#7-8). Slow: a slowed enemy moves 50% slower and aims worse. In the
+  # game it stacks and x100 Slow freezes it; here it doesn't stack (no maxStacks) until a rule freezes on max Slow. No
+  # duration is stated. Freeze:
+  # a frozen combatant can't move, shoot or use abilities for 6 s (Guardians 1.35 to 4.75 s); bosses shatter out of it
+  # after 3 s. "Frozen", not "Freezed": its adjective. Shatter (Stasis#9) is damage, not a status, and isn't here.
+  - { id: slow, name: Slow, kind: debuff, affinity: stasis, trait: 4239423954 }
+  - { id: freeze, name: Freeze, kind: debuff, affinity: stasis, duration: 6s, adjective: Frozen, trait: 2968599152 }
+  # Suspend: a suspended combatant can't move, shoot or use abilities (compendium/2026-10-17/Strand#9). No duration:
+  # the Compendium gives "up to 6+2 s" for rank-and-file and elites and 3+1 s for minibosses, not one figure.
+  - { id: suspend, name: Suspend, kind: debuff, affinity: strand, trait: 2679722414 }
+
+pickups:
+  # Ionic Traces home in on you at 6 m/s (compendium/2026-10-09/Arc#6); the creator agrees:
+  # "you don't need to go pick them up ... They literally come to you."
+  - { id: ionic-trace, name: Ionic Trace, affinity: arc, collectsAutomatically: true, trait: 3824458961 }
+  - { id: orb-of-power, name: Orb of Power, affinity: neutral, collectsAutomatically: false }
+  # The other elemental pickups, which Synergy (rules/mods/weapons.yaml) spawns by the weapon's element. None is said to
+  # come to you as Ionic Traces do, so each lands on the ground until picked up: a Firesprite lasts 25 s
+  # (compendium/2026-10-13/Solar#5), a Void Breach 25 s (Void#7), a Stasis Shard 20 s (Stasis#4) and a Tangle can be
+  # picked up within 5 m for up to 20 s (Strand#4). What picking one up gives (grenade, class or melee energy; a Tangle's
+  # throw) has no keyword element yet.
+  - { id: firesprite, name: Firesprite, affinity: solar, collectsAutomatically: false, trait: 37177486 }
+  - { id: void-breach, name: Void Breach, affinity: void, collectsAutomatically: false, trait: 3328352616 }
+  - { id: stasis-shard, name: Stasis Shard, affinity: stasis, collectsAutomatically: false, trait: 4043161234 }
+  - { id: tangle, name: Tangle, affinity: strand, collectsAutomatically: false, trait: 1577394840 }
+
+summons:
+  - { id: threadling, name: Threadling, damageType: strand, trait: 2724747993 }
+
+# ---------------------------------------------------------------- subclass items
+# The manifest hash of each subclass item, so a DIM loadout's subclass is recognised (ADRs D27,
+# docs/loop-format.md "Starting from a DIM link"). The nine Light subclasses, as DIM's own source
+# lists them (src/app/loadout-drawer/loadout-utils.ts, `oldToNewItems`, DIM commit d7c02e5); the
+# owner's DIM loadout names Arcstrider as 2328211300. The six Stasis and Strand ones are the Subclass bucket's items
+# of those names in Bungie's manifest (244213.26.06.29.2000-1-bnet.65864). Prismatic waits on an element per ability
+# (requirements FR-14).
+subclasses:
+  - { class: hunter,  subclass: arc,   name: Arcstrider,   hash: 2328211300 }
+  - { class: titan,   subclass: arc,   name: Striker,      hash: 2932390016 }
+  - { class: warlock, subclass: arc,   name: Stormcaller,  hash: 3168997075 }
+  - { class: hunter,  subclass: solar, name: Gunslinger,   hash: 2240888816 }
+  - { class: titan,   subclass: solar, name: Sunbreaker,   hash: 2550323932 }
+  - { class: warlock, subclass: solar, name: Dawnblade,    hash: 3941205951 }
+  - { class: hunter,  subclass: void,  name: Nightstalker, hash: 2453351420 }
+  - { class: titan,   subclass: void,  name: Sentinel,     hash: 2842471112 }
+  - { class: warlock, subclass: void,  name: Voidwalker,   hash: 2849050827 }
+  - { class: hunter,  subclass: stasis, name: Revenant,    hash: 873720784 }
+  - { class: titan,   subclass: stasis, name: Behemoth,    hash: 613647804 }
+  - { class: warlock, subclass: stasis, name: Shadebinder, hash: 3291545503 }
+  - { class: hunter,  subclass: strand, name: Threadrunner, hash: 3785442599 }
+  - { class: titan,   subclass: strand, name: Berserker,    hash: 242419885 }
+  - { class: warlock, subclass: strand, name: Broodweaver,  hash: 4204413574 }
+
+# ---------------------------------------------------------------- class finishers
+# Each class's own finisher, which the game plays when the player has none equipped (the manifest's "Finishers" item:
+# "If no finishers are in your inventory, your default class finisher plays."): the one Common, class-only item of the
+# Finishers bucket (3683254069) for each class. The designer's HUD shows its icon on the finisher square until a Bungie
+# login names the finisher the player's character has equipped (docs/loop-format.md, "Next trigger").
+finishers:
+  - { class: hunter,  name: Blade Carnival,   hash: 4012203003 }
+  - { class: titan,   name: The Focused Fist, hash: 2854370169 }
+  - { class: warlock, name: Palm of Wen Jie,  hash: 254514436 }

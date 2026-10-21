@@ -174,7 +174,8 @@ time (a login during an import's read waits for it).
 
 Every pull request from a branch of this repository shows its end-to-end scenarios
 ([tests/Loopsmith.Web.E2E](../tests/Loopsmith.Web.E2E/README.md), the web app's, and
-[tests/Loopsmith.VsCodeExtension.E2E](../tests/Loopsmith.VsCodeExtension.E2E/README.md), the VS Code extension's) as GIFs, each with a **▶ Play MP4** link to the
+[tests/Loopsmith.VsCodeExtension.E2E](../tests/Loopsmith.VsCodeExtension.E2E/README.md), the VS Code extension's, and
+[tests/Loopsmith.RuleViewer.E2E](../tests/Loopsmith.RuleViewer.E2E/README.md), the rule viewer's page's) as GIFs, each with a **▶ Play MP4** link to the
 same run as a sharp video with controls, so a reviewer sees them working without running anything. The session that
 works the PR records them; CI doesn't run, record or build anything for them.
 
@@ -191,14 +192,15 @@ works the PR records them; CI doesn't run, record or build anything for them.
   `main` (a class whose file changed, or that names a changed fixture file), not only those the push touched.
   `out/scenarios.json` keeps why each was picked: `"selected": "changed"` (its own file changed, or it was named on
   the command line), or `"selected": "fixtures"` with the changed `"fixtures"` (paths in its project:
-  `Scenarios/Loop/Weapons/EnemyCount/….build.yaml`, `Workspace/…`) when only a fixture it uses changed; a class that did both is
+  `Scenarios/Loop/Weapons/EnemyCount/….build.yaml`, `Workspace/…`, `Fixtures/rules/…`) when only a fixture it uses changed; a class that did both is
   `changed`. Every
   scenario passes before the push. While developing, the session runs them unrecorded
   (`tools/e2e/record.sh --no-video …`: same selection and served publish, no video, no pacing, no GIF) and never
   records between pushes; when a scenario or the web app changes after the recording and before the push, it records
   again, so the posted GIFs match the pushed head. A PR that changes nothing under `tests/Loopsmith.Web.E2E/Scenarios`, `tests/Loopsmith.Web.E2E/Rules`,
-  `tests/Loopsmith.VsCodeExtension.E2E/Scenarios` or `tests/Loopsmith.VsCodeExtension.E2E/Workspace` (the files the
-  extension's scenarios open) records and posts nothing, and runs no e2e workflow.
+  `tests/Loopsmith.VsCodeExtension.E2E/Scenarios`, `tests/Loopsmith.VsCodeExtension.E2E/Workspace` (the files the
+  extension's scenarios open), `tests/Loopsmith.RuleViewer.E2E/Scenarios` or `tests/Loopsmith.RuleViewer.E2E/Fixtures`
+  (the rules its page is drawn from) records and posts nothing, and runs no e2e workflow.
 - **How the GIFs get to GitHub:** a session can't upload a file to GitHub (its proxy only lets JSON request bodies
   through: a release upload answers 415), but it can push. Right after the push (the first one once the PR is open),
   `tools/e2e/push-gifs.sh` pushes a throwaway branch **`e2e-gifs/pr-<n>-<short sha>`**: the branch's head, already on

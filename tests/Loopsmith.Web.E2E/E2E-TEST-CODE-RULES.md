@@ -7,10 +7,10 @@ apply to this project; these do. Its web host section still binds the app: what 
 The aim: a scenario is one Gherkin, line for line. Every acceptance criterion about the app is a Gherkin, written by
 [docs/given-when-then-test-rules.md](../../docs/given-when-then-test-rules.md), and every Gherkin is one scenario here,
 played on the screens its tags name. A scenario reads like the Gherkin it implements, in the app's own words, and
-everything that isn't the scenario lives in `Infrastructure/`. What this project shares with the VS Code extension's e2e
-project (`tests/Loopsmith.VsCodeExtension.E2E`: a Gherkin and its `[TestDescription]`, the screens and their
+everything that isn't the scenario lives in `Infrastructure/`. What this project shares with the VS Code extension's and the
+rule viewer's e2e projects (`tests/Loopsmith.VsCodeExtension.E2E`, `tests/Loopsmith.RuleViewer.E2E`: a Gherkin and its `[TestDescription]`, the screens and their
 attributes, `ScenarioNaming`, the record next to a video, what a recording draws over the page) lives in
-`tests/Loopsmith.E2E.Shared`, a global using of both.
+`tests/Loopsmith.E2E.Shared`, a global using of each.
 
 ## A full example
 
