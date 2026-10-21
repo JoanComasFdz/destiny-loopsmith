@@ -1,0 +1,5 @@
+# Shinobu's Vow alone: it gives Bolt Charge, so "What this build does" lists the Bolt Charge keyword's rows, and no other keyword's.
+name: "E2E - What this build does, Shinobu's Vow"
+class: hunter
+subclass: arc
+exoticArmor: shinobus-vow

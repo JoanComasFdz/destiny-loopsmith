@@ -28,6 +28,22 @@ public static class ExplainPanelSnapshotAssertions
         return that;
     }
 
+    /// <summary>Under the panel's <paramref name="trigger"/> heading a row's source is <paramref name="source"/> ("[Bolt Charge]").</summary>
+    public static AssertingThat<ExplainPanelSnapshot> HasRowFromUnder(this AssertingThat<ExplainPanelSnapshot> that, string trigger, string source)
+    {
+        var rows = ReadRows(that.InstanceToAssert, trigger);
+        Assert.True(rows.Any(row => row.EndsWith(source, StringComparison.Ordinal)), $"Under \"{trigger}\" the panel shows {Describe(rows)}, but a row from \"{source}\" was expected among them.");
+        return that;
+    }
+
+    /// <summary>No row of the panel, under any heading, has one of <paramref name="sources"/> as its source ("[Jolt]").</summary>
+    public static AssertingThat<ExplainPanelSnapshot> HasNoRowFrom(this AssertingThat<ExplainPanelSnapshot> that, params string[] sources)
+    {
+        var found = that.InstanceToAssert.Lines.Where(IsRow).Where(row => sources.Any(source => row.EndsWith(source, StringComparison.Ordinal))).ToArray();
+        Assert.True(found.Length == 0, $"The panel shows {Describe(found)}, but no row from {Describe(sources)} was expected.");
+        return that;
+    }
+
     /// <summary>The panel offers no choice of how it is laid out ("Note", "Tree"): it is always a tree.</summary>
     public static AssertingThat<ExplainPanelSnapshot> OffersNoStyleChoice(this AssertingThat<ExplainPanelSnapshot> that)
     {

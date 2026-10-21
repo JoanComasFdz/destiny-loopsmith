@@ -311,7 +311,10 @@ Two keys belong to some kinds only (anywhere else they are an error):
   (ADRs D36).
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
-build slot ([Build check](#build-check)). A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
+build slot ([Build check](#build-check)). The build's explanation ("What this build does") lists a keyword's rules only when
+the build uses it: an element of the build names it (gives it, reacts to it, needs it, uses it up, strikes with it or
+changes it), a keyword already listed names it, or it gives a keyword one of them reads (Orb of Power, for a build that
+reads Armor Charge). The Guardian's resistance, which no element names, is never listed; nor is Super unless an element names it. A `kind: jump` element is a subclass's jump (High Jump, Blink): it is
 `inert` ("A jump: movement has no part in a loop."), so the build knows it and its subclass editor marks it, but it
 sets nothing off and the engine never plays it. The rules have the Arcstrider's four, by that subclass's hashes; a
 jump of another subclass (each has its own copies) stays a left-out plug. Besides the keywords, `keywords/guardian.yaml`
