@@ -83,12 +83,13 @@ public sealed class StepCard(IPage page, int number)
         State.Locator($"[data-testid=state-group][data-group={ToGroupKey(group)}] [data-testid=state-chip]")
             .Filter(new() { Has = page.Locator("[data-testid=state-chip-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(chip.Split(" · ")[0])}$") }) });
 
-    // A keyword by its name, in the line of that text under the element of that name.
+    // A keyword by its name, in the line of that text under the element of that name. The line's text holds the white
+    // space between its parts as the page writes it (a line break and an indent), so any white space matches a space.
     private ILocator FindFiredKeyword(string keyword, string line, string source) =>
         Card.Locator("[data-testid=outcome-source]")
             .Filter(new() { Has = page.Locator("[data-testid=outcome-element-name]").Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(source)}$") }) })
             .Locator("[data-testid=outcome-line]")
-            .Filter(new() { HasTextRegex = new Regex($"^{Regex.Escape(line)}$") })
+            .Filter(new() { HasTextRegex = new Regex($@"^\s*{Regex.Escape(line).Replace("\\ ", @"\s+", StringComparison.Ordinal)}\s*$") })
             .GetByRole(AriaRole.Button, new() { Name = keyword, Exact = true });
 
     private static string ToGroupKey(StateGroup group) =>

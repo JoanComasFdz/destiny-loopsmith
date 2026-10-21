@@ -138,7 +138,7 @@ public sealed class MultiEnemyWeaponPerksCatalogTests
         {
             "reapers-tithe" => Kill(session, WeaponSlot.Kinetic, 2),
             "slice" => LoopDesigning.AppendStep(session, new PlayerAction.UseClassAbility(), Optional.None<string>()).Resolutions[^1],
-            "all-star" => LoopDesigning.AppendStep(session, new PlayerAction.PickUpAmmo(AmmoBrick.Special), Optional.None<string>()).Resolutions[^1],
+            "all-star" => LoopDesigning.AppendStep(session, new PlayerAction.PickUpAmmo(AmmoBrick.Heavy), Optional.None<string>()).Resolutions[^1],
             _ => Hit(session, WeaponSlot.Kinetic, 3),
         };
 
