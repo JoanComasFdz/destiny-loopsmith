@@ -36,6 +36,7 @@ public abstract class BaseE2E : IAsyncLifetime
     private string? videoFolder;
     private readonly Stopwatch sinceOpened = new();
     private double? homeShownAt;
+    private byte[]? shownScreenshot;
     private Screen screen;
 
     /// <summary>The app as the user sees it, starting on Home.</summary>
@@ -59,7 +60,8 @@ public abstract class BaseE2E : IAsyncLifetime
                 : RecordingOverlay.PointerScript + RecordingOverlay.TapRingScript);
         }
 
-        // Started before the page (and its video): the time Home is noted at is never earlier than Home in the video.
+        // Started before the page (and its video). The video's clock runs behind it, so record.sh trims the video at the
+        // first frame that looks like the screenshot taken when Home is noted (<name>.home.png; the e2e tool's find-home).
         sinceOpened.Start();
         page = await context.NewPageAsync();
         OnScreen.NoteScreen(page, screen);
@@ -82,6 +84,7 @@ public abstract class BaseE2E : IAsyncLifetime
         TestContext.Current.SendDiagnosticMessage($"{DescribeScenario()}: Home shown {homeShownAt:0.0} s after the page opened");
         if (videoFolder is not null)
         {
+            shownScreenshot = await page.ScreenshotAsync();
             await Task.Delay(Hold);
         }
     }
@@ -169,6 +172,10 @@ public abstract class BaseE2E : IAsyncLifetime
             homeShownAt,
             passed);
         await File.WriteAllTextAsync(Path.Combine(folder, gifName + ".json"), JsonSerializer.Serialize(record, RecordingJson));
+        if (shownScreenshot is not null)
+        {
+            await File.WriteAllBytesAsync(Path.Combine(folder, gifName + ".home.png"), shownScreenshot);
+        }
     }
 
     private string DescribeScenario() => $"{GetType().Name}.{TestContext.Current.TestMethod?.MethodName} ({screen})";
