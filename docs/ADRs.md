@@ -8,7 +8,7 @@ step's damage resistance (D29), armor mods in their sockets (D30), the artifact 
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
 developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40), a
-slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), readying a weapon (D44) and the rank of the enemy a kill kills (D45). D1 is the
+slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), readying a weapon (D44), the rank of the enemy a kill kills (D45), the coding building blocks in a project of their own (D46) and the tools written in C# (D47). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -56,6 +56,7 @@ founding one: every other decision follows from it.
 | D44 | Readying (swapping to) a weapon is a step the player declares; which weapon is in hand isn't kept | Mechaneer's Tricksleeves's damage buff comes from readying a sidearm at critical health; a weapon in hand would be state no other rule reads |
 | D45 | A kill step or a finisher says the rank of the enemy it kills (`energy:kill:elite`); a rule needs one rank or that rank and stronger (`tier: elite+`) | Ascendant Escape and Iron Sharpens Iron react to an Elite+ kill; the pack is minor (D7), and which enemy dies is play |
 | D46 | Optional, Result and Unit are a project of their own, `Loopsmith.Functional`; Core is the main app's domain and logic, and a tool references it only when it uses that | A development tool that needs only the coding building blocks builds in seconds instead of compiling Core (about 27 s on a clean CI runner) |
+| D47 | A developer tool is written in C#, following the coding rules; a shell script is only thin glue | C# is what the owner reads and reviews; the tools once in Python (the Compendium download, the manifest extractor, the e2e scripts' steps) were ported, and Python is no longer installed |
 
 ## What the product is
 
@@ -815,3 +816,15 @@ D39); a development tool that doesn't references only `Loopsmith.Functional`, or
 rules. **Consequence.** Core's kernel is `Domain`, `Phrasing` and `Causality`; Core's architecture tests guard
 `Loopsmith.Functional` in its own assembly (`FunctionalProjectTests`: only .NET and Dunet, no I/O, its own namespace,
 immutable), and a type Core declares in that namespace fails `Every_core_type_lives_in_a_known_slice`.
+
+### D47 — Developer tools are written in C#
+
+**Context.** The Compendium download, the manifest extractor and the e2e scripts' steps were Python, and the cloud
+session and the dev container installed its packages for them. The owner reads and reviews C#, and every one of those
+tools was ported to .NET (#192, #193, #194), after which Python was removed from the setup and the docs (#197).
+**Decision (product owner).** A tool under `tools/` is a .NET project that follows the coding rules (D39, D46), never
+Python or another language. A shell script is fine as thin glue: it installs something, runs `dotnet`, `git`, `ffmpeg`
+or `gh`, and passes files along; any decision or parsing goes into the tool's C#. **Consequence.** No Python package is
+installed anywhere, and an agent never writes a Python helper (the rule author reads a Compendium row from the tab's
+`.md`). Thin scripts may stay (`record.sh`, `push-gifs.sh`, `prepare-pages.sh`, the dev container's): turning them
+into C# too is left for later.

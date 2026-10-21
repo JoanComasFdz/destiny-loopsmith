@@ -51,7 +51,8 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
   nothing else): the coding building blocks, a project of its own so a tool can use them without Core.
   **Core is the main app's domain and business logic**: a tool under `tools/` references Core only when it uses that
   (the rule viewer does); a development tool that doesn't references only `Loopsmith.Functional`, or nothing, and still
-  follows [docs/CODING_RULES.md](docs/CODING_RULES.md) ("The host owns no logic").
+  follows [docs/CODING_RULES.md](docs/CODING_RULES.md) ("The host owns no logic"). Every tool is C# (ADRs D47): a shell
+  script is only thin glue (install, run `dotnet`, `git`, `ffmpeg` or `gh`, pass files along), never Python.
 - `src/Loopsmith.Core/` — kernel (`Domain`, `Phrasing`, `Causality`) and
   slices (`SourceFetching`, `RuleParsing`, `BuildParsing`, `LoopFiles`, `BuildComposition`,
   `StepPlaying` (plays steps, and a loop's passes until it repeats), `LoopAnalyzing` (judges a played loop by its
