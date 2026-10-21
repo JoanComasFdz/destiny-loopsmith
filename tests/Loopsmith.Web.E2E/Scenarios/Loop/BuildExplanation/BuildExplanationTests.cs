@@ -14,7 +14,7 @@ public sealed class BuildExplanationTests : BaseE2E
           Given the build "build-explanation-mechaneers-tricksleeves" is imported, with no steps
           When I tap "What this build does" above the loop
           Then the panel shows no "Note" or "Tree" choice
-          And its "Always" heading is followed by the line "├ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]"
+          And its "Always" heading is followed by the line "└ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]"
         """)]
     public async Task WhatThisBuildDoesShowsEachTriggerWithOneOutcomePerLineAndNoNoteTreeChoice(Screen screen)
     {
@@ -30,7 +30,7 @@ public sealed class BuildExplanationTests : BaseE2E
         var explained = await Frontend.Designer.ExplainPanel.ReadAsync();
         Asserting.That(explained)
             .OffersNoStyleChoice()
-            .HasRowUnder("Always", "├ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]");
+            .HasRowUnder("Always", "└ Sidearms: +50 Airborne Effectiveness, +100 Handling, +100 Reload Speed  [Mechaneer's Tricksleeves]");
     }
 
     [Theory, PlayInMobile]
