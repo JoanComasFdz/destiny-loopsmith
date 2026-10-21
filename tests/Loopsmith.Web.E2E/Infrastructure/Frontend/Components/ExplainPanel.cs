@@ -146,7 +146,13 @@ public sealed class ExplainPanel(IPage page)
             tabs: [...panel.querySelectorAll('[role=tab]')].map(tab => ({ name: tab.innerText.trim(), box: box(tab.getBoundingClientRect()) })),
             lines: lines.map(line => {
               // Only the parts with text: the spaces that align the sources hang past a wrapped line's end, unseen.
-              const rects = [...line.children].flatMap(part => [...part.childNodes]).flatMap(text => {
+              // Its texts, a name's inside its button too (a name's preview, when it shows, isn't the line's).
+              const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+              const texts = [];
+              for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                if (!node.parentElement.closest('[data-testid=item-preview]')) texts.push(node);
+              }
+              const rects = texts.flatMap(text => {
                 const start = text.textContent.search(/\S/);
                 if (start < 0) return [];
                 const range = document.createRange();
