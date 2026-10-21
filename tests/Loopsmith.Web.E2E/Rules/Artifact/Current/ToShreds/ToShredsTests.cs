@@ -91,8 +91,8 @@ public sealed class ToShredsTests : BaseE2E
           When I tap "Festival Flight" in the trigger panel
           And I tap "💀 kill"
           Then card #3's heading is "#3 Festival Flight (💀 kill)"
-          # The heal's amount is unknown ("?" in the rules), so its line names no number.
-          And "To Shreds" fires "Woven Mail (10s)" and "heals you and allies"
+          # The heal's amount is unknown ("?" in the rules), so its line shows "?".
+          And "To Shreds" fires "Woven Mail (10s)" and "heals you and allies ?"
           And its BUFFS show only "Woven Mail"
         """)]
     public async Task ToShredsHealsAndWeavesMailWhenASeveredTargetDies(Screen screen)
@@ -130,11 +130,11 @@ public sealed class ToShredsTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(3);
 
         // Then
-        // The heal's amount is unknown ("?" in the rules), so its line names no number.
+        // The heal's amount is unknown ("?" in the rules), so its line shows "?".
         var killed = await Frontend.Designer.Loop.Step(3).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#3 Festival Flight (💀 kill)")
-            .Fires(new ArtifactPerk.ToShreds(), "Woven Mail (10s)", "heals you and allies")
+            .Fires(new ArtifactPerk.ToShreds(), "Woven Mail (10s)", "heals you and allies ?")
             .Shows(new StateGroup.Buffs(), "Woven Mail");
     }
 }

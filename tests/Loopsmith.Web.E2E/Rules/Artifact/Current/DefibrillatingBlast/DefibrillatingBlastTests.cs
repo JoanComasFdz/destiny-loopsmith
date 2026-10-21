@@ -11,8 +11,8 @@ public sealed class DefibrillatingBlastTests : BaseE2E
     [Theory, PlayInDesktop, PlayInMobile]
     [TestDescription("""
         @desktop @mobile
-        Scenario: Defibrillating Blast's Bolt Charge strike jolts and heals
-          # Rule artifact-current-defibrillating-blast-1: Bolt Charge strike hit ➜ Defibrillating Blast equipped ➜ Health (?), Jolt
+        Scenario: Defibrillating Blast's Bolt Charge strike jolts and heals you ~55 HP
+          # Rule artifact-current-defibrillating-blast-1: Bolt Charge strike hit ➜ Defibrillating Blast equipped ➜ Health (~55 HP), Jolt
           Given the build "defibrillating-blast-disorienting-blow-hits" is imported, with no steps
           When I tap "Disorienting Blow" in the trigger panel
           And I tap "🥊 hit"
@@ -26,11 +26,10 @@ public sealed class DefibrillatingBlastTests : BaseE2E
           When I tap "Disorienting Blow" in the trigger panel
           And I tap "🥊 hit"
           Then card #3's heading is "#3 Melee (🥊 hit)"
-          # The heal's amount is unknown ("?" in the rules), so its line names no number.
-          And "Defibrillating Blast" fires "Jolt target (10s)" and "heals you"
+          And "Defibrillating Blast" fires "Jolt target (10s)" and "heals you ~55 HP"
           And its DEBUFFS show only "Blind" and "Jolt"
         """)]
-    public async Task DefibrillatingBlastsBoltChargeStrikeJoltsAndHeals(Screen screen)
+    public async Task DefibrillatingBlastsBoltChargeStrikeJoltsAndHealsYou55HP(Screen screen)
     {
         // Given
         await Frontend.Home.ImportBuildAsync("defibrillating-blast-disorienting-blow-hits.build.yaml");
@@ -65,11 +64,10 @@ public sealed class DefibrillatingBlastTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(3);
 
         // Then
-        // The heal's amount is unknown ("?" in the rules), so its line names no number.
         var struck = await Frontend.Designer.Loop.Step(3).ReadAsync();
         Asserting.That(struck)
             .HasHeading("#3 Melee (🥊 hit)")
-            .Fires(new ArtifactPerk.DefibrillatingBlast(), "Jolt target (10s)", "heals you")
+            .Fires(new ArtifactPerk.DefibrillatingBlast(), "Jolt target (10s)", "heals you ~55 HP")
             .Shows(new StateGroup.Debuffs(), "Blind", "Jolt");
     }
 }

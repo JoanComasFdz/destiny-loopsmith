@@ -11,8 +11,8 @@ public sealed class RecuperationTests : BaseE2E
     [Theory, PlayInDesktop, PlayInMobile]
     [TestDescription("""
         @desktop @mobile
-        Scenario: Recuperation's Orb of Power pickup heals you
-          # Rule mods-armor-recuperation-1: Pick up Orb of Power ➜ Recuperation equipped ➜ Health ?
+        Scenario: Recuperation's Orb of Power pickup heals you 16 HP
+          # Rule mods-armor-recuperation-1: Pick up Orb of Power ➜ Recuperation equipped ➜ Health (16 | 21 | 21 HP)
           Given the build "recuperation-crux-celeritas-strand-siphon" is imported, with no steps
           When I tap "Crux Celeritas IV" in the trigger panel
           And I select "2 in 3 s · Strand Siphon"
@@ -22,10 +22,10 @@ public sealed class RecuperationTests : BaseE2E
           # keeping step #1: its Orb of Power is what #2 picks up
           When I tap "Pick up Orb of Power" under "On the ground" in the trigger panel
           Then card #2's heading is "#2 Pick up Orb of Power"
-          # The rule's heal is "?": the card shows no amount (a finding of this PR).
-          And on "📍 Picked up Orb of Power" "Recuperation" fires "heals you"
+          # One Recuperation is equipped: its 16 HP of 16 | 21 | 21
+          And on "📍 Picked up Orb of Power" "Recuperation" fires "heals you 16 HP"
         """)]
-    public async Task RecuperationsOrbOfPowerPickupHealsYou(Screen screen)
+    public async Task RecuperationsOrbOfPowerPickupHealsYou16HP(Screen screen)
     {
         // Given
         await Frontend.Home.ImportBuildAsync("recuperation-crux-celeritas-strand-siphon.build.yaml");
@@ -49,10 +49,10 @@ public sealed class RecuperationTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
-        // The rule's heal is "?": the card shows no amount (a finding of this PR).
+        // One Recuperation is equipped: its 16 HP of 16 | 21 | 21
         var pickedUp = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(pickedUp)
             .HasHeading("#2 Pick up Orb of Power")
-            .FiresOn("📍 Picked up Orb of Power", new ArmorMod.Recuperation(), "heals you");
+            .FiresOn("📍 Picked up Orb of Power", new ArmorMod.Recuperation(), "heals you 16 HP");
     }
 }

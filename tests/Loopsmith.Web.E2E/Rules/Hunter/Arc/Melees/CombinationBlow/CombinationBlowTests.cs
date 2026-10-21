@@ -18,7 +18,7 @@ public sealed class CombinationBlowTests : BaseE2E
           And I tap "💀 kill"
           Then card #1's heading is "#1 Melee (💀 kill)"
           And it reads "Melee 💀 kill"
-          And "Combination Blow" fires "+1 Combination Blow (20s)", "+100% class ability energy" and "heals you"
+          And "Combination Blow" fires "+1 Combination Blow (20s)", "+100% class ability energy" and "heals you ?"
           And its BUFFS show only "Combination Blow"
         """)]
     public async Task CombinationBlowsMeleeKillRefillsTheClassAbilityHealsYouAndStacks(Screen screen)
@@ -38,7 +38,7 @@ public sealed class CombinationBlowTests : BaseE2E
         Asserting.That(killed)
             .HasHeading("#1 Melee (💀 kill)")
             .Reads("Melee 💀 kill")
-            .Fires(new Ability.CombinationBlow(), "+1 Combination Blow (20s)", "+100% class ability energy", "heals you")
+            .Fires(new Ability.CombinationBlow(), "+1 Combination Blow (20s)", "+100% class ability energy", "heals you ?")
             .Shows(new StateGroup.Buffs(), "Combination Blow");
     }
 
@@ -52,7 +52,7 @@ public sealed class CombinationBlowTests : BaseE2E
           When I tap "SLIDE" in the trigger panel
           And I tap "💀 kill"
           Then card #1's heading is "#1 Sliding melee (💀 kill)"
-          And "Combination Blow" fires "+1 Combination Blow (20s)", "+100% class ability energy" and "heals you"
+          And "Combination Blow" fires "+1 Combination Blow (20s)", "+100% class ability energy" and "heals you ?"
         """)]
     public async Task CombinationBlowsSlidingMeleeKillRefillsTheClassAbilityHealsYouAndStacks(Screen screen)
     {
@@ -70,7 +70,7 @@ public sealed class CombinationBlowTests : BaseE2E
         var killed = await Frontend.Designer.Loop.Step(1).ReadAsync();
         Asserting.That(killed)
             .HasHeading("#1 Sliding melee (💀 kill)")
-            .Fires(new Ability.CombinationBlow(), "+1 Combination Blow (20s)", "+100% class ability energy", "heals you");
+            .Fires(new Ability.CombinationBlow(), "+1 Combination Blow (20s)", "+100% class ability energy", "heals you ?");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

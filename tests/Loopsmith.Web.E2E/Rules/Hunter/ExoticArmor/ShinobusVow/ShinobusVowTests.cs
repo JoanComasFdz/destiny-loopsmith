@@ -87,7 +87,7 @@ public sealed class ShinobusVowTests : BaseE2E
           # keeping step #1: its Bolt Charge is what #2 declares at max
           When I tap "at max (x10)" on "Bolt Charge" under "On you" in the trigger panel
           Then card #2's heading is "#2 Bolt Charge at max (x10)"
-          And "Shinobu's Vow" fires "New Tricks", "+~40% grenade energy" and "heals you and allies"
+          And "Shinobu's Vow" fires "New Tricks", "+~40% grenade energy" and "heals you and allies ?"
           And its BUFFS show only "Bolt Charge (at max)" and "New Tricks"
         """)]
     public async Task ShinobusVowsBoltChargeAtMaxGivesNewTricksGrenadeEnergyAndHealing(Screen screen)
@@ -116,7 +116,7 @@ public sealed class ShinobusVowTests : BaseE2E
         var atMax = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(atMax)
             .HasHeading("#2 Bolt Charge at max (x10)")
-            .Fires(new ArmorPiece.ShinobusVow(), "New Tricks", "+~40% grenade energy", "heals you and allies")
+            .Fires(new ArmorPiece.ShinobusVow(), "New Tricks", "+~40% grenade energy", "heals you and allies ?")
             .Shows(new StateGroup.Buffs(), "Bolt Charge (at max)", "New Tricks");
     }
 

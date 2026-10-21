@@ -22,8 +22,8 @@ public sealed class BetterAlreadyTests : BaseE2E
           # keeping step #1: its Orb of Power is what #2 picks up
           When I tap "Pick up Orb of Power" under "On the ground" in the trigger panel
           Then card #2's heading is "#2 Pick up Orb of Power"
-          # The heal's amount is unknown ("?" in the rules), so its line names no number.
-          And "Better Already" fires "heals you"
+          # The heal's amount is unknown ("?" in the rules), so its line shows "?".
+          And "Better Already" fires "heals you ?"
         """)]
     public async Task BetterAlreadysOrbOfPowerPickupHealsYou(Screen screen)
     {
@@ -49,10 +49,10 @@ public sealed class BetterAlreadyTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
-        // The heal's amount is unknown ("?" in the rules), so its line names no number.
+        // The heal's amount is unknown ("?" in the rules), so its line shows "?".
         var pickedUp = await Frontend.Designer.Loop.Step(2).ReadAsync();
         Asserting.That(pickedUp)
             .HasHeading("#2 Pick up Orb of Power")
-            .Fires(new ArmorMod.BetterAlready(), "heals you");
+            .Fires(new ArmorMod.BetterAlready(), "heals you ?");
     }
 }
