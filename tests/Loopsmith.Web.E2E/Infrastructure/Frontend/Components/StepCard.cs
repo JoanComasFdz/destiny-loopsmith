@@ -52,6 +52,9 @@ public sealed class StepCard(IPage page, int number)
     /// </summary>
     public Task ClickStateChipAsync(StateGroup group, string chip) => OnScreen.PressAsync(State, FindStateChip(group, chip));
 
+    /// <summary>Taps <paramref name="keyword"/>'s name in the card's line <paramref name="line"/> ("Stats for All" in "Stats for All (11s)"): its details open.</summary>
+    public Task ClickKeywordAsync(Keyword keyword, string line) => OnScreen.PressAsync(Card, FindKeyword(keyword, line));
+
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
 
@@ -70,6 +73,12 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.Bonus.Select(row => new DamageBonusRow(row.Name, row.Value))],
                 [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
     }
+
+    // A keyword's name in the line that reads exactly as given (its data-line: the hover preview a name opens inside the line
+    // is not part of it).
+    private ILocator FindKeyword(Keyword keyword, string line) =>
+        Card.Locator($"[data-testid=outcome-line][data-line=\"{line}\"]")
+            .GetByRole(AriaRole.Button, new() { Name = keyword.ToShownText(), Exact = true });
 
     // A chip by its name, the part of its text before the first " · " (its effects and weapons come after).
     private ILocator FindStateChip(StateGroup group, string chip) =>

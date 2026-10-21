@@ -45,6 +45,14 @@ public static class ItemInfoDialogSnapshotAssertions
         return that;
     }
 
+    /// <summary>It has no "In this build" section: nothing else in the build interacts with it.</summary>
+    public static AssertingThat<ItemInfoDialogSnapshot> HasNoInBuild(this AssertingThat<ItemInfoDialogSnapshot> that)
+    {
+        var roles = that.InstanceToAssert.InBuild;
+        Assert.True(roles.IsEmpty, $"The item details popup shows {Describe(roles.Select(role => role.Heading))} in this build, but no \"In this build\" section was expected.");
+        return that;
+    }
+
     private static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, string expected)
     {
         var title = that.InstanceToAssert.Title;
