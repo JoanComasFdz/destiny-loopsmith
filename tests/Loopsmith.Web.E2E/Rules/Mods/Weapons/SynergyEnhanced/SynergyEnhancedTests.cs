@@ -16,7 +16,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with a Kinetic weapon spawn an Orb of Power
-          # Rule mods-weapons-synergy-enhanced-1: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Orb of Power
+          # Rule mods-weapons-synergy-enhanced-1: This weapon (Kinetic) 8+ kills ➜ Synergy (enhanced) equipped ➜ Orb of Power
           Given the build "synergy-enhanced-battle-scar" is imported, with no steps
           When I tap "Battle Scar" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -52,7 +52,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with a Kinetic weapon may spawn an Orb of Power
-          # Rule mods-weapons-synergy-enhanced-2: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Orb of Power
+          # Rule mods-weapons-synergy-enhanced-2: This weapon (Kinetic) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Orb of Power
           Given the build "synergy-enhanced-battle-scar" is imported, with no steps
           When I tap "Battle Scar" in the trigger panel
           And I select "1 enemy"
@@ -89,7 +89,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with an Arc weapon spawn an Ionic Trace
-          # Rule mods-weapons-synergy-enhanced-3: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Ionic Trace
+          # Rule mods-weapons-synergy-enhanced-3: This weapon (Arc) 8+ kills ➜ Synergy (enhanced) equipped ➜ Ionic Trace
           Given the build "synergy-enhanced-matador-64" is imported, with no steps
           When I tap "Matador 64" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -124,7 +124,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with an Arc weapon may spawn an Ionic Trace
-          # Rule mods-weapons-synergy-enhanced-4: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Ionic Trace
+          # Rule mods-weapons-synergy-enhanced-4: This weapon (Arc) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Ionic Trace
           Given the build "synergy-enhanced-matador-64" is imported, with no steps
           When I tap "Matador 64" in the trigger panel
           And I select "1 enemy"
@@ -160,7 +160,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with a Solar weapon spawn a Firesprite
-          # Rule mods-weapons-synergy-enhanced-5: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Firesprite
+          # Rule mods-weapons-synergy-enhanced-5: This weapon (Solar) 8+ kills ➜ Synergy (enhanced) equipped ➜ Firesprite
           Given the build "synergy-enhanced-speleologist" is imported, with no steps
           When I tap "Speleologist" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -196,7 +196,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with a Solar weapon may spawn a Firesprite
-          # Rule mods-weapons-synergy-enhanced-6: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Firesprite
+          # Rule mods-weapons-synergy-enhanced-6: This weapon (Solar) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Firesprite
           Given the build "synergy-enhanced-speleologist" is imported, with no steps
           When I tap "Speleologist" in the trigger panel
           And I select "1 enemy"
@@ -233,7 +233,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with a Void weapon spawn a Void Breach
-          # Rule mods-weapons-synergy-enhanced-7: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Void Breach
+          # Rule mods-weapons-synergy-enhanced-7: This weapon (Void) 8+ kills ➜ Synergy (enhanced) equipped ➜ Void Breach
           Given the build "synergy-enhanced-bellowing-giant" is imported, with no steps
           When I tap "Bellowing Giant" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -269,7 +269,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with a Void weapon may spawn a Void Breach
-          # Rule mods-weapons-synergy-enhanced-8: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Void Breach
+          # Rule mods-weapons-synergy-enhanced-8: This weapon (Void) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Void Breach
           Given the build "synergy-enhanced-bellowing-giant" is imported, with no steps
           When I tap "Bellowing Giant" in the trigger panel
           And I select "1 enemy"
@@ -306,7 +306,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with a Stasis weapon spawn a Stasis Shard
-          # Rule mods-weapons-synergy-enhanced-9: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Stasis Shard
+          # Rule mods-weapons-synergy-enhanced-9: This weapon (Stasis) 8+ kills ➜ Synergy (enhanced) equipped ➜ Stasis Shard
           Given the build "synergy-enhanced-forensic-nightmare" is imported, with no steps
           When I tap "Forensic Nightmare" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -342,7 +342,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with a Stasis weapon may spawn a Stasis Shard
-          # Rule mods-weapons-synergy-enhanced-10: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Stasis Shard
+          # Rule mods-weapons-synergy-enhanced-10: This weapon (Stasis) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Stasis Shard
           Given the build "synergy-enhanced-forensic-nightmare" is imported, with no steps
           When I tap "Forensic Nightmare" in the trigger panel
           And I select "1 enemy"
@@ -379,7 +379,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's eight kills with a Strand weapon spawn a Tangle
-          # Rule mods-weapons-synergy-enhanced-11: This weapon 8+ kills ➜ Synergy (enhanced) equipped ➜ Tangle
+          # Rule mods-weapons-synergy-enhanced-11: This weapon (Strand) 8+ kills ➜ Synergy (enhanced) equipped ➜ Tangle
           Given the build "synergy-enhanced-festival-flight" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           And I select "8 · Synergy (enhanced)"
@@ -415,7 +415,7 @@ public sealed class SynergyEnhancedTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Synergy's single kill with a Strand weapon may spawn a Tangle
-          # Rule mods-weapons-synergy-enhanced-12: This weapon fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Tangle
+          # Rule mods-weapons-synergy-enhanced-12: This weapon (Strand) fewer than 8 kills ➜ Synergy (enhanced) equipped ➜ Tangle
           Given the build "synergy-enhanced-festival-flight" is imported, with no steps
           When I tap "Festival Flight" in the trigger panel
           And I select "1 enemy"
