@@ -12,7 +12,7 @@ public sealed class DemolitionistTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Demolitionist's grenade refills its weapon
-          # Rule weapons-perks-demolitionist-2: Grenade cast ➜ Demolitionist equipped ➜ Refill
+          # Rule weapons-perks-demolitionist-2: Grenade thrown ➜ Demolitionist equipped ➜ Refill
           Given the build "demolitionist-crisis-inverted" is imported, with no steps
           When I tap "Skip Grenade" in the trigger panel
           And I tap "💀 kill"
@@ -114,7 +114,7 @@ public sealed class DemolitionistTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Enhanced Demolitionist's grenade refills its weapon
-          # Rule weapons-perks-demolitionist-2: Grenade cast ➜ Demolitionist (enhanced) equipped ➜ Refill
+          # Rule weapons-perks-demolitionist-2: Grenade thrown ➜ Demolitionist (enhanced) equipped ➜ Refill
           Given the build "demolitionist-enhanced-crisis-inverted" is imported, with no steps
           When I tap "Skip Grenade" in the trigger panel
           And I tap "💀 kill"

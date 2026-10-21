@@ -566,7 +566,7 @@ public static class DomainPhrasing
             : string.Join(" + ", targetHas.Select(glossary.DescribeDebuffedAdjective)) + " target";
 
     /// <summary>The ability-cast trigger as a player says it ("Grenade thrown", "Melee swung while sliding", "Grenade held").</summary>
-    private static string DescribeCast(AbilityKind kind, AbilityInput input) =>
+    public static string DescribeCast(AbilityKind kind, AbilityInput input) =>
         (kind, input) switch
         {
             (_, AbilityInput.Press) => DescribeCast(kind),
