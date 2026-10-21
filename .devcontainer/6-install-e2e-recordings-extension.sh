@@ -5,7 +5,7 @@
 # PublishVsCodeExtension target lays out the site's (extension/ with package.json, extension.js, README.md and the
 # repository's LICENSE as LICENSE.txt; extension.vsixmanifest; [Content_Types].xml), and installs it in the VS Code
 # attached, replacing the one there: no Marketplace, no download.
-#   .devcontainer/7-install-e2e-recordings-extension.sh [--pack-only <vsix>]
+#   .devcontainer/6-install-e2e-recordings-extension.sh [--pack-only <vsix>]
 set -euo pipefail
 
 repo="$(cd "$(dirname "$0")/.." && pwd)"

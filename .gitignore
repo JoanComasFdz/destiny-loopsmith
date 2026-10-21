@@ -21,9 +21,5 @@ tools/compendium/compendium-*
 # End-to-end recordings (tools/e2e/record.sh)
 /out/
 
-# Python bytecode caches (written whenever a tool script runs)
-__pycache__/
-*.pyc
-
 # npm packages (tests/Loopsmith.VsCodeExtension.E2E/vscode-web: npm ci)
 node_modules/

@@ -1,5 +1,5 @@
 #!/bin/bash
-# tmux, its configuration (~/.tmux.conf) and its aliases in ~/.zshrc. Runs after 5-install-zsh-config.sh, which writes
+# tmux, its configuration (~/.tmux.conf) and its aliases in ~/.zshrc. Runs after 4-install-zsh-config.sh, which writes
 # ~/.zshrc. The configuration and aliases are the owner's script, as given.
 set -e  # Exit on any error - fail fast for reproducible devcontainer
 
