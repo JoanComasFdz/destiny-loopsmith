@@ -57,6 +57,24 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>"On you" shows <paramref name="status"/> on you with <paramref name="icon"/> before its name.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> ShowsOnYouWithIcon(this AssertingThat<TriggerPaletteSnapshot> that, Keyword status, KeywordIcon icon) =>
+        that.ShowsOnYouWithIcons(status, [icon]);
+
+    /// <summary>"On you" shows <paramref name="status"/> on you with no icon before its name (Bungie gives it none).</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> ShowsOnYouWithNoIcon(this AssertingThat<TriggerPaletteSnapshot> that, Keyword status) =>
+        that.ShowsOnYouWithIcons(status, []);
+
+    private static AssertingThat<TriggerPaletteSnapshot> ShowsOnYouWithIcons(this AssertingThat<TriggerPaletteSnapshot> that, Keyword status, KeywordIcon[] icons)
+    {
+        var chip = that.InstanceToAssert.OnYou.FirstOrDefault(shown => !shown.IsButton && shown.Name == status.ToShownText());
+        Assert.True(chip is not null, $"\"On you\" shows {DescribeOnYou(that.InstanceToAssert)}, but \"{status.ToShownText()}\" on you was expected.");
+        Assert.True(
+            chip.Icons.SequenceEqual(icons),
+            $"\"On you\" shows \"{chip.Name}\" with the icons {DescribeCaptions(chip.Icons.Select(shown => shown.ToShownText()))}, but {DescribeCaptions(icons.Select(icon => icon.ToShownText()))} was expected.");
+        return that;
+    }
+
     /// <summary>"On you" shows <paramref name="state"/> as a button of its own, a state to declare (not a buff on you).</summary>
     public static AssertingThat<TriggerPaletteSnapshot> ShowsOnYouAsAButton(this AssertingThat<TriggerPaletteSnapshot> that, Keyword state)
     {

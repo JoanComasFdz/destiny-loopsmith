@@ -179,7 +179,7 @@
     {
         if (keyword.Icon is Optional<IconRef>.Some icon)
         {
-            <img class="inline-icon keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" />
+            <img class="inline-icon keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" data-testid="keyword-icon" />
         }
     };
 

@@ -331,6 +331,10 @@
                 @foreach (var status in statuses)
                 {
                     <span class="trig-status-chip aff-@status.Affinity.ToString().ToLowerInvariant()" data-testid="status-chip">
+                        @if (status.Icon is Optional<IconRef>.Some icon)
+                        {
+                            <img class="inline-icon hud-keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" data-testid="keyword-icon" />
+                        }
                         <span class="trig-status-name" data-testid="status-name">@status.Name</span>
                         @foreach (var button in status.Buttons)
                         {

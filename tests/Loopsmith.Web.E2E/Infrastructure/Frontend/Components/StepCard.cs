@@ -60,7 +60,7 @@ public sealed class StepCard(IPage page, int number)
         var shown = (await Card.EvaluateAsync<JsonElement>(ReadScript)).Deserialize<ShownCard>(ShownJson.Options)!;
         return new StepCardSnapshot(
             shown.Heading,
-            [.. shown.Events.Select(e => new FiredEvent(e.Text, [.. e.Sources.Select(s => new FiredSource(s.Name, [.. s.Lines], [.. s.Reasons], [.. s.Caveats]))]))],
+            [.. shown.Events.Select(e => new FiredEvent(e.Text, [.. e.Sources.Select(s => new FiredSource(s.Name, [.. s.Lines], [.. s.LineIcons.Select(ToIcons)], [.. s.Reasons], [.. s.Caveats]))]))],
             shown.NothingTriggers,
             new StepState(ToChips(shown.Buffs), ToChips(shown.Weapons), ToChips(shown.Debuffs), ToChips(shown.Ground)),
             new DamageResistance(
@@ -84,7 +84,9 @@ public sealed class StepCard(IPage page, int number)
             ground => "ground",
             unlisted => unlisted.Shown);
 
-    private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text))];
+    private static ImmutableArray<StateChip> ToChips(ShownChip[] chips) => [.. chips.Select(chip => new StateChip(chip.Text, ToIcons(chip.Icons)))];
+
+    private static ImmutableArray<KeywordIcon> ToIcons(string[] icons) => [.. icons.Select(KeywordIconShowing.ReadKeywordIcon)];
 
     // The card's texts as the user reads them, white space collapsed. A chip reads as its parts (its name, how many
     // effects it switches on, its weapons) joined by " · " ("One for All · Festival Flight"), as the card draws them
@@ -94,9 +96,11 @@ public sealed class StepCard(IPage page, int number)
     private const string ReadScript = """
         card => {
           const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
+          const icons = el => [...el.querySelectorAll('[data-testid=keyword-icon]')].map(icon => icon.getAttribute('src'));
           const chips = group => [...card.querySelectorAll(`[data-testid=step-state] [data-testid=state-group][data-group=${group}] [data-testid=state-chip]`)].map(chip => ({
             text: [chip.querySelector('[data-testid=state-chip-name]'), chip.querySelector('[data-testid=switches-on]'), ...chip.querySelectorAll('[data-testid=buff-weapon]')]
               .map(text).filter(part => part.length > 0).join(' · '),
+            icons: icons(chip),
           }));
           return {
             heading: `${text(card.querySelector('[data-testid=step-no]'))} ${text(card.querySelector('[data-testid=step-title]'))}`,
@@ -105,6 +109,7 @@ public sealed class StepCard(IPage page, int number)
               sources: [...event.querySelectorAll('[data-testid=outcome-source]')].map(source => ({
                 name: text(source.querySelector('[data-testid=outcome-element-name]')),
                 lines: [...source.querySelectorAll('[data-testid=outcome-line]')].map(text),
+                lineIcons: [...source.querySelectorAll('[data-testid=outcome-line]')].map(icons),
                 reasons: [...source.querySelectorAll('[data-testid=outcome-reason]')].map(text),
                 caveats: [...source.querySelectorAll('[data-testid=outcome-caveat]')].map(text),
               })),
@@ -147,9 +152,9 @@ public sealed class StepCard(IPage page, int number)
 
     private sealed record ShownEvent(string Text, ShownSource[] Sources);
 
-    private sealed record ShownSource(string Name, string[] Lines, string[] Reasons, string[] Caveats);
+    private sealed record ShownSource(string Name, string[] Lines, string[][] LineIcons, string[] Reasons, string[] Caveats);
 
-    private sealed record ShownChip(string Text);
+    private sealed record ShownChip(string Text, string[] Icons);
 }
 
 /// <summary>
@@ -162,16 +167,18 @@ public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);
 
 /// <summary>
-/// An element that fired ("One for All"), its lines ("One for All (10s) (chance)"), its "why:" reasons and its caveats
-/// ("· +1 Bolt Charge: +1 from Spark of Frequency", when the "caveats" checkbox is ticked).
+/// An element that fired ("One for All"), its lines ("One for All (10s) (chance)"), the keyword icons of each line, in
+/// order (Void Overshield's before its name), its "why:" reasons and its caveats ("· +1 Bolt Charge: +1 from Spark of
+/// Frequency", when the "caveats" checkbox is ticked).
 /// </summary>
-public sealed record FiredSource(string Name, ImmutableArray<string> Lines, ImmutableArray<string> Reasons, ImmutableArray<string> Caveats);
+public sealed record FiredSource(
+    string Name, ImmutableArray<string> Lines, ImmutableArray<ImmutableArray<KeywordIcon>> LineIcons, ImmutableArray<string> Reasons, ImmutableArray<string> Caveats);
 
 /// <summary>The card's "State after #N": the chips of each group.</summary>
 public sealed record StepState(ImmutableArray<StateChip> Buffs, ImmutableArray<StateChip> Weapons, ImmutableArray<StateChip> Debuffs, ImmutableArray<StateChip> Ground);
 
-/// <summary>A chip of the state ("One for All · Festival Flight").</summary>
-public sealed record StateChip(string Text);
+/// <summary>A chip of the state ("One for All · Festival Flight") and the keyword icon before its name (none when it has none).</summary>
+public sealed record StateChip(string Text, ImmutableArray<KeywordIcon> Icons);
 
 /// <summary>
 /// The card's damage resistance: its rows ("All damage" and each against some combatants only) and, once its title is

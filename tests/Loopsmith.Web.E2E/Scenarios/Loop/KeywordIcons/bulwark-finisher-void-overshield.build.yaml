@@ -1,0 +1,5 @@
+# Bulwark Finisher, with Empowered Finish for the first Armor Charge on a finisher: x3 spent gives a Void Overshield.
+name: "E2E - Bulwark Finisher's Void Overshield"
+class: hunter
+subclass: arc
+armorMods: [bulwark-finisher, empowered-finish]
