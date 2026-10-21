@@ -28,8 +28,8 @@ public static partial class SheetNaming
     /// <summary>A name made safe for a file: letters, digits, <c>_</c>, <c>-</c> and spaces kept, spaces as <c>_</c>, at most 60 characters.</summary>
     public static string ToSlug(string name)
     {
-        var kept = PythonText.StripWhitespace(CreateUnsafeCharactersPattern().Replace(name, "")).Replace(' ', '_');
-        var slug = PythonText.TakeCharacters(kept, 60);
+        var kept = TextTrimming.TrimWhitespace(CreateUnsafeCharactersPattern().Replace(name, "")).Replace(' ', '_');
+        var slug = TextTrimming.TakeCharacters(kept, 60);
         return slug.Length > 0 ? slug : "tab";
     }
 
@@ -42,7 +42,7 @@ public static partial class SheetNaming
     [GeneratedRegex("/d/([a-zA-Z0-9_-]+)")]
     private static partial Regex CreateSheetIdPattern();
 
-    /// <summary>Python's <c>[^\w\- ]+</c>: <c>\w</c> there is a letter, a digit of any kind or <c>_</c>.</summary>
+    /// <summary>What a file name drops: anything but a letter, a digit of any kind, <c>_</c>, <c>-</c> or a space.</summary>
     [GeneratedRegex(@"[^\p{L}\p{N}_\- ]+")]
     private static partial Regex CreateUnsafeCharactersPattern();
 }

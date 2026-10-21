@@ -15,8 +15,8 @@ public static partial class MetaReading
         new(title, sheetId, SheetNaming.BuildEditUrl(sheetId), now.ToString("yyyy-MM-dd"), now.ToString("yyyy-MM-dd HH:mm"));
 
     /// <summary>
-    /// The tab names → their gids, one a line. A name twice keeps its first place and its last gid (it was a Python
-    /// dict), so a rebuild sees each name once.
+    /// The tab names → their gids, one a line. A name twice keeps its first place and its last gid, so a rebuild sees
+    /// each name once.
     /// </summary>
     public static string WriteTabsJson(ImmutableArray<SheetTab> tabs) =>
         JsonWriting.WriteObject(KeepEachNameOnce(tabs).Select(tab => (tab.Name, tab.Gid)), asciiOnly: false, indented: true);
@@ -52,7 +52,7 @@ public static partial class MetaReading
         var sheetId = id.Success ? id.Groups[1].Value : "";
         var extracted = tabsJsonDate.ToString("yyyy-MM-dd");
         return new SheetMeta(
-            title.Success ? TabListing.TrimGoogleSuffix(DecodeHtml(PythonText.StripWhitespace(title.Groups[1].Value))) : folderName,
+            title.Success ? TabListing.TrimGoogleSuffix(DecodeHtml(TextTrimming.TrimWhitespace(title.Groups[1].Value))) : folderName,
             sheetId,
             sheetId.Length > 0 ? SheetNaming.BuildEditUrl(sheetId) : "",
             extracted,

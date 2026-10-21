@@ -27,7 +27,7 @@ public static class GridReading
                     column++;
                 }
 
-                var text = PythonText.StripWhitespace(HtmlReading.ReadText(cell, breaksAsNewlines: true));
+                var text = TextTrimming.TrimWhitespace(HtmlReading.ReadText(cell, breaksAsNewlines: true));
                 var rowSpan = ReadSpan(cell, "rowspan");
                 var columnSpan = ReadSpan(cell, "colspan");
                 for (var down = 0; down < rowSpan; down++)
@@ -66,5 +66,5 @@ public static class GridReading
 
     /// <summary>A cell's <c>rowspan</c> or <c>colspan</c> as written (a 0 covers nothing); 1 when it has none or it isn't a number.</summary>
     private static int ReadSpan(IElement cell, string attribute) =>
-        int.TryParse(PythonText.StripWhitespace(cell.GetAttribute(attribute) ?? ""), out var span) ? span : 1;
+        int.TryParse(TextTrimming.TrimWhitespace(cell.GetAttribute(attribute) ?? ""), out var span) ? span : 1;
 }

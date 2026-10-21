@@ -8,10 +8,9 @@ using Loopsmith.Functional;
 namespace Loopsmith.CompendiumDownload.Core;
 
 /// <summary>
-/// Google's HTML, read: the page parsed, its sheet table found, and an element's text taken as BeautifulSoup's
-/// <c>get_text</c> took it in sheet_dump.py (the Python version), so the tab files come out the same: only plain text,
-/// not a script's, a style's or a template's, nor a comment, and a text of spaces alone read as one space (one line
-/// break when it holds one), as BeautifulSoup stores it.
+/// Google's HTML, read: the page parsed, its sheet table found, and an element's text taken as the tab files hold it:
+/// only plain text, not a script's, a style's or a template's, nor a comment, and a text of spaces alone read as one
+/// space (one line break when it holds one).
 /// </summary>
 public static class HtmlReading
 {
@@ -28,9 +27,9 @@ public static class HtmlReading
         return text.ToString();
     }
 
-    /// <summary>The element's texts, each trimmed, the empty ones left out (<c>get_text(strip=True)</c>'s parts).</summary>
+    /// <summary>The element's texts, each trimmed, the empty ones left out.</summary>
     public static ImmutableArray<string> ReadStrippedTexts(INode node) =>
-        [.. ReadTextNodes(node).Select(PythonText.StripWhitespace).Where(text => text.Length > 0)];
+        [.. ReadTextNodes(node).Select(TextTrimming.TrimWhitespace).Where(text => text.Length > 0)];
 
     private static IEnumerable<string> ReadTextNodes(INode node) =>
         node.ChildNodes.SelectMany(child => child switch
@@ -68,6 +67,6 @@ public static class HtmlReading
     private static bool IsPreformatted(INode node) =>
         node.Parent is IElement parent && (parent.LocalName is "pre" or "textarea" || IsPreformatted(parent));
 
-    /// <summary>A script, style or template: BeautifulSoup keeps its text apart from the page's.</summary>
+    /// <summary>A script, style or template: its text isn't the page's.</summary>
     private static bool IsOpaque(IElement element) => element.LocalName is "script" or "style" or "template";
 }

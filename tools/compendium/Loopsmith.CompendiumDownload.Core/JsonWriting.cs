@@ -5,9 +5,9 @@ using System.Text;
 namespace Loopsmith.CompendiumDownload.Core;
 
 /// <summary>
-/// JSON written as Python's <c>json.dumps</c> wrote it in sheet_dump.py (the Python version), so the files come out the
-/// same: <c>", "</c> and <c>": "</c> between items, or one item a line indented by 2; with <paramref name="asciiOnly"/>
-/// every character outside printable ASCII escaped (<c>\u00e9</c>), else only quotes, backslashes and control characters.
+/// JSON as the snapshot's files hold it: <c>", "</c> and <c>": "</c> between items, or one item a line indented by 2;
+/// with <paramref name="asciiOnly"/> every character outside printable ASCII escaped (<c>\u00e9</c>), else only quotes,
+/// backslashes and control characters.
 /// </summary>
 public static class JsonWriting
 {

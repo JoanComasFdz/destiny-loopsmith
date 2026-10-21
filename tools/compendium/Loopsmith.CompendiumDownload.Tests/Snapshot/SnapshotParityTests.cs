@@ -5,7 +5,7 @@ using Loopsmith.Functional;
 namespace Loopsmith.CompendiumDownload.Tests.Snapshot;
 
 /// <summary>
-/// A downloaded snapshot (<c>LOOPSMITH_COMPENDIUM_DIR</c>, any snapshot, the Python version's too) against what this tool
+/// A downloaded snapshot (<c>LOOPSMITH_COMPENDIUM_DIR</c>, any snapshot) against what this tool
 /// makes of the pages it kept: each tab's <c>.md</c> and <c>.csv</c> from its <c>raw/</c> page, and INDEX.md, byte for byte.
 /// Skipped without a snapshot (CI never has one: licensing).
 /// </summary>

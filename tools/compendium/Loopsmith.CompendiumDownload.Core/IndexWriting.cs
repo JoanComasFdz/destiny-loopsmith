@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using Loopsmith.Functional;
@@ -38,13 +39,13 @@ public static partial class IndexWriting
             ? []
             : [.. found.Value.QuerySelectorAll("a[href^='#rangeid=']")
                 .Select(link => string.Join(' ', HtmlReading.ReadStrippedTexts(link)))
-                .Where(text => text.Length > 0 && PythonText.CountCharacters(text) <= 40 && !CreateGoBackPattern().IsMatch(text))
+                .Where(text => text.Length > 0 && TextTrimming.CountCharacters(text) <= 40 && !CreateGoBackPattern().IsMatch(text))
                 .Distinct()];
 
     private static string WriteIndexRow(SnapshotTab tab)
     {
         var rows = tab.Csv is Optional<string>.Some csv ? TabWriting.CountCsvRows(csv.Value) : 0;
-        var tokens = tab.MarkdownBytes is Optional<long>.Some bytes ? PythonText.FormatThousandsToTenths(bytes.Value) : "0";
+        var tokens = tab.MarkdownBytes is Optional<long>.Some bytes ? (bytes.Value / 4.0 / 1000.0).ToString("0.0", CultureInfo.InvariantCulture) : "0";
         var table = tab.RawHtml.Bind(html => HtmlReading.FindSheetTable(HtmlReading.ParseHtml(html)));
         var sections = string.Join(", ", ReadSections(table)).Replace("|", "/");
         var stem = SheetNaming.ToStem(tab.Place, tab.Tab.Name);

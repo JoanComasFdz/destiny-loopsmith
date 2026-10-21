@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.RegularExpressions;
+using System.Web;
 using AngleSharp.Dom;
 using Loopsmith.Functional;
 
@@ -38,7 +39,7 @@ public static partial class ViewerWriting
 
         var tabList = tabs.Select(tab => (IEnumerable<(string, string)>)[("gid", tab.Tab.Gid), ("name", tab.Tab.Name), ("file", $"{SheetNaming.ToStem(tab.Place, tab.Tab.Name)}.md")]);
         return ViewerTemplate.Page
-            .Replace("/*__TITLE__*/", PythonText.EscapeHtml($"{meta.Title} ({meta.ExtractedAt})"))
+            .Replace("/*__TITLE__*/", HttpUtility.HtmlEncode($"{meta.Title} ({meta.ExtractedAt})"))
             .Replace("/*__SHEET_CSS__*/", string.Join('\n', styles.Distinct()))
             .Replace("<!--__TEMPLATES__-->", string.Join('\n', templates))
             .Replace("/*__TABS__*/[]", JsonWriting.WriteArrayOfObjects(tabList, asciiOnly: false))
@@ -120,7 +121,7 @@ public static partial class ViewerWriting
         }
     }
 
-    /// <summary>Python's <c>unquote_plus</c>: <c>+</c> is a space, then <c>%XX</c> decoded as UTF-8.</summary>
+    /// <summary>A query part decoded as a form encodes it: <c>+</c> is a space, then <c>%XX</c> decoded as UTF-8.</summary>
     private static string DecodeQueryPart(string part) => Uri.UnescapeDataString(part.Replace('+', ' '));
 
     [GeneratedRegex(@"\.ritz[^{}]*\{[^}]*\}")]

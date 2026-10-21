@@ -3,7 +3,7 @@ using Loopsmith.CompendiumDownload.Core;
 
 namespace Loopsmith.CompendiumDownload.Tests;
 
-/// <summary>A tab's table → its grid of cell texts, as BeautifulSoup read it in the Python version.</summary>
+/// <summary>A tab's table → its grid of cell texts.</summary>
 public sealed class GridReadingTests
 {
     [Fact]
@@ -49,7 +49,7 @@ public sealed class GridReadingTests
     }
 
     [Fact]
-    public void Text_of_spaces_alone_is_one_space_as_BeautifulSoup_stores_it()
+    public void Text_of_spaces_alone_is_one_space()
     {
         var grid = ReadGrid("<tr><td>Strand ⯁<span>  </span>Bow</td><td>a<span>\n  </span>b</td></tr>");
 

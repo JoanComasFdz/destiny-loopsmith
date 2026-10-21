@@ -56,7 +56,7 @@ public static partial class ImageListing
 
     /// <summary>What an answer that isn't an image said, for the log: its first 300 characters on one line; nothing for an image.</summary>
     public static string ReadFailedBody(string mediaType, string text) =>
-        IsImage(mediaType) ? "" : PythonText.TakeCharacters(text, 300).Replace('\n', ' ');
+        IsImage(mediaType) ? "" : TextTrimming.TakeCharacters(text, 300).Replace('\n', ' ');
 
     /// <summary>The first link of each host, by host name: one is asked first, so a host that never answers is found quickly.</summary>
     public static ImmutableArray<(string Host, string Url)> ListHostProbes(ImmutableArray<string> urls) =>
@@ -104,7 +104,7 @@ public static partial class ImageListing
 
     /// <summary>The failures counted by host and kind of error, the most first: <c>"   12  host  HTTP 404 text/html"</c>.</summary>
     public static ImmutableArray<string> SummarizeFailures(ImmutableArray<FailedImage> failed) =>
-        [.. failed.Select(image => (Host: ReadHost(image.Url), Kind: PythonText.TakeCharacters(image.Error.Split(':')[0], 40)))
+        [.. failed.Select(image => (Host: ReadHost(image.Url), Kind: TextTrimming.TakeCharacters(image.Error.Split(':')[0], 40)))
             .GroupBy(key => key)
             .Select((group, first) => (group.Key, Count: group.Count(), First: first))
             .OrderByDescending(group => group.Count).ThenBy(group => group.First)

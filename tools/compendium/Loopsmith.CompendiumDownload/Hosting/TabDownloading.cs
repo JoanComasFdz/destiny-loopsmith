@@ -63,7 +63,7 @@ public static class TabDownloading
     private static async Task<Result<Unit, string>> DownloadTab(SheetClient client, string sheetId, string folder, SnapshotLog log, int place, SheetTab tab)
     {
         var stem = SheetNaming.ToStem(place, tab.Name);   // pure
-        var quotedName = PythonText.QuoteForConsole(tab.Name);   // pure
+        var quotedName = $"\"{tab.Name}\"";   // pure
         var tabUrl = SheetNaming.BuildTabUrl(sheetId, tab.Gid);   // pure
         var answered = await client.GetAsync(tabUrl, [], PageTimeout);   // impure
         if (answered is Result<SheetAnswer, string>.Error noAnswer)
