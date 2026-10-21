@@ -108,44 +108,6 @@ public static class BuildExplaining
     public static ImmutableArray<StyledLine> RenderExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups) =>
         [.. groups.SelectMany(group => RenderTree(glossary, group))];
 
-    /// <summary>DIM-like header: what is equipped, plus validation warnings.</summary>
-    public static ImmutableArray<StyledLine> RenderBuildSummary(ValidatedBuild build)
-    {
-        var b = build.Build;
-        var tone = b.Subclass.ToAffinity().ToTone();
-        string DescribeElement(ElementId id) => build.Catalog.Elements.TryGetValue(id, out var e) ? e.Name : id.Value;
-        string DescribeAbility(AbilityPlug ability) => ability.Match(known => DescribeElement(known.Element), _ => DomainPhrasing.Unknown, _ => "—");
-        string DescribeElements(IEnumerable<ElementId> ids) => string.Join(", ", ids
-            .GroupBy(id => id)
-            .Select(g => g.Count() > 1 ? $"{DescribeElement(g.Key)} ×{g.Count()}" : DescribeElement(g.Key)));
-        StyledLine RenderRow(string label, string value) => StyledText.ToLine(1, $"{label,-10}".ToSpan(Tone.Muted), value.ToSpan(Tone.Plain));
-
-        var source = b.Author.Match(a => a.Value, _ => "") + b.SourceUrl.Match(u => $"  {u.Value}", _ => "");
-        string DescribeMod(ItemHash mod) => build.Catalog.FindElementByHash(mod).Match(e => e.Value.Name, _ => build.Catalog.Manifest.DescribeItemHash(mod));
-        var weapons = b.Weapons.Select(w =>
-            $"{w.Name} ({w.Type}{w.Archetype.Match(a => $" {a.Value}", _ => "")})" + (w.Perks.IsEmpty ? "" : $": {DescribeElements(w.Perks)}")
-            + w.Mod.Match(mod => $" — mod {DescribeMod(mod.Value)}", _ => ""));
-        var stats = StatReading.GameOrder
-            .SelectMany(stat => b.Stats.ReadStat(stat).Match(v => new[] { $"{stat} {v.Value.Value}" }, _ => []));
-        var issues = build.Issues.Select(issue => StyledText.ToLine(1,
-            $"{(issue.Severity == Severity.Warning ? "! " : "i ")}{issue.Message}".ToSpan(issue.Severity == Severity.Warning ? Tone.Warning : Tone.Muted)));
-        return
-        [
-            StyledText.ToLine(0, b.Name.ToSpan(Tone.Strong), $"  {b.Class} · {b.Subclass}".ToSpan(tone)),
-            .. source.Length > 0 ? [StyledText.ToLine(1, source.Trim().ToSpan(Tone.Muted))] : ImmutableArray<StyledLine>.Empty,
-            RenderRow("Abilities", $"{DescribeAbility(b.Abilities.Super)} · {DescribeAbility(b.Abilities.Grenade)} · {DescribeAbility(b.Abilities.Melee)} · {DescribeAbility(b.Abilities.ClassAbility)}"),
-            RenderRow("Aspects", DescribeElements(b.Aspects)),
-            RenderRow("Fragments", DescribeElements(b.Fragments)),
-            RenderRow("Exotic", b.ExoticArmor.Match(e => DescribeElement(e.Value), _ => "—")),
-            .. b.ArmorSetBonuses.IsEmpty ? ImmutableArray<StyledLine>.Empty : [RenderRow("Set", DescribeElements(b.ArmorSetBonuses))],
-            RenderRow("Mods", DescribeElements(b.ArmorMods)),
-            RenderRow("Artifact", DescribeElements(b.ArtifactPerks)),
-            RenderRow("Weapons", string.Join(" · ", weapons)),
-            RenderRow("Stats", string.Join(" · ", stats)),
-            .. issues,
-        ];
-    }
-
     /// <summary>The trigger; a stacking buff's max also names the build's cap ("Max Bolt Charge (x10)", Charged Up raises it), a fact.</summary>
     private static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
         build.Catalog.Glossary.DescribeTrigger(trigger, build.ReadSuperType()) + (trigger is Trigger.StacksMaxed maxed
