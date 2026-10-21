@@ -207,7 +207,7 @@ public sealed class StatsForAllTests : BaseE2E
           # Rule weapons-perks-stats-for-all-3: Always ➜ Stats for All (enhanced) equipped and Stats for All on you ➜ Weapon stats
           Given the build "stats-for-all-enhanced-ogma-pr6" is imported, with no steps
           When I tap "Ogma PR6" in the trigger panel
-          And I select "3 in 3 s · Stats for All"
+          And I select "3 in 3 s · Stats for All (enhanced)"
           And I tap "🥊 hit"
           Then card #1's heading is "#1 Ogma PR6 (🥊 hit 3)"
           And its WEAPONS show only "Stats for All · 1 effect · Ogma PR6"
@@ -225,7 +225,7 @@ public sealed class StatsForAllTests : BaseE2E
         // When
         await Frontend.Designer.TriggerPalette.ClickWeaponAsync(new Weapon.OgmaPr6());
         await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync(new Weapon.OgmaPr6());
-        await Frontend.Designer.TriggerPalette.SelectTargetCountAsync("3 in 3 s · Stats for All");
+        await Frontend.Designer.TriggerPalette.SelectTargetCountAsync("3 in 3 s · Stats for All (enhanced)");
         await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.Hit());
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
