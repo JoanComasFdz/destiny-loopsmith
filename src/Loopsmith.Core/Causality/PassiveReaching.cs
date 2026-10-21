@@ -24,9 +24,9 @@ public partial record PassiveReach
 /// </summary>
 public static class PassiveReaching
 {
-    /// <summary>A passive holding now that this status switches on (not the status's own).</summary>
-    public static bool IsSwitchedOnBy(this ActivePassive passive, StatusId status) =>
-        !passive.Source.IsStatusElement(status) && passive.Passive.IsSwitchedOnBy(status);
+    /// <summary>A passive holding now that this status switches on (not the status's own, nor its enhanced trait's).</summary>
+    public static bool IsSwitchedOnBy(this ActivePassive passive, RuleCatalog catalog, StatusId status) =>
+        !catalog.IsOwnElementOf(passive.Source, status) && passive.Passive.IsSwitchedOnBy(status);
 
     /// <summary>A passive whose condition this status meets by being there (has, at max, on the pack) — not a "without" guard.</summary>
     public static bool IsSwitchedOnBy(this PassiveRule passive, StatusId status) =>

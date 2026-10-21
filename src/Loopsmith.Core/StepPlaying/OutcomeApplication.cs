@@ -149,7 +149,7 @@ public static class OutcomeApplication
         var resolved = ResolveSpentDuration(apply, source.SpentBefore);
         var stacking = build.Catalog.Glossary.IsStacking(apply.Status);
         var wasActive = state.HasBuff(apply.Status);
-        var next = state.PutBuff(apply.Status);
+        var next = state.PutBuff(apply.Status, Optional.Some(source.Equipped.Element.Id));
         var gained = stacking || !wasActive
             ? ImmutableArray.Create<PendingEvent>(new PendingEvent.Ready(new GameEvent.BuffGained(apply.Status)))
             : [];

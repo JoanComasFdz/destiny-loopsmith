@@ -129,6 +129,10 @@ public sealed class ReapersTitheTests : BaseE2E
           And it reads "Bellowing Giant 💀 killed 2 enemies"
           And "Reaper's Tithe (enhanced)" fires "+2 Reaper's Tithe (17s)" and "+20% heavy weapon damage"
           And its WEAPONS show only "Reaper's Tithe · Bellowing Giant"
+          # keeping step #1: its Reaper's Tithe is what the chip shows
+          When I tap the "Reaper's Tithe · Bellowing Giant" chip in card #1's WEAPONS
+          Then the item details popup opens, titled "Reaper's Tithe (enhanced)"
+          And its "Right then, after #1" card reads only "up to x4 · 17s"
         """)]
     public async Task EnhancedReapersTithes2KillsAtOnceGive2Stacks(Screen screen)
     {
@@ -150,6 +154,16 @@ public sealed class ReapersTitheTests : BaseE2E
             .Reads("Bellowing Giant 💀 killed 2 enemies")
             .Fires(new WeaponPerk.ReapersTitheEnhanced(), "+2 Reaper's Tithe (17s)", "+20% heavy weapon damage")
             .Shows(new StateGroup.Weapons(), "Reaper's Tithe · Bellowing Giant");
+
+        // When
+        await Frontend.Designer.Loop.Step(1).ClickStateChipAsync(new StateGroup.Weapons(), "Reaper's Tithe · Bellowing Giant");
+        await Frontend.Designer.ItemDetails.WaitUntilShownAsync();
+
+        // Then
+        var details = await Frontend.Designer.ItemDetails.ReadAsync();
+        Asserting.That(details)
+            .IsTitled(new WeaponPerk.ReapersTitheEnhanced())
+            .HasRightThen("Right then, after #1", "up to x4 · 17s");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]

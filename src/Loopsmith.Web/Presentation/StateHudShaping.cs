@@ -16,9 +16,15 @@ public sealed record BuffWeapon(string Name, Optional<string> Icon);
 /// </summary>
 public static class StateHudShaping
 {
+    /// <summary>
+    /// The weapons holding the element that gave the buff (the enhanced Stats for All: the weapon that shot, not one rolling
+    /// the base perk); else every weapon whose own perks give it.
+    /// </summary>
     public static ImmutableArray<BuffWeapon> ListBuffWeapons(ValidatedBuild build, StateEntry entry) =>
         entry.Keyword is KeywordRef.Status status
-            ? ListWeapons(build, LoopDesigning.ListWeaponsGiving(build, status.Id))
+            ? ListWeapons(build, entry.Element.Map(element => LoopDesigning.ListWeaponsHolding(build, element)) is Optional<ImmutableArray<int>>.Some { Value.IsEmpty: false } holding
+                ? holding.Value
+                : LoopDesigning.ListWeaponsGiving(build, status.Id))
             : [];
 
     /// <summary>The build's weapons at these places, with their icons.</summary>

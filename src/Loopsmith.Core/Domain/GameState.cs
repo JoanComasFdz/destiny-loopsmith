@@ -7,9 +7,11 @@ namespace Loopsmith.Core.Domain;
 /// <summary>
 /// A buff on the player: present, and — for a status that stacks — whether it is at its maximum (declared with
 /// <c>max:</c>, ADRs D3, or a counted buff's sure stacks at its cap). A counted buff (Armor Charge, ADRs D33) holds its
-/// <see cref="Tally"/>; any other buff none: the engine counts nothing else (ADRs D1).
+/// <see cref="Tally"/>; any other buff none: the engine counts nothing else (ADRs D1). <see cref="GivenBy"/>: the element
+/// whose rule gave it last (the enhanced Stats for All on the weapon that shot, not the base one on another); none for a
+/// counted buff (its tally says where each stack came from) or one the player declared.
 /// </summary>
-public sealed record ActiveBuff(StatusId Status, bool AtMax, Optional<StackTally> Tally);
+public sealed record ActiveBuff(StatusId Status, bool AtMax, Optional<StackTally> Tally, Optional<ElementId> GivenBy);
 
 /// <summary>
 /// The stacks of a counted buff (ADRs D33): those it surely holds after the steps so far, those it may hold besides

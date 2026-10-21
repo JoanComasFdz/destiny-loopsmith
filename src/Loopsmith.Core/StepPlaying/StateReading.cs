@@ -17,15 +17,20 @@ public enum GuardResult { Fails, ByChance, Holds }
 /// </summary>
 public static class StateReading
 {
-    /// <summary>Makes the buff present; one already present keeps its place (and its declaration).</summary>
-    public static GameState PutBuff(this GameState state, StatusId status) =>
-        state.HasBuff(status) ? state : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, AtMax: false, Optional.None<StackTally>())) };
+    /// <summary>
+    /// Makes the buff present, given by this element (none: the player declared it); one already present keeps its place
+    /// (and its declaration), and is given by the element that gave it last.
+    /// </summary>
+    public static GameState PutBuff(this GameState state, StatusId status, Optional<ElementId> givenBy) =>
+        state.HasBuff(status)
+            ? state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status && givenBy.IsSome() ? buff with { GivenBy = givenBy } : buff)] }
+            : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, AtMax: false, Optional.None<StackTally>(), givenBy)) };
 
     /// <summary>A counted buff with these stacks (ADRs D33): present, in its place, at its maximum or not.</summary>
     public static GameState PutTally(this GameState state, StatusId status, StackTally tally, bool atMax) =>
         state.HasBuff(status)
             ? state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status ? buff with { AtMax = atMax, Tally = Optional.Some(tally) } : buff)] }
-            : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, atMax, Optional.Some(tally))) };
+            : state with { Buffs = state.Buffs.Add(new ActiveBuff(status, atMax, Optional.Some(tally), Optional.None<ElementId>())) };
 
     public static GameState DeclareAtMax(this GameState state, StatusId status) =>
         state with { Buffs = [.. state.Buffs.Select(buff => buff.Status == status ? buff with { AtMax = true } : buff)] };
