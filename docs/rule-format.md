@@ -772,7 +772,7 @@ sidearm is a fact in its description, as Spark of Momentum's is:
 | `{ strikeTarget: { via: bolt-charge, hit: kill } }` (`damage\|kill`; `via` names a status) | `StrikeTarget` |
 | `{ strikeTarget: { via: "weapon:this", type: kinetic, hit: damage } }` — this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave, Radiolaria Transposer's explosion and pool): it hits as the weapon holding the element, so every rule on that weapon's damage reacts to it; `type` (optional) is the strike's damage type, else the weapon's own; only in an element a weapon holds, like `weapon:this` | `WeaponStrike` |
 | `{ modifyDamage: { against: keyword:bolt-charge, change: "+50%" } }` — `"+100% [10%]"`: with its PvP value, like `resistDamage`'s, shown `+100% [PvP 10%]` | `ModifyDamage` |
-| `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) — `amount` a share of your health; `{ hp: 65 }` instead: HP (Unrelenting) | `RestoreHealth(Share \| Points, allies)` |
+| `{ restoreHealth: { amount: "?", allies: true } }` (`allies` default false) — `amount` a share of your health; `{ hp: 65 }` instead: HP (Unrelenting); `pulses: 3` (default 1): it restores that amount that many times, shown "3 × 15 HP", never added up (To Shreds) | `RestoreHealth(Share \| Points, allies, pulses)` |
 | `{ resetCooldown: melee }` | `ResetCooldown` |
 | `{ collect: orb-of-power }` | `Collect` — picks the pickup up from the ground (Powerful Attraction) |
 | `{ reloadWeapon: weapon:this }` / `{ reloadWeapon: slot:power }` — reloads that one weapon: `weapon:this`, `weapon:this:<type>` or `slot:<slot>` | `ReloadWeapon` |

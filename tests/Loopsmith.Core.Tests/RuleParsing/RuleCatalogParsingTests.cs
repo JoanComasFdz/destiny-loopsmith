@@ -331,8 +331,8 @@ public sealed class RuleCatalogParsingTests
         Assert.Equal(new Trigger.StacksMaxed(ToStatus("bolt-charge")), rules[6].On);
         Assert.Equal<Outcome>(
             [
-                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), IncludesAllies: true),
-                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.25m)), IncludesAllies: false),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Unknown()), IncludesAllies: true, Pulses: 1),
+                new Outcome.RestoreHealth(new HealAmount.Share(new GameValue.Known(0.25m)), IncludesAllies: false, Pulses: 1),
                 new Outcome.ResetCooldown(AbilityKind.Melee),
             ],
             rules[6].Then);
@@ -1586,7 +1586,27 @@ public sealed class RuleCatalogParsingTests
         var then = catalog.Elements[ElementId.From("veterans-wisdom")].Rules[0].Then;
         Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.Some(DamageType.Kinetic), HitOutcome.Damage), then[0]);
         Assert.Equal(new Outcome.WeaponStrike(new DamageSource.ThisWeapon(), Optional.None<DamageType>(), HitOutcome.Kill), then[1]);
-        Assert.Equal(new Outcome.RestoreHealth(new HealAmount.Points(new GameValue.Known(65m)), false), then[2]);
+        Assert.Equal(new Outcome.RestoreHealth(new HealAmount.Points(new GameValue.Known(65m)), false, 1), then[2]);
+    }
+
+    [Fact]
+    public void Parses_a_heal_in_pulses()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToElementsFile("artifact/current.yaml", """
+            elements:
+              - id: to-shreds
+                name: To Shreds
+                kind: artifactPerk
+                affinity: strand
+                rules:
+                  - id: to-shreds-2
+                    on: { kill: { via: any } }
+                    then:
+                      - { restoreHealth: { hp: 15, pulses: 3, allies: true } }
+            """)]));
+
+        var then = catalog.Elements[ElementId.From("to-shreds")].Rules[0].Then;
+        Assert.Equal(new Outcome.RestoreHealth(new HealAmount.Points(new GameValue.Known(15m)), true, 3), then[0]);
     }
 
     [Theory]
@@ -1594,6 +1614,7 @@ public sealed class RuleCatalogParsingTests
     [InlineData("{ strikeTarget: { via: bolt-charge, type: arc, hit: damage } }", "unknown key 'type'")]
     [InlineData("{ restoreHealth: { amount: \"?\", hp: 65 } }", "takes amount or hp, not both")]
     [InlineData("{ restoreHealth: { allies: true } }", "needs amount (a share of your health) or hp")]
+    [InlineData("{ restoreHealth: { hp: 15, pulses: 0 } }", "'0'")]
     public void A_strike_by_a_weapon_is_this_weapons_and_a_heal_has_one_amount(string outcome, string expected)
     {
         var message = ParseInvalidCatalog(Glossary, ToElementsFile("weapons/perks.yaml", $$"""

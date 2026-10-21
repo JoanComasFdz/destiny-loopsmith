@@ -81,13 +81,14 @@ elements:
         then:
           - { debuffTarget: unravel }
         reason: "Keep shooting a severed enemy and it gets unraveled."
-      # The pulses are simplified to one grant: you stand in them to get it. The heal is 15 HP per
-      # pulse: restoreHealth amounts are percentages, so it stays "?".
+      # The pulses are simplified to one grant: you stand in them to get it. The heal is their 3 × 15 HP
+      # (`pulses: 3`, each pulse's HP, never added up, ADRs D1); they come 2 s apart and reach allies within
+      # 10? m of the enemy's death spot (compendium/2026-10-21/Artifact Perks#51).
       - id: to-shreds-2
         on: { kill: { via: any, targetHas: [sever] } }
         then:
           - { applyBuff: { status: woven-mail, duration: 10s } }
-          - { restoreHealth: { amount: "?", allies: true } }
+          - { restoreHealth: { hp: 15, pulses: 3, allies: true } }
         reason: "Killing a severed enemy leaves healing pulses behind that give you and your allies Woven Mail."
     passives: []
 
