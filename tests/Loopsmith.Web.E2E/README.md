@@ -52,7 +52,9 @@ and video on, and writes to `out/` (`--out <dir>`; gitignored):
 
 It prints each scenario's startup time and every request that left for bungie.net, and exits non-zero when a scenario
 failed. `--changed-since <ref>` picks the scenario classes added or changed since the branch left `<ref>` (working tree
-included), plus those that name a changed fixture file.
+included), plus those that name a changed fixture file: its whole file name in double quotes
+(`ImportBuildAsync("arc-staff.build.yaml")`), so `arc-staff.build.yaml` doesn't select the classes of
+`thunderous-retort-disorienting-blow-arc-staff.build.yaml` (`FixtureNamingTests` keeps every fixture named that way).
 
 What the GIF and the MP4 show is the browser window, nothing more and nothing less: the video is the window at its pixels
 (1280×800 on desktop; a 390×844 phone drawn at twice that, 780×1688; `BaseE2E`, `BrowserRun`, E2E-TEST-CODE-RULES.md rule b), and the window shows its scrollbar (Playwright hides it in headless Chromium; `BrowserRun` turns
