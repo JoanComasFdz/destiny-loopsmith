@@ -289,7 +289,7 @@ emergency-reinforcement#p0 mods-chest-emergency-reinforcement-2: [Trigger] Alway
 flashover#p0 artifact-current-flashover-2: [Trigger] Always ➜ [Artifact perk] Flashover (equipped) ➜ [Effect] Damage bonus (+50% vs Bolt Charge)
 grenade-font#p0 mods-arms-grenade-font-1: [Trigger] Always ➜ [Armor mod] Grenade Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Grenade stat (+20 | +40 | +50)
 health-font#p0 mods-chest-health-font-1: [Trigger] Always ➜ [Armor mod] Health Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Health stat (+20 | +40 | +50)
-luminopotent-2pc#p0 armor-sets-luminopotent-luminopotent-2pc-1: [Trigger] Always ➜ [Armor set bonus] Ionic Overclock (equipped) + [Buff] Amplified (on you) ➜ [Effect] Weapon stats (handling ?, reload ?)
+luminopotent-2pc#p0 armor-sets-luminopotent-luminopotent-2pc-1: [Trigger] Always ➜ [Armor set bonus] Ionic Overclock (equipped) + [Buff] Amplified (on you) ➜ [Effect] Weapon stats (handling ?, reload-speed ?)
 iron-panoply-4pc#p0 armor-sets-iron-panoply-iron-panoply-4pc-3: [Trigger] Always ➜ [Armor set bonus] Iron Conviction (equipped) + [Buff] Iron Conviction (on you) ➜ [Effect] Damage resistance (15% vs combatants within 10 m)
 kinetic-weapon-surge#p0 mods-legs-kinetic-weapon-surge-1: [Trigger] Always ➜ [Armor mod] Kinetic Weapon Surge (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Damage bonus (+10% | +17% | +22% | +25% vs Kinetic weapon)
 melee-font#p0 mods-arms-melee-font-1: [Trigger] Always ➜ [Armor mod] Melee Font (equipped) + [Buff] Armor Charge (on you) ➜ [Effect] Melee stat (+20 | +40 | +50)

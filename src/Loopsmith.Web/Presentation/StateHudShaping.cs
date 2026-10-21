@@ -40,6 +40,13 @@ public static class StateHudShaping
             ? new ItemDetails.OfStateEntry(details, step, lines)
             : details);
 
+    /// <summary>
+    /// A change to some weapons' stats (Ionic Overclock's, while Amplified): its element's details, with the stats it gives
+    /// after step <paramref name="step"/> first, as a status's own effects are (Stats for All's).
+    /// </summary>
+    public static ItemDetails FindWeaponEffectDetails(WeaponEffect effect, int step) =>
+        new ItemDetails.OfStateEntry(new ItemDetails.OfElement(effect.Source), step, [effect.Text]);
+
     private static Optional<ItemDetails> FindOwnDetails(StateEntry entry) =>
         entry.Element.Match(
             element => Optional.Some<ItemDetails>(new ItemDetails.OfElement(element.Value)),

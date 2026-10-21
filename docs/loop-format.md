@@ -311,7 +311,8 @@ before: x2") and its decay, never applied; tapping it again hides them. The trac
 `Armor Charge` line. A status that switches other elements' passives on says how many ("Amplified · 1 effect": Spark of
 Frequency's extra Bolt Charge); its details list them under **While Amplified** in their **In this build**
 card, each with where it reaches. A passive that changes weapon stats (Ionic Overclock: Linear Fusion Rifles, Fusion Rifles and Heat
-Weapons) shows in the weapons column next to the build's weapons of those types while it holds; when none of
+Weapons) shows in the weapons column next to the build's weapons of those types while it holds ("Ionic Overclock ·
+Techeun Force"), and tapping it opens its details with its stats first, under "Right then, after #N"; when none of
 them is one, the details say it does nothing here and Validation says so too. A status's own effect (Woven
 Mail's damage resistance) is in its details, not in the state's chips: it counts in the **damage resistance** below
 them. Every status opens its details on a tap — one the
