@@ -11,6 +11,9 @@
     <Project Path="tests/Loopsmith.Web.E2E/Loopsmith.Web.E2E.csproj" />
   </Folder>
   <Folder Name="/tools/">
+    <Project Path="tools/compendium/Loopsmith.CompendiumDownload/Loopsmith.CompendiumDownload.csproj" />
+    <Project Path="tools/compendium/Loopsmith.CompendiumDownload.Core/Loopsmith.CompendiumDownload.Core.csproj" />
+    <Project Path="tools/compendium/Loopsmith.CompendiumDownload.Tests/Loopsmith.CompendiumDownload.Tests.csproj" />
     <Project Path="tools/e2e/Loopsmith.E2ETools/Loopsmith.E2ETools.csproj" />
     <Project Path="tools/e2e/Loopsmith.E2ETools.Core/Loopsmith.E2ETools.Core.csproj" />
     <Project Path="tools/e2e/Loopsmith.E2ETools.Tests/Loopsmith.E2ETools.Tests.csproj" />

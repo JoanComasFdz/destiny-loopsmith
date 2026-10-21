@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Compendium download's logic (tools/compendium/README.md): pure, follows docs/CODING_RULES.md; uses only
+       Loopsmith.Functional and AngleSharp (to read Google's HTML), never Core. -->
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.CompendiumDownload.Core</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+    <PackageReference Include="AngleSharp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Loopsmith.CompendiumDownload.Tests" />
+  </ItemGroup>
+</Project>

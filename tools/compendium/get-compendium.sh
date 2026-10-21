@@ -6,40 +6,42 @@
 #   tools/compendium/get-compendium.sh            # tabs only (small)
 #   tools/compendium/get-compendium.sh --images   # also the sheet's images
 #
-# Needs Docker (preferred) or Python 3.10+. Keep the result private: the Compendium is one
-# person's donation-supported work — don't publish the raw files.
+# Runs the C# download (Loopsmith.CompendiumDownload) from this clone: in Docker's .NET 10 SDK image
+# (preferred), or with a local .NET 10 SDK. Keep the result private: the Compendium is one person's
+# donation-supported work — don't publish the raw files.
 set -euo pipefail
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo="$(cd "$here/../.." && pwd)"
 sheet='https://docs.google.com/spreadsheets/d/1WaxvbLx7UoSZaBqdFr1u32F2uWVLo-CJunJB4nlGUE4/edit'
+image='mcr.microsoft.com/dotnet/sdk:10.0'
 name="compendium-$(date +%F)"
-args=("$sheet" "$name")
+args=("$sheet" "tools/compendium/$name" --zip)
 [ "${1:-}" = "--images" ] || args+=("--no-images")
 
-cd "$here"
+cd "$repo"
 use_docker=false
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
-  if docker image inspect python:3.12-slim >/dev/null 2>&1 || docker pull -q python:3.12-slim >/dev/null 2>&1; then
+  if docker image inspect "$image" >/dev/null 2>&1 || docker pull -q "$image" >/dev/null 2>&1; then
     use_docker=true
   else
-    echo "Docker can't download python:3.12-slim (network or proxy settings?) - using local Python instead."
+    echo "Docker can't download $image (network or proxy settings?) - using the local .NET SDK instead."
   fi
 fi
 if [ "$use_docker" = true ]; then
-  echo "Running sheet_dump.py in Docker (python:3.12-slim)..."
-  docker run --rm -v "$here":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e PIP_DISABLE_PIP_VERSION_CHECK=1 python:3.12-slim \
-    sh -c "pip install -q --user --no-warn-script-location requests beautifulsoup4 && python sheet_dump.py ${args[*]}"
+  echo "Running the Compendium download in Docker ($image)..."
+  # Builds into the container's /tmp, so the clone's bin/ and obj/ stay the host's.
+  docker run --rm -v "$repo":/w -w /w -u "$(id -u):$(id -g)" -e HOME=/tmp -e DOTNET_CLI_HOME=/tmp \
+    -e NUGET_PACKAGES=/tmp/nuget -e DOTNET_NOLOGO=1 -e DOTNET_CLI_TELEMETRY_OPTOUT=1 "$image" \
+    dotnet run --project tools/compendium/Loopsmith.CompendiumDownload --artifacts-path /tmp/artifacts -- "${args[@]}"
+elif command -v dotnet >/dev/null 2>&1; then
+  dotnet run --project tools/compendium/Loopsmith.CompendiumDownload -- "${args[@]}"
 else
-  python3 -m pip install -q --user --disable-pip-version-check requests beautifulsoup4
-  python3 sheet_dump.py "${args[@]}"
+  echo "Install Docker or the .NET 10 SDK first, then run this script again." >&2
+  exit 1
 fi
 
-[ -f "$name/tabs.json" ] || { echo "No tabs.json in $here/$name - the download did not complete." >&2; exit 1; }
-if command -v zip >/dev/null 2>&1; then
-  zip -qr "$name.zip" "$name"
-else
-  python3 -c "import shutil,sys; shutil.make_archive(sys.argv[1], 'zip', '.', sys.argv[1])" "$name"
-fi
+[ -f "$here/$name/tabs.json" ] || { echo "No tabs.json in $here/$name - the download did not complete." >&2; exit 1; }
 echo
 echo "Done: $here/$name.zip"
 echo "Send that zip to the Loopsmith session (it stays out of git)."

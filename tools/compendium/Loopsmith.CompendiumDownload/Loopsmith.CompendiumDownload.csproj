@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The Compendium download (tools/compendium/README.md): Google Sheets' read-only pages → a snapshot folder. A host: its
+       logic is Loopsmith.CompendiumDownload.Core. It never references Loopsmith.Core, so it builds in seconds. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Loopsmith.CompendiumDownload</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+    <ProjectReference Include="..\Loopsmith.CompendiumDownload.Core\Loopsmith.CompendiumDownload.Core.csproj" />
+  </ItemGroup>
+</Project>

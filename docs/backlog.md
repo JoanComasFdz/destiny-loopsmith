@@ -15,7 +15,7 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   set ([tools/compendium/README.md](../tools/compendium/README.md)). Next: parsers for Exotic Weapons, Exotic Armors,
   Armor Perks and Game Mechanics (their citations are listed as not checked), and the coverage report (elements without
   rules, names that don't resolve to the manifest). To refresh, run `tools/compendium/get-compendium.ps1` (Windows) or `.sh` locally
-  and hand the zip to a session, or let the session run `sheet_dump.py` itself
+  and hand the zip to a session, or let the session run the download itself
   ([tools/compendium/README.md](../tools/compendium/README.md)).
   The raw snapshot stays private (`snapshots/` is gitignored).
 - **Draft rules from the Compendium** (requirements FR-12, ADRs D10): read the Compendium's "On X:" phrasing into draft

@@ -72,7 +72,7 @@ src/Loopsmith.Web/       host: Blazor WebAssembly loop designer (Home, Designer)
 tests/Loopsmith.Core.Tests/   unit, golden and architecture tests
 rules/                   authored causality (glossary, keywords, hunter, exotics, armor sets, mods, artifact, weapon perks)
 docs/                    requirements, rule format, loop format, hosting, backlog
-tools/compendium/        Destiny Data Compendium download: sheet_dump.py + Docker/Python scripts
+tools/compendium/        Destiny Data Compendium download: Loopsmith.CompendiumDownload (.NET) + its scripts
 tools/manifest/          Bungie manifest excerpt: the manifest tool (.NET) downloads the manifest → rules/manifest.yaml
 tools/web/               prepare-pages.sh — readies a published site for GitHub Pages
 .github/workflows/       CI, Pages deploy (main), PR previews
@@ -93,9 +93,8 @@ Every e2e build and loop fixture file is checked against the rules by a Core tes
 | [DIM](https://github.com/DestinyItemManager/DIM) (MIT) | The nine Light subclass hashes (in the glossary; the Stasis and Strand ones are from Bungie's manifest) | Hashes in the glossary; the DIM link (dim.gg shares) is removed ([docs/example-loops.md](docs/example-loops.md)) |
 
 **Getting a Compendium snapshot:** run `tools/compendium/get-compendium.ps1` (Windows) or
-`get-compendium.sh` locally and hand the resulting zip to a session — see
-[tools/compendium/README.md](tools/compendium/README.md). (`docs.google.com` isn't reachable from
-the cloud environment unless it's added to its allowed domains.)
+`get-compendium.sh` locally and hand the resulting zip to a session, or let the session download it itself — see
+[tools/compendium/README.md](tools/compendium/README.md).
 
 **Licensing.** The Compendium is one person's donation-supported work. Keep snapshots
 private, out of any public repo (`snapshots/` is gitignored), never served as raw text,
