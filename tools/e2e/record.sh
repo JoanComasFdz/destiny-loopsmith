@@ -74,7 +74,10 @@ find_class_project() {
 
 # The scenario classes changed since a ref, and those whose fixture files changed, in both projects, each on a line with
 # why it was picked: "<class>\tchanged", or "<class>\tfixtures\t<the fixture's path in its project>" (one line per
-# changed fixture). The extension's scenarios all open the files of its project's Workspace/: a change there selects
+# changed fixture). A class uses a fixture when it names its whole file name in double quotes
+# (ImportBuildAsync("arc-staff.build.yaml")), so a fixture whose name ends another's (arc-staff.build.yaml,
+# thunderous-retort-disorienting-blow-arc-staff.build.yaml) selects only its own classes; FixtureNamingTests keeps every
+# fixture named that way. The extension's scenarios all open the files of its project's Workspace/: a change there selects
 # every one of them.
 list_changed_classes() {
   local base
@@ -92,7 +95,7 @@ list_changed_classes() {
           *Tests.cs) printf '%s\tchanged\n' "$(basename "$file" .cs)" ;;
           *.cs) ;;
           *)
-            for class in $(cd "$project" && grep -rlF --include='*Tests.cs' "$(basename "$file")" $(scenario_roots "$project") 2> /dev/null | xargs -r -n1 basename | sed 's/\.cs$//'); do
+            for class in $(cd "$project" && grep -rlF --include='*Tests.cs' "\"$(basename "$file")\"" $(scenario_roots "$project") 2> /dev/null | xargs -r -n1 basename | sed 's/\.cs$//'); do
               printf '%s\tfixtures\t%s\n' "$class" "${file#"${project#"$repo"/}"/}"
             done ;;
         esac

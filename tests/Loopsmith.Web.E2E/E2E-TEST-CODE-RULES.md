@@ -229,8 +229,11 @@ are separate contexts too.
    `Loopsmith.Web.E2E.Scenarios.Loop.Weapons`): the recordings' folder, a rule scenario's release and the VS Code
    extension's lookup are named by it. A fixture two classes use is copied into each class's folder under a name of its
    own (`Reload/festival-flight-one-for-all.build.yaml`, `WeaponRowLayout/festival-flight-one-for-all-row-layout.build.yaml`):
-   a scenario finds its fixture by its file name, which must be unique in the project and not part of another's
-   (`tools/e2e/record.sh --changed-since` finds the classes a fixture selects by its name).
+   a scenario finds its fixture by its file name, which must be unique in the project. The class writes that name out
+   whole, in double quotes (`ImportBuildAsync("arc-staff.build.yaml")`, never built from pieces):
+   `tools/e2e/record.sh --changed-since` finds the classes a changed fixture selects by that quoted name, so a name that
+   ends another's (`arc-staff.build.yaml`, `thunderous-retort-disorienting-blow-arc-staff.build.yaml`) selects only its
+   own classes, and `FixtureNamingTests` fails a fixture no class names that way.
 5. Grow `Infrastructure/` only by what this scenario needs: the page-object members, vocabulary cases and assertions it
    calls. Missing `data-action` / `data-testid` attributes are added to the app in the same PR.
 6. Run it unrecorded while you work: `tools/e2e/record.sh --no-video <its class>` (fast; `--no-publish` when the web
