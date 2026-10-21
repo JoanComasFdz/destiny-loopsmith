@@ -286,6 +286,30 @@ public static class StepCardSnapshotAssertions
         return that;
     }
 
+    /// <summary>
+    /// Under <paramref name="mod"/>, the line <paramref name="line"/> ("Void Overshield (8s)") shows <paramref name="icon"/>
+    /// before the keyword it names, and no other keyword icon.
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> FiresWithIcon(this AssertingThat<StepCardSnapshot> that, ArmorMod mod, string line, KeywordIcon icon)
+    {
+        var name = mod.ToShownText();
+        var lines = FindSources(that.InstanceToAssert, name).SelectMany(source => source.Lines.Zip(source.LineIcons)).Where(shown => shown.First == line).ToArray();
+        Assert.True(lines.Length == 1, $"Under {name} the card shows {Describe(FindSources(that.InstanceToAssert, name).SelectMany(source => source.Lines))}, but one \"{line}\" was expected.");
+        var icons = lines[0].Second;
+        Assert.True(icons.SequenceEqual([icon]), $"Under {name} the line \"{line}\" shows the icons {Describe(icons.Select(shown => shown.ToShownText()))}, but only {icon.ToShownText()} was expected.");
+        return that;
+    }
+
+    /// <summary>The state's <paramref name="group"/> shows the chip <paramref name="chip"/> ("Void Overshield") with <paramref name="icon"/> before its name.</summary>
+    public static AssertingThat<StepCardSnapshot> ShowsWithIcon(this AssertingThat<StepCardSnapshot> that, StateGroup group, string chip, KeywordIcon icon)
+    {
+        var chips = ReadGroup(that.InstanceToAssert.State, group);
+        var shown = chips.Where(found => found.Text == chip).ToArray();
+        Assert.True(shown.Length == 1, $"The state's {group.ToShownText()} show {Describe(chips.Select(found => found.Text))}, but one \"{chip}\" was expected.");
+        Assert.True(shown[0].Icons.SequenceEqual([icon]), $"The state's \"{chip}\" chip shows the icons {Describe(shown[0].Icons.Select(found => found.ToShownText()))}, but only {icon.ToShownText()} was expected.");
+        return that;
+    }
+
     /// <summary>The state's <paramref name="group"/> reads "none".</summary>
     public static AssertingThat<StepCardSnapshot> ShowsNone(this AssertingThat<StepCardSnapshot> that, StateGroup group) =>
         that.Shows(group);

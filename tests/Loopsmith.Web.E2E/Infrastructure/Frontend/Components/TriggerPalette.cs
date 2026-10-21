@@ -208,17 +208,21 @@ public sealed class TriggerPalette(IPage page)
     private async Task<ImmutableArray<OnYouChip>> ReadOnYouAsync() =>
         await OnYou.CountAsync() == 0
             ? []
-            : [.. (await OnYou.EvaluateAsync<JsonElement>(OnYouScript)).Deserialize<ImmutableArray<OnYouChip>>(ShownJson.Options)];
+            : [.. (await OnYou.EvaluateAsync<JsonElement>(OnYouScript)).Deserialize<ShownOnYouChip[]>(ShownJson.Options)!
+                .Select(chip => new OnYouChip(chip.Name, chip.IsButton, [.. chip.Buttons], [.. chip.Icons.Select(KeywordIconShowing.ReadKeywordIcon)]))];
 
-    // Each chip of the "On you" group, in order: a status's name with its buttons' captions, or a state to declare's caption
-    // with no buttons (it is a button itself).
+    private sealed record ShownOnYouChip(string Name, bool IsButton, string[] Buttons, string[] Icons);
+
+    // Each chip of the "On you" group, in order: a status's name with its buttons' captions and its keyword icon, or a state
+    // to declare's caption with no buttons (it is a button itself).
     private const string OnYouScript = """
         group => [...group.children]
           .filter(el => el.matches('[data-testid=status-chip], [data-action=trigger-at-once]'))
           .map(el => el.matches('[data-testid=status-chip]')
             ? { name: el.querySelector('[data-testid=status-name]').innerText.trim(), isButton: false,
-                buttons: [...el.querySelectorAll('[data-testid=trigger-caption]')].map(c => c.innerText.trim()) }
-            : { name: el.querySelector('[data-testid=trigger-caption]').innerText.trim(), isButton: true, buttons: [] })
+                buttons: [...el.querySelectorAll('[data-testid=trigger-caption]')].map(c => c.innerText.trim()),
+                icons: [...el.querySelectorAll('[data-testid=keyword-icon]')].map(icon => icon.getAttribute('src')) }
+            : { name: el.querySelector('[data-testid=trigger-caption]').innerText.trim(), isButton: true, buttons: [], icons: [] })
         """;
 
     // The row's box and its content's right edge (its right padding left out), each button's box with its caption, each
@@ -272,10 +276,11 @@ public sealed record TriggerPaletteSnapshot(
 public sealed record RankPickerShown(EnemyRank Picked, bool IsEnabled);
 
 /// <summary>
-/// A chip of the "On you" group: a buff on you, by its name, with its buttons' captions ("at max (x10)", "ends"); or a
-/// state to declare, by its caption, which is a button itself (<see cref="IsButton"/>, no buttons of its own).
+/// A chip of the "On you" group: a buff on you, by its name, with its buttons' captions ("at max (x10)", "ends") and the
+/// keyword icon before its name (none when it has none); or a state to declare, by its caption,
+/// which is a button itself (<see cref="IsButton"/>, no buttons or icon of its own).
 /// </summary>
-public sealed record OnYouChip(string Name, bool IsButton, ImmutableArray<string> Buttons);
+public sealed record OnYouChip(string Name, bool IsButton, ImmutableArray<string> Buttons, ImmutableArray<KeywordIcon> Icons);
 
 /// <summary>
 /// Where the picked row is on the screen, in CSS pixels: the row's box and its content's right edge, each button's box

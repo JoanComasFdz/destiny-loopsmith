@@ -42,8 +42,11 @@ public sealed record HudSecondary(HudSlot Slot, string Gesture, string Caption, 
 /// <summary>A weapon of the HUD: its slot, its damage type's icon and its archetype ("Grenade Launcher"), when known.</summary>
 public sealed record HudWeapon(HudSlot Slot, WeaponSlot WeaponSlot, Optional<string> DamageIcon, Optional<string> Archetype);
 
-/// <summary>A status the player can declare something about — its name, its colour — and those declarations ("at max (x10)", "ends").</summary>
-public sealed record HudStatus(string Name, Affinity Affinity, ImmutableArray<TriggerButton> Buttons);
+/// <summary>
+/// A status the player can declare something about — its name, its colour, its icon (the game's own keyword icon, or the
+/// shape it draws), when it has one — and those declarations ("at max (x10)", "ends").
+/// </summary>
+public sealed record HudStatus(string Name, Affinity Affinity, Optional<IconRef> Icon, ImmutableArray<TriggerButton> Buttons);
 
 /// <summary>
 /// The Next trigger section laid out like Destiny's HUD: the Super's diamond, then the grenade, melee and class ability
@@ -206,7 +209,7 @@ public static class TriggerHudShaping
             .SelectMany(button => ReadStatus(button.Action).Match(status => new[] { (Status: status.Value, Button: button) }, _ => []))
             .GroupBy(entry => entry.Status)
             .SelectMany(group => build.Catalog.Glossary.Statuses.TryGetValue(group.Key, out var definition)
-                ? new[] { (definition.Kind, new HudStatus(definition.Name, definition.Affinity, [.. group.Select(entry => ToStatusButton(entry.Button, definition.Name))])) }
+                ? new[] { (definition.Kind, new HudStatus(definition.Name, definition.Affinity, LoopDesigning.FindKeywordIcon(build, new KeywordRef.Status(group.Key)), [.. group.Select(entry => ToStatusButton(entry.Button, definition.Name))])) }
                 : []),
     ];
 

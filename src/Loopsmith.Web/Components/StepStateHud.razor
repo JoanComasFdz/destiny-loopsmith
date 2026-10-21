@@ -268,7 +268,7 @@
     {
         if (LoopDesigning.FindKeywordIcon(Build, entry.Keyword) is Optional<IconRef>.Some icon)
         {
-            <img class="inline-icon hud-keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" />
+            <img class="inline-icon hud-keyword-icon" src="@LoadoutShaping.ToIconUrl(icon.Value)" alt="" loading="lazy" data-testid="keyword-icon" />
         }
     };
 

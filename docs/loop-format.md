@@ -295,7 +295,7 @@ status, a debuff by its adjective ("Jolted"), a pickup, a summon — is in its a
 the line ("+1 **Bolt Charge**", "Grenade 💀 kill on **Jolted** target"), and the ones the rules have as an element
 (Jolt, Bolt Charge, Ionic Trace, Combination Blow) preview and open the same way. A keyword shows the game's
 own icon before its name ([rule-format.md](rule-format.md#glossary-rulesglossaryyaml), `trait`) — in the step's
-text, in the state at its end and in its details (Unraveling Rounds, which Bungie's data has no icon for, shows the
+text, in the state at its end, in its details and on its chip in the trigger panel ("On you", on your weapons, on the pack) (Unraveling Rounds, which Bungie's data has no icon for, shows the
 shape the game draws for it, the glossary's `drawnIcon`: a triangle around a round, in Strand green); a step's title shows the icon of what it does (its weapon, its
 ability, the pickup or the status it declares, the finisher the HUD shows), and an event that is a weapon's hit or kill shows that weapon's. An element
 whose rules the engine fired apart (a debuff first, energy last) shows at each of its places, in that order. "why" adds each rule's reason under its element; "caveats" adds the outcomes'
