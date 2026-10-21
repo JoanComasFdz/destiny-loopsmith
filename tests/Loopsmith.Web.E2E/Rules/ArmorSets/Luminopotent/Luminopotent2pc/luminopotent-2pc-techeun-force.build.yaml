@@ -1,0 +1,8 @@
+# Luminopotent's 2-piece bonus (Ionic Overclock), with Disorienting Blow (its hit makes you Amplified) and Techeun Force, an Arc Fusion Rifle.
+name: "E2E - Ionic Overclock on Techeun Force"
+class: hunter
+subclass: arc
+melee: disorienting-blow
+armorSetBonuses: [luminopotent-2pc]
+weapons:
+  - { hash: 4094657108 } # Techeun Force
