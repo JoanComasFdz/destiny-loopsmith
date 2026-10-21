@@ -80,7 +80,11 @@ Python packages of the Compendium download (`requests`, `beautifulsoup4`), and i
   (ADRs D40). `rules/manifest.yaml` is generated (the Bungie manifest's
   names, descriptions, icons, slots, perks and armor sets for every hash in the rules and in `tools/manifest/test-items.yaml`
   (the weapons, armor and mods the Core tests equip that no rule names), and the seven artifacts with all their perks): rerun
-  `tools/manifest/` after adding a hash to either ([tools/manifest/README.md](tools/manifest/README.md)), never edit it.
+  `tools/manifest/`'s manifest tool after adding a hash to either ([tools/manifest/README.md](tools/manifest/README.md)), never edit it.
+  The manifest tool: `dotnet run --project tools/manifest/Loopsmith.ManifestTools -- download <dir>` downloads Bungie's
+  manifest and `… -- extract <dir>` writes `rules/manifest.yaml` from it. `Loopsmith.ManifestTools` is the host (files, the
+  download); `Loopsmith.ManifestTools.Core` its pure logic; `Loopsmith.ManifestTools.Tests` their tests. Neither references
+  Core, only `Loopsmith.Functional`.
 - [docs/example-loops.md](docs/example-loops.md) — the example builds and loops (`builds/`), the DIM link and the
   `build-extractor` agent, all removed: what they were, how their tests looked, how example loops could come back, the
   agent's definition verbatim; the last commit holding them is `d56905d`. Creator transcripts are third-party content:
@@ -242,9 +246,10 @@ pull request:
    one line there, its title and test class, never its full text: the PR's e2e comment shows it in
    full with its GIFs ([docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md), section 8). A PR gets
    **no build** when every path it changes (a rename's old path too) is a Markdown file or under
-   `docs/`, `.github/`, `.claude/`, `.devcontainer/`, `tools/compendium/` or `tools/manifest/`, or a script directly in
-   `tools/e2e/` (not its .NET projects, which are built and tested) (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
-   **no preview** when every path is on that list or under `tests/` (nothing the published site is
+   `docs/`, `.github/`, `.claude/`, `.devcontainer/` or `tools/compendium/`, or a file directly in `tools/e2e/` or
+   `tools/manifest/` but `tools/manifest/test-items.yaml` (not their .NET projects, which are built and tested, nor the test
+   items, which a Core test reads) (nothing `dotnet build` or `dotnet test` reads: `ci.yml` skips `build`), and
+   **no preview** when every path is on that list, is `tools/manifest/test-items.yaml` or is under `tests/` (nothing the published site is
    built from: `ci.yml` neither publishes it nor calls `pr-preview.yml`; a test or e2e fixture change still builds and tests). A
    PR with no preview leaves the preview out of its description and messages. Then rename
    the session: put `#<PR number> ` in front of its current title ("D2 damage resistance calculation" →

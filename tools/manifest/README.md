@@ -28,22 +28,53 @@ Regenerate it after adding a hash to the rules or an item to `test-items.yaml`, 
 A Core test (`TestItemHashesTests`) fails, naming the hash, when an item of `test-items.yaml` isn't in the excerpt:
 
 ```bash
-tools/manifest/get-manifest.sh /tmp/manifest            # downloads eleven English components (~11 MB compressed, ~215 MB on disk)
-python3 -I tools/manifest/extract_manifest.py /tmp/manifest "$(cat /tmp/manifest/version.txt)"   # needs PyYAML (python3-yaml)
-dotnet test                                             # the catalog version changes; nothing pins it
+dotnet run --project tools/manifest/Loopsmith.ManifestTools -- download /tmp/manifest   # twelve English components (~11 MB compressed, ~215 MB on disk) and version.txt
+dotnet run --project tools/manifest/Loopsmith.ManifestTools -- extract /tmp/manifest    # writes rules/manifest.yaml (run from the repository's root, or pass --root <repo>)
+dotnet test                                                                             # the catalog version changes; nothing pins it
 ```
+
+`extract` takes the manifest's version from the folder's `version.txt` (`--version <version>` to give another). It prints
+how many items, armor sets and stat plugs it wrote, and reports on stderr every hash the manifest doesn't have
+(`not in the manifest: <hash>`), writing nothing for it. The output is sorted and stable, so a rerun on the same
+manifest changes nothing.
 
 The web app reads the same components in the browser for hashes the excerpt lacks
 (`src/Loopsmith.Core/ManifestJoining`, the same reading in C#); `ManifestContentId` in
 `src/Loopsmith.Web/wwwroot/appsettings.json` is the content id it falls back to — set it to the one
-`get-manifest.sh` prints. To check that the two readings agree, run the tests with the download:
-`LOOPSMITH_MANIFEST_DIR=/tmp/manifest dotnet test --filter ManifestJoin`. The same run checks that the pickers' "Every item"
-(`ManifestListing`) lists every weapon and armor piece of the excerpt as the join names it, breakers included
-(`--filter ManifestListing`).
+`download` prints. Three checks run with the download (`LOOPSMITH_MANIFEST_DIR=/tmp/manifest dotnet test`):
+- that the committed `rules/manifest.yaml` is what `extract` writes from its manifest version, byte for byte
+  (`--filter ExcerptMatchesTheManifest`; skipped when the download is of another version);
+- that the two readings agree (`--filter ManifestJoin`);
+- that the pickers' "Every item" (`ManifestListing`) lists every weapon and armor piece of the excerpt as the join names
+  it, breakers included (`--filter ManifestListing`).
 
-`get-manifest.sh` reads the manifest index from `https://www.bungie.net/Platform/Destiny2/Manifest/` (with
-`$BUNGIE_API_KEY` as `X-API-Key` when set). A cloud session got bungie.net's 500 error page for the index
-(2026-10-10) but could download the component files; give their content id and version instead
-(`MANIFEST_ID=… MANIFEST_VERSION=…`, see the script). The extractor reports every hash the manifest doesn't
-have and writes nothing for it. Downloads are untrusted data: keep them out of the repository and run the
-extractor with `python3 -I`.
+`download` reads the manifest index from `https://www.bungie.net/Platform/Destiny2/Manifest/` (with
+`$BUNGIE_API_KEY` as `X-API-Key` when set) and keeps it as `index.json`. A cloud session got bungie.net's 500 error page
+for the index (2026-10-10) but could download the component files; give their content id and version instead:
+
+```bash
+MANIFEST_ID=e677f6ea-2a1e-48d4-a8c8-700a39a62585 MANIFEST_VERSION=245114.26.10.13.2000-1-bnet.66137 \
+  dotnet run --project tools/manifest/Loopsmith.ManifestTools -- download /tmp/manifest
+```
+
+The component files themselves (`…/common/destiny2_content/json/en/…`) need no key. Downloads are untrusted data: keep
+them out of the repository.
+
+## The manifest tool
+
+Three projects, like the e2e tool's ([tools/e2e/README.md](../e2e/README.md)):
+- `Loopsmith.ManifestTools`: the host. It reads the command line and the environment, downloads the manifest
+  (`Hosting/ManifestDownload`), reads the components, the rule files and `test-items.yaml`, and writes
+  `rules/manifest.yaml` (`Hosting/ExcerptExtraction`, `Hosting/ManifestFiles`).
+- `Loopsmith.ManifestTools.Core`: its logic, pure, following [CODING_RULES](../../docs/CODING_RULES.md): the components'
+  JSON (`ManifestTables`), the hashes the rules and test items name (`NamedHashReading`), what an item's definition says
+  (`ItemReading`: its kind and slot, trait columns, mods, intrinsic, catalyst, breaker, an artifact's tiers, a subclass's
+  plugs, its description), the stat plugs (`StatPlugReading`), Bungie's text as YAML (`TextWriting`), the excerpt whole
+  (`ExcerptWriting`), the index and the components' addresses (`ManifestDownloading`) and the command line
+  (`OptionsReading`).
+- `Loopsmith.ManifestTools.Tests`: their tests, which `dotnet test` runs with the rest, in CI too: each reading on small
+  hand-made manifests (no Bungie data is committed but the excerpt), the excerpt whole, and the opt-in check above.
+
+Neither project references `Loopsmith.Core`, only `Loopsmith.Functional` (an architecture test holds it). It replaced
+`extract_manifest.py` and `get-manifest.sh` (Python and shell), writing the same `rules/manifest.yaml` byte for byte
+from the same manifest but for the line that names the generator.

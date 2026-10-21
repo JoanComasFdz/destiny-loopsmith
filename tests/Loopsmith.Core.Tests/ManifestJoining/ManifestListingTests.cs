@@ -127,7 +127,7 @@ public sealed class ManifestListingTests
     public void The_real_manifest_lists_every_weapon_and_armor_piece_of_the_bundled_excerpt()
     {
         var directory = Environment.GetEnvironmentVariable("LOOPSMITH_MANIFEST_DIR");
-        Assert.SkipWhen(string.IsNullOrEmpty(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest (tools/manifest/get-manifest.sh) to run it.");
+        Assert.SkipWhen(string.IsNullOrEmpty(directory), "Set LOOPSMITH_MANIFEST_DIR to a downloaded manifest (tools/manifest/README.md) to run it.");
         var bundled = FileSourceFetching.ReadRuleFiles(RepoFiles.ToPath("rules"))
             .Bind(CatalogLoading.ParseCatalog)
             .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure))

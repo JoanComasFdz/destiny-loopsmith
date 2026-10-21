@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- The manifest tool's logic (tools/manifest/README.md): pure, follows docs/CODING_RULES.md; uses only Loopsmith.Functional, never Core. -->
+  <PropertyGroup>
+    <RootNamespace>Loopsmith.ManifestTools.Core</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Dunet" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Loopsmith.Functional\Loopsmith.Functional.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Loopsmith.ManifestTools.Tests" />
+  </ItemGroup>
+</Project>
