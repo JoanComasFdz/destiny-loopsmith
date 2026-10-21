@@ -463,6 +463,10 @@ textarea { resize: vertical; }
 .explain-title { font-weight: 700; }
 .explain-panel summary .muted { font-size: 12px; }
 .explain-panel .slines { padding: 0 14px 12px; max-height: 420px; overflow: auto; }
+.explain-tabs { display: inline-flex; margin: 0 14px 8px; border: 1px solid var(--line-2); border-radius: var(--radius); overflow: hidden; }
+.explain-tab { padding: 5px 12px; border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.explain-tab + .explain-tab { border-left: 1px solid var(--line-2); }
+.explain-tab.on { background: var(--raised); color: var(--text); font-weight: 650; }
 /* On a phone a long row wraps, its continuation under the outcome, so its [source] stays in view without scrolling sideways. */
 @media (max-width: 640px) {
     .explain-panel .slines.pre .sline {
