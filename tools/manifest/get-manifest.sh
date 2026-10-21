@@ -4,7 +4,7 @@
 # The component paths come from Bungie's manifest index (https://www.bungie.net/Platform/Destiny2/Manifest/;
 # sent with $BUNGIE_API_KEY as X-API-Key when it is set). Where the index can't be read (a cloud session got
 # bungie.net's 500 error page for it), give its content id and version instead:
-#   MANIFEST_ID=a8ba855a-93c7-4014-8f2e-d92357fdfb42 MANIFEST_VERSION=244213.26.06.29.2000-1-bnet.65864 \
+#   MANIFEST_ID=e677f6ea-2a1e-48d4-a8c8-700a39a62585 MANIFEST_VERSION=245114.26.10.13.2000-1-bnet.66137 \
 #     tools/manifest/get-manifest.sh <out-dir>
 # The component files themselves (…/common/destiny2_content/json/en/…) need no key. Then:
 #   python3 -I tools/manifest/extract_manifest.py <out-dir> "$(cat <out-dir>/version.txt)"
