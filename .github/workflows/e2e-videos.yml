@@ -6,7 +6,7 @@ name: E2E videos
 # names (and e2e-gifs/what-changed.md, the post's "What changed", when the session gave one). A session can't upload a file to
 # GitHub, so this workflow does only that part: it checks the push, uploads them as pr-<n>-v<version>-<scenario>.gif
 # and .mp4 (a flow as pr-<n>-v<version>-<rule name>.png, shown under its scenario's title) to their release (a rule scenario's, under Rules/<…>/, to its rule group's rules-<…>-resources pre-release,
-# created on its first upload; any other to `prs-resources`), posts them on the PR as a new comment (each GIF with a "▶ Play MP4" link to
+# created on its first upload; any other to `prs-resources`), posts them on the PR as a new comment (each scenario a closed <details> under its title; each GIF with a "▶ Play MP4" link to
 # the site's player page; it never touches the PR's description) and deletes the branch. It builds, tests and records
 # nothing. A push runs the workflow file inside the pushed commit, so the branch carries the PR's own version of this file.
 # A failing scenario is marked ❌ in the post and never turns this check red; only the workflow's own failures do (a push

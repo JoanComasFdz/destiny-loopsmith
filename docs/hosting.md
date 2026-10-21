@@ -280,20 +280,24 @@ works the PR records them; CI doesn't run, record or build anything for them.
   when it has no body. `--message` travels as `e2e-gifs/what-changed.md`, posted as it is, not in the commit message:
   there a one-paragraph text like `AFTER: …` looks like a trailer (`Key: value`) and was dropped, so the post fell back
   to the subject (PR #106's V2). Each post reads only its own push's commit, so two posts from the same head commit,
-  or posts on several PRs at once, each show their own text. Each scenario shows once: its Gherkin's title as a small
-  heading; for a rule scenario, its rule's flow PNG (from its release), or *No flow drawn for `<rule>`: <why>* when
+  or posts on several PRs at once, each show their own text. Each scenario shows once, as a closed `<details>` whose
+  summary is its Gherkin's title in bold, so the owner opens only the scenarios they want to see (PR #177 posted 24
+  scenarios, each with two GIFs, all open one after another). Inside it: for a rule scenario, its rule's flow PNG (from its release), or *No flow drawn for `<rule>`: <why>* when
   there was none; its Gherkin in a `gherkin` block; then a `🖥️ Desktop` and/or `📱 Mobile` subtitle (the screens it was played
   on, desktop first) with that run's GIF below, and below it **▶ Play MP4**. The GIF and that line both link to the
   player page with that run's MP4 (`https://<owner, lowercase>.github.io/<repo>/e2e-player.html?v=<MP4 name>`), so a tap
   on the GIF opens the video instead of downloading the GIF (GitHub can't make a link open a new tab, so a long-press
   does). A run with no MP4 (a `scenarios.json` from before the MP4s) shows its GIF only. A failed run has ❌ before its subtitle, and its scenario before its
-  title. The scenarios the PR added or changed come first; those only re-recorded because a fixture they use changed
+  title in the summary, so it shows while closed. A re-recorded scenario's line naming its fixtures is the first thing
+  inside its `<details>`. The scenarios the PR added or changed come first; those only re-recorded because a fixture they use changed
   (`"selected": "fixtures"`) follow under `### Re-recorded: their fixtures changed`, each with a line naming its changed
   fixtures, so the owner can check that the fixture change left their behaviour as it was (PR #113's post listed the
   Weapons scenarios its `*.build.yaml` changes re-recorded like its own, and read as another PR's). With both kinds,
-  the first sits under `### Added or changed by this PR`, a scenario's title is `####` and its screens `#####`; a
-  section with no scenarios isn't shown. With only the PR's own (or a `scenarios.json` from before `selected`), there
-  are no section headings: titles `###`, screens `####`. `tools/e2e/test_post_scenarios.py` tests the layout
+  the first sits under `### Added or changed by this PR`; the section headings stay open, outside the scenarios'
+  `<details>`, and a section with no scenarios isn't shown. With only the PR's own (or a `scenarios.json` from before
+  `selected`), there are no section headings. A screen's subtitle is `####` either way. The scenario counts in the
+  collapsed and shrunk lines below count the scenarios' `<details>` (not the collapse's own, told apart by its
+  summary), or, in a post written before them, the title headings (`###`, `####` under a section). `tools/e2e/test_post_scenarios.py` tests the layout
   (`python3 -m unittest tools/e2e/test_post_scenarios.py`; CI doesn't run it). Every post ends with `---` and
   `_Recorded by the e2e workflow · Claude Code_`. The workflow never touches the PR's description, so editing the
   description can't break a post.

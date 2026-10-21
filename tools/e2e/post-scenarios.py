@@ -11,7 +11,8 @@ Reads <out>/scenarios.json (tools/e2e/record.sh: one entry per run, a scenario p
   rules-hunter-arc-melees-resources, one per rule file: rules/hunter/arc/melees.yaml), created as a pre-release when it
   doesn't exist yet; any other run's is `prs-resources`. The post then shows <out>/what-changed.md as it is (push-gifs.sh --message), or else
   the body of --commit's message without its trailers, or its subject. Each scenario
-  shows once: its title, the flow PNG of the rule its Gherkin names (record.sh's "flow", uploaded once per rule as
+  shows once, as a closed <details> whose summary is its bold title (so the owner opens only the ones to look at),
+  holding the flow PNG of the rule its Gherkin names (record.sh's "flow", uploaded once per rule as
   pr-<n>-v<version>-<rule name>.png next to its GIFs, or a line saying why none was drawn), its Gherkin, then a "🖥️ Desktop" and/or "📱 Mobile" subtitle with that screen's GIF and, below
   it, "▶ Play MP4": both link to the site's player page (e2e-player.html?v=<the MP4's name>, and &r=<its release> for a
   rule release), since GitHub shows no
@@ -44,6 +45,7 @@ Uses the gh CLI (GH_TOKEN) on the repository in --repo or GITHUB_REPOSITORY. --d
 """
 import argparse
 import hashlib
+import html
 import json
 import os
 import re
@@ -66,6 +68,9 @@ HEADING = re.compile(r"^## Scenarios \(V(\d+)\)[ \t]*$", re.MULTILINE)
 # A shrunk post has no heading left: its version is in its one line.
 SHRUNK = re.compile(r"^\*\*Scenarios \(V(\d+)\)\*\*")
 COLLAPSED = "<details>"
+# A scenario is a closed <details> whose summary is its bold title; an earlier version's collapse is one too, around the
+# whole post, told apart by its summary. A post from before them had a heading per title (count_scenarios).
+SCENARIO = re.compile(r"^<details><summary><b>(?!Scenarios \(V\d+\)</b>)", re.MULTILINE)
 SECTIONS = re.compile(r"^### (Added or changed by this PR|Re-recorded: their fixtures changed)[ \t]*$", re.MULTILINE)
 TRAILER = re.compile(r"^[A-Za-z][A-Za-z0-9-]*: \S")
 SCREENS = {"desktop": "🖥️ Desktop", "mobile": "📱 Mobile"}
@@ -167,8 +172,11 @@ def is_collapsed(comment):
 
 
 def count_scenarios(body):
-    """A scenario's title is ### in a post without sections, #### under "Added or changed…" / "Re-recorded…" (its
-    screens one level down, so never counted)."""
+    """Each scenario is a closed <details> of its own. In a post from before them, a scenario's title is ### in a post
+    without sections, #### under "Added or changed…" / "Re-recorded…" (its screens one level down, so never counted)."""
+    collapsed = len(SCENARIO.findall(body))
+    if collapsed:
+        return collapsed
     level = "####" if SECTIONS.search(body) else "###"
     return len(re.findall(rf"^{level} ", body, re.MULTILINE))
 
@@ -414,25 +422,25 @@ def group_by_scenario(runs):
 
 def write_section(repo, version, scenarios, changed):
     """The post. The scenarios the PR added or changed come first, then those only re-recorded because a fixture file they
-    use changed ("selected": "fixtures"), each naming its changed fixtures. With only the first kind (a scenarios.json
-    without "selected" included) there are no section headings, and a scenario's title is ### and its screens ####."""
+    use changed ("selected": "fixtures"), each naming its changed fixtures, under ### headings. With only the first kind
+    (a scenarios.json without "selected" included) there are no section headings. Each scenario is a closed <details>."""
     lines = [f"## Scenarios (V{version})", "", "**What changed**", "", changed, ""]
     groups = group_by_scenario(scenarios)
     own = [runs for runs in groups if not is_rerecorded(runs[0])]
     rerecorded = [runs for runs in groups if is_rerecorded(runs[0])]
     if not rerecorded:
         for runs in own:
-            lines += write_scenario(repo, runs, "###")
+            lines += write_scenario(repo, runs)
     else:
         if own:
             lines += ["### Added or changed by this PR", ""]
             for runs in own:
-                lines += write_scenario(repo, runs, "####")
+                lines += write_scenario(repo, runs)
         lines += ["### Re-recorded: their fixtures changed", "",
                   "Their code didn't change, a fixture file they use did: they should behave as before.", ""]
         for runs in rerecorded:
             fixtures = ", ".join(f"`{path}`" for path in runs[0].get("fixtures") or [])
-            lines += write_scenario(repo, runs, "####", f"_{fixtures} changed._" if fixtures else "")
+            lines += write_scenario(repo, runs, f"_{fixtures} changed._" if fixtures else "")
     lines += ["---", FOOTER, ""]
     return "\n".join(lines)
 
@@ -441,12 +449,12 @@ def is_rerecorded(scenario):
     return scenario.get("selected") == "fixtures"
 
 
-def write_scenario(repo, runs, level, why=""):
-    """A scenario's title at <level>, why it is there, the flow of the rule it names (or why there is none), its Gherkin,
-    then each screen one level down with its GIF."""
+def write_scenario(repo, runs, why=""):
+    """A closed <details> whose summary is the scenario's title, holding why it is there, the flow of the rule it names
+    (or why there is none), its Gherkin, then each screen as a #### subtitle with its GIF."""
     first = runs[0]
     mark = "❌ " if any(not run["passed"] for run in runs) else ""
-    lines = [f"{level} {mark}{first['title']}", ""]
+    lines = [f"<details><summary><b>{mark}{html.escape(first['title'], quote=False)}</b></summary>", ""]
     if why:
         lines += [why, ""]
     lines += write_flow(repo, first)
@@ -454,7 +462,7 @@ def write_scenario(repo, runs, level, why=""):
         lines += ["```gherkin", first["gherkin"], "```", ""]
     for run in runs:
         screen = SCREENS.get(run.get("screen"), run.get("screen") or "")
-        lines += [f"{level}# {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
+        lines += [f"#### {'❌ ' if not run['passed'] else ''}{screen}".rstrip(), ""]
         if os.path.exists(run["file"]):
             release = run.get("release", RELEASE)
             url = f"https://github.com/{repo}/releases/download/{release}/{run['asset']}"
@@ -466,7 +474,7 @@ def write_scenario(repo, runs, level, why=""):
                 lines += [image, ""]
         else:
             lines += ["_No recording._", ""]
-    return lines
+    return lines + ["</details>", ""]
 
 
 def write_flow(repo, scenario):

@@ -69,7 +69,7 @@ CI doesn't run them. On a pull request, the session records them once, right bef
 scenarios (`--changed-since origin/main`; again if a scenario or the web app changes before the push, so the GIFs match
 the pushed head; never between pushes) and, right after the push, `tools/e2e/push-gifs.sh` pushes the GIFs to a throwaway
 `e2e-gifs/pr-<n>-<short sha>` branch, which `.github/workflows/e2e-videos.yml` posts on the PR
-([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): each scenario once, its title, the flow of the rule a rule scenario names (a PNG
+([docs/hosting.md](../../docs/hosting.md#e2e-videos-on-pull-requests)): each scenario once, a closed `<details>` under its title holding the flow of the rule a rule scenario names (a PNG
 the recording draws with the rule viewer), its Gherkin, then its 🖥️ Desktop and/or 📱 Mobile GIF with a ▶ Play MP4 link under it; a failing run is marked there, never red.
 
 Against a site you serve yourself: `E2E_URL=http://127.0.0.1:8000/destiny-loopsmith/ dotnet test tests/Loopsmith.Web.E2E`
