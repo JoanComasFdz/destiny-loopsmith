@@ -1,0 +1,6 @@
+# Explosive Finisher with Empowered Finish to give the first Armor Charge on a finisher, and one Charged Up
+# to raise the Armor Charge cap to x4.
+name: "E2E - Explosive Finisher with Empowered Finish and one Charged Up"
+class: hunter
+subclass: arc
+armorMods: [explosive-finisher, empowered-finish, charged-up]
