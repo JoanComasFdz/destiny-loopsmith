@@ -20,7 +20,12 @@ jobs:
   #   tools/manifest/ and tools/compendium/ too (test files, e2e fixtures among them, and those tools are built and
   #   tested but never published). If so, `build` publishes the web app and `preview` deploys what it published
   #   (pr-preview.yml).
-  # If this job fails, both run. Pushes to main always build and never preview (pages.yml deploys).
+  # - viewer: a file the rule viewer's page or its e2e scenarios are made or played from, i.e. tools/rule-viewer/,
+  #   tests/Loopsmith.RuleViewer.E2E/, tests/Loopsmith.E2E.Shared/, src/Loopsmith.Core/ (the viewer draws with it), what
+  #   plays them (tools/e2e/record.sh, the e2e tool, the static server), the Playwright pin (Directory.Packages.props)
+  #   and this file. If so, `rule-viewer-e2e` plays them.
+  # If this job fails, all of them run. Pushes to main always build, never preview (pages.yml deploys) and never play the
+  # rule viewer's scenarios.
   changes:
     runs-on: ubuntu-latest
     permissions:
@@ -28,21 +33,25 @@ jobs:
     outputs:
       code: ${{ steps.files.outputs.code }}
       site: ${{ steps.files.outputs.site }}
+      viewer: ${{ steps.files.outputs.viewer }}
     steps:
       - id: files
         env:
           GH_TOKEN: ${{ github.token }}
           PR: ${{ github.event.pull_request.number }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then printf 'code=true\nsite=false\n' >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$GITHUB_EVENT_NAME" != pull_request ]; then printf 'code=true\nsite=false\nviewer=false\n' >> "$GITHUB_OUTPUT"; exit 0; fi
           files=$(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR/files" \
             --jq '.[] | .filename, (.previous_filename // empty)')
           unread='\.md$|^docs/|^\.github/|^\.claude/|^\.devcontainer/|^tools/compendium/[^/]+\.(sh|ps1)$|^tools/(e2e|manifest)/[^/]+$'
           tested='^tools/manifest/test-items\.yaml$'
           code=$(( $(printf '%s' "$files" | grep -cvE "$unread" || true) + $(printf '%s' "$files" | grep -cE "$tested" || true) ))
           site=$(printf '%s' "$files" | grep -cvE "$unread|^tests/|^tools/(e2e|manifest|compendium)/" || true)
+          plays='^tools/rule-viewer/|^tests/Loopsmith\.(RuleViewer\.E2E|E2E\.Shared)/|^src/Loopsmith\.Core/|^tools/e2e/(record\.sh$|Loopsmith\.(E2ETools|E2ETools\.Core|StaticServer)/)|^Directory\.Packages\.props$|^\.github/workflows/ci\.yml$'
+          viewer=$(printf '%s' "$files" | grep -cE "$plays" || true)
           echo "code=$([ "$code" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "site=$([ "$site" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "viewer=$([ "$viewer" -gt 0 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
 
   build:
     needs: changes
@@ -67,6 +76,37 @@ jobs:
           path: publish/wwwroot
           include-hidden-files: true # .nojekyll
           retention-days: 1
+
+  # The rule viewer's e2e scenarios (tests/Loopsmith.RuleViewer.E2E), played unrecorded on desktop and mobile as a session
+  # plays them while developing (tools/e2e/record.sh --no-video, every domain folder of the project's Scenarios/): it
+  # fails when a run fails or none ran. Recording them stays the session's job. The Chromium Playwright's pin expects
+  # (1.56.0 → chromium-1194, the cloud image's) is installed by Playwright and cached by its version; the page's icons and
+  # fonts are cached by the fixtures they are named by, and fetched from bungie.net and Google Fonts only on a miss.
+  rule-viewer-e2e:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.viewer != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: dotnet build tests/Loopsmith.RuleViewer.E2E -c Release
+      - id: playwright
+        run: echo "version=$(grep -oP 'Include="Microsoft\.Playwright" Version="\K[^"]+' Directory.Packages.props)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      # Downloads the browser only when the cache missed; the system libraries it needs are installed every time.
+      - name: Install Chromium
+        run: pwsh tests/Loopsmith.RuleViewer.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - uses: actions/cache@v5
+        with:
+          path: ~/.cache/loopsmith/rule-viewer-page
+          key: rule-viewer-page-${{ hashFiles('tests/Loopsmith.RuleViewer.E2E/Fixtures/**') }}
+      - name: Play the rule viewer's scenarios
+        run: tools/e2e/record.sh --no-video $(find tests/Loopsmith.RuleViewer.E2E/Scenarios -mindepth 1 -maxdepth 1 -type d -printf '%f ')
 
   # The PR's preview, from the site `build` published once it built and passed its tests.
   preview:

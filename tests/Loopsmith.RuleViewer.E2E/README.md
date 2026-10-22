@@ -25,7 +25,9 @@ For this project it:
    each run's GIF and MP4 like the web app's, trimmed from when the page showed.
 
 Without `E2E_RULE_VIEWER_URL` the scenarios are skipped, so `dotnet test` runs only their checks that need no browser
-(`ScenarioShapeTests`, `FixtureRulesTests`). CI doesn't run them: its runner has no Chromium. The page's HTML has its
+(`ScenarioShapeTests`, `FixtureRulesTests`). CI plays them unrecorded, the same `tools/e2e/record.sh --no-video` run, on every PR that changes the rule viewer, this
+project, `tests/Loopsmith.E2E.Shared`, Core, what plays them or the Playwright pin (`ci.yml`'s `rule-viewer-e2e` job,
+which installs Playwright's Chromium and caches it and the icons and fonts); recording them stays the session's job. The page's HTML has its
 own tests in `tools/rule-viewer/Loopsmith.RuleViewer.Tests` (`RuleTreePageTests`).
 
 ## Where tests go
