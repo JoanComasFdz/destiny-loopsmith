@@ -11,7 +11,9 @@ work out on their own. These rules apply to every Gherkin a session writes. A Gh
   play button and recording panel) is one scenario in `tests/Loopsmith.VsCodeExtension.E2E`, played in VS Code for the web on
   the desktop only (its
   [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md)), and its PR shows its GIFs
-  the same way.
+  the same way. So does the rule viewer's page (`tools/rule-viewer`): each Gherkin about how its tree behaves is one
+  scenario in `tests/Loopsmith.RuleViewer.E2E`, played on the page drawn from that project's fixture rules (its
+  [E2E-TEST-CODE-RULES.md](../tests/Loopsmith.RuleViewer.E2E/E2E-TEST-CODE-RULES.md)).
 
 The PR's e2e comment shows each scenario's title, closed until it is opened, and inside it the flow of the rule it names (a rule scenario's `# Rule` line,
 drawn by the rule viewer), its Gherkin, and a GIF of it played on each screen its tags name
@@ -38,7 +40,9 @@ for a loop scenario ([its document](given-when-then-loop-scenarios.md)), and
    designer. A criterion checked in a file (a doc, a rules YAML, a test, a workflow) stays a plain line.
 2. **Layout is a Gherkin too**, checked from where things are on the screen: a row wraps, two parts don't overlap, a
    button sits at a row's right end, a row fits inside the screen with no sideways scroll, a text isn't cut off. "Looks right",
-   colours and spacing are never a Gherkin: nothing checks them but an eye.
+   colours and spacing are never a Gherkin: nothing checks them but an eye, the reviewer's, on the scenarios' GIFs in the
+   PR's e2e post. So a scenario plays the screen as a player or reader sees it: its real icons and fonts, never
+   placeholders.
 3. **Not yet:** what needs a Bungie login (no e2e scenario can reach it yet). Such a criterion stays
    a plain line, checked by hand on the preview, and says why.
 

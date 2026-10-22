@@ -1,0 +1,79 @@
+# Hunter, Arc (Arcstrider): melees.
+#
+# Numbers from the Destiny Data Compendium snapshots of 2026-10-09 and 2026-10-13 (source:
+# compendium/<date>/<Tab>#<row>; the elements added with the 2026-10-13 snapshot cite it). Hashes are
+# Clarity 2.0625's for the elements of the 2026-10-09 snapshot unless a comment says they are the
+# manifest's (Clarity has no grenade, melee or super entries); the elements of the 2026-10-13
+# snapshot take the manifest's (244213.26.06.29.2000-1-bnet.65864: the Arcstrider's plugs).
+#
+# Ability energy amounts are base values: chunk energy scalars and stats are not applied, and
+# chunkScalar / baseCooldown are facts recorded from the Compendium that change nothing (ADRs D5).
+#
+# Format gaps that shape these rules (see builds/skip-grenade-hunter/discrepancies.md at commit d56905d):
+#  - an ability damage source cannot name a specific ability or its damage type ("Arc grenades",
+#    "Skip Grenade drones" -> `grenade`);
+#  - movement qualifiers are the abilities' secondary uses only (ADRs D9): the melee while sliding
+#    (`melee:slide`, Tempest Strike's uppercut) and the class ability's air move (`class:air`,
+#    Ascension). A rule on the plain ability fires for its secondary uses too.
+#
+# Where a rule file sits, and each rule's id: docs/rule-format.md, "Files" (ADRs D40).
+elements:
+  - id: combination-blow
+    name: Combination Blow
+    kind: melee
+    affinity: arc
+    class: hunter
+    # The manifest's hash (light.gg, 2026-10-10): what a DIM loadout names (the owner's Arc
+    # loadout plugs it).
+    hash: 2716335211
+    ability: { kind: melee, charges: 1, chunkScalar: 1, baseCooldown: 58.1 }
+    description: "Arc punch. A melee kill grants 100% class ability energy, heals you and adds a Combination Blow stack (20 s, up to x3). Melee damage +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3; the kill heal drops from 100 HP to 80 / 60 / 40 HP as stacks build."
+    source: compendium/2026-10-09/Arc#41
+    rules:
+      # 100% is a base chunk gain: the Compendium adds that 70 Class is needed for it to refill
+      # Gambler's Dodge completely (the build has 104). The heal is in HP and depends on the stacks
+      # (100, then 80 / 60 / 40 HP): restoreHealth amounts are percentages and an amount can't vary
+      # with the stack level, so it stays "?".
+      - id: combination-blow-1
+        on: { kill: { via: melee } }
+        then:
+          - { applyBuff: combination-blow }
+          - { grantEnergy: { to: classAbility, amount: "100%" } }
+          - { restoreHealth: { amount: "?" } }
+        reason: "A Combination Blow kill gives your class ability back in full, heals you and stacks its melee damage buff (up to x3)."
+    passives:
+      # +133% / +266% / +400% [PvP 23% / 51.3% / 86%] at x1 / x2 / x3: the bonus varies with the
+      # stack level and a passive's value can't, so it stays "?".
+      - id: combination-blow-2
+        effect: { modifyDamage: { against: melee, change: "?" } }
+        when: [ { has: combination-blow } ]
+        reason: "Each Combination Blow stack makes your melee hits much harder."
+    statChecks:
+      # Arc#41: 70 Class for the kill to refill Gambler's Dodge completely. Chunk gains scale with their
+      # stat: 100% of the stated value at 70, more above, less below (TWID 2025-06-05; patch 9.0.0.4).
+      # How much less below 70 isn't published.
+      - stat: class
+        below: 70
+        severity: warning
+        says: "With {value} Class, a Combination Blow kill gives back less than a full class ability: its 100% needs 70 Class, and below that it gives less (how much less isn't published)."
+
+  - id: disorienting-blow
+    name: Disorienting Blow
+    kind: melee
+    affinity: arc
+    class: hunter
+    hash: 2716335210
+    ability: { kind: melee, charges: 1, chunkScalar: 0.9, baseCooldown: 118.8 }
+    description: "Arc palm strike: 162 impact and up to 976 damage within 7 m. A hit blinds enemies within 9.6 m for 8.5 s and gives you Amplified and x2 Bolt Charge."
+    source: compendium/2026-10-13/Arc#42
+    rules:
+      # The plain press only (`melee:press`): Tempest Strike's sliding uppercut is the melee too, but
+      # the Compendium says it doesn't interact with Disorienting Blow (Arc#51).
+      - id: disorienting-blow-1
+        on: { damage: { via: melee:press } }
+        then:
+          - { debuffTarget: { status: blind, duration: 8.5s } }
+          - { applyBuff: amplified }
+          - { applyBuff: { status: bolt-charge, stacks: 2 } }
+        reason: "Every Disorienting Blow hit blinds the enemies around it, makes you Amplified and gives you two Bolt Charge stacks."
+    passives: []

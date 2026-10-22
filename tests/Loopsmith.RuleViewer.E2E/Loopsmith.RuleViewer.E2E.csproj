@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- End-to-end tests of the rule viewer's page (tools/rule-viewer), played in Chromium on the page it draws from
+       Fixtures/rules. Its own code rules: E2E-TEST-CODE-RULES.md. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- xUnit1026: a scenario's Screen parameter is read by BaseE2E (the browser opens as that screen), never by its body
+         (E2E-TEST-CODE-RULES.md, rule a). -->
+    <NoWarn>$(NoWarn);xUnit1026</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="JoanComasFdz.AssertingThat" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Loopsmith.E2E.Shared\Loopsmith.E2E.Shared.csproj" />
+    <!-- FixtureRulesTests: the fixture rules still draw a tree. -->
+    <ProjectReference Include="..\..\tools\rule-viewer\Loopsmith.RuleViewer.Core\Loopsmith.RuleViewer.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Loopsmith.E2E.Shared" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The rules the page is drawn from (record.sh draws it from this folder; FixtureRulesTests reads the copy). -->
+    <None Include="Fixtures\**\*.yaml" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

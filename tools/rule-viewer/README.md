@@ -44,6 +44,9 @@ The tool is three projects ([ADRs D39](../../docs/ADRs.md)):
 - `Loopsmith.RuleViewer.Tests`: the unit and golden tests, and the architecture test that keeps the pure project pure
   (no files, network or console; no part of Core but its kernel and `Orchestration`). Core's host boundary test checks
   the host's and the pure project's calls into Core.
+- [`tests/Loopsmith.RuleViewer.E2E`](../../tests/Loopsmith.RuleViewer.E2E/README.md): the page's e2e scenarios, played in
+  Chromium on the page drawn from that project's fixture rules: the tree's arrows, checkboxes (and their dash) and names,
+  and where the tree sits on a desktop and a phone (`tools/e2e/record.sh` draws, serves and records them).
 
 The files:
 

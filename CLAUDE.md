@@ -34,7 +34,7 @@ Open items: [docs/backlog.md](docs/backlog.md).
 ## Build & test
 ```bash
 dotnet build Loopsmith.slnx          # TreatWarningsAsErrors is on
-dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL / E2E_VSCODE_URL)
+dotnet test                          # unit, golden and architecture tests (the e2e scenarios skip without E2E_URL / E2E_VSCODE_URL / E2E_RULE_VIEWER_URL)
 node --test src/Loopsmith.VsCodeExtension/test/*.test.js   # the VS Code extension's unit tests
 tools/e2e/record.sh --no-video Starting   # e2e scenarios in Chromium, unrecorded: the fast run while developing (Recordings: the extension's)
 tools/e2e/record.sh --changed-since origin/main   # recorded → out/<domain>/<scenario>-<screen>.gif + .mp4 + out/scenarios.json (right before a push)
@@ -140,6 +140,13 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
   faked; their GIFs post on the PR like the web app's. Binding rules: its
   [E2E-TEST-CODE-RULES.md](tests/Loopsmith.VsCodeExtension.E2E/E2E-TEST-CODE-RULES.md); how to run: its
   [README](tests/Loopsmith.VsCodeExtension.E2E/README.md).
+- `tests/Loopsmith.RuleViewer.E2E/` — end-to-end scenarios of the rule viewer's page (its tree: folding, ticking and the
+  dash, selecting and scrolling, beside or above the flows), one per Gherkin, played in Chromium on desktop and mobile on
+  the page `record.sh` draws from its `Fixtures/rules/` (copies of real rule files, so a new rule changes no scenario) and
+  serves, with its real icons and fonts from `${E2E_PAGE_CACHE:-~/.cache/loopsmith/rule-viewer-page}` (filled once, never
+  committed); a console error fails a scenario; their GIFs post on the PR like the web app's. Binding rules: its
+  [E2E-TEST-CODE-RULES.md](tests/Loopsmith.RuleViewer.E2E/E2E-TEST-CODE-RULES.md); how to run: its
+  [README](tests/Loopsmith.RuleViewer.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
   every acceptance criterion about how the app behaves is one, and every Gherkin is one e2e scenario (its
   `[TestDescription]`), played on 🖥️ desktop and/or 📱 mobile (`[PlayInDesktop]` / `[PlayInMobile]`). It holds what
