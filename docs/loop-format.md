@@ -63,7 +63,7 @@ build: |                                # required — the build file's full tex
 Same tokens everywhere: loop files and web share links:
 
 `grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]]` · `class[:air]` · `kinetic|energy|power[:hit|kill[:N]]` ·
-`kinetic|energy|power:reload` · `kinetic|energy|power:ready` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` — and last, an option:
+`kinetic|energy|power:reload` · `kinetic|energy|power:ready` · `ammo:special|heavy[:slide]` · `finisher` · `pickup:<pickup-id>` · `max:<status-id>` · `end:<status-id>` · `pack:new` · `health:critical` · `health:hit` · `recharged:grenade|melee|class` — and last, an option:
 `:last` on a grenade, melee or class ability step, `:shield` and `:precision` on a weapon step, and
 `:elite|miniboss|champion|boss` on a kill step or a finisher
 
@@ -201,6 +201,22 @@ has ended, that the next enemies are a new pack — the player declares as a ste
   cascades, and changes no state. It holds only while Critical health is on you, so a step before it must reach it
   (`Not at critical health — declare Critical health (health:critical) first.`). Spark of Instinct reacts to it: its
   burst jolts the pack (its damage and the time between bursts are facts in its description).
+* `recharged:grenade`, `recharged:melee`, `recharged:class` — "Grenade recharged": the ability recharged over time, every
+  charge full again (ADRs D48). No time is modelled, so nothing regenerates by itself between steps: the player says it.
+  It always holds (a full ability stays full) and raises no event; the designer offers it while the ability isn't
+  surely full.
+
+**Ability energy** (ADRs D48). The grenade's, melee's and class ability's energy is part of the state, and each step
+card shows it before and after the step: `Grenade 100% → 0%`. A loop starts with every ability full; a grenade, melee
+or class ability step spends a charge, then what it sets off fills the energy back — a grant times the receiving
+ability's chunk scalar at 70 in its stat (exactly that at 70, at least that above, unknown below 70 or without the
+stat), never past its full charges ([rule-format.md](rule-format.md#ability-energy)). An unknown part never reads as 0:
+the known part is a floor, `≥ 8.44%`, and with none the energy reads `?`; it stays so until a spend, a full charge or a
+recharge makes it known. An ability with two charges (Shinobu's Vow's grenade) reads `2 charges`, `1 charge + 25%`. A
+step whose ability had no full charge before it is still played, flagged **Not ready** in its header with the note
+`Grenade not ready: 0% before #2`, or **May not be ready** when part of the energy is unknown
+(`Grenade may not be ready: ≥ 8.44% before #2`). Energy reads to two decimals at most, never rounded up to a full charge.
+The next pass starts with the energy the last one ended with.
 
 **Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
 fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a
@@ -215,21 +231,22 @@ x1) takes sure stacks first. The decay (one stack every 10 s, slower with Time D
 isn't modelled. The next pass starts from what the last one ended with.
 
 **Written form.** Written tokens are lower-case and carry the count only when it is more than one
-(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`, `health:hit`). Every token written
+(`grenade:kill`, `kinetic`, `grenade:kill:3`, `finisher`, `max:bolt-charge`, `end:amplified`, `pack:new`, `health:critical`, `health:hit`, `recharged:grenade`). Every token written
 reads back as the same action (`grenade:hit` is written `grenade`). Labels read "Grenade (💀 kill 3)",
 "Festival Flight (🥊 hit 5)" (a weapon by its build name), "Sliding melee (💀 kill)" — 💀 marks a kill step and 🥊 a
 hit step, in the steps' titles and the HUD's buttons alike — "Festival Flight (💀 kill · 🛡 shield)", "Festival Flight (💀 kill ·
 🎯 precision)", "Festival Flight (💀 kill · 🛡 shield · 🎯 precision)", "Festival Flight (💀 kill · Elite)",
 "Grenade (💀 kill · ⬜ spend fully)", "Class ability (⬜ spend fully)", "Class ability (in the air)",
 "Finisher", "Finisher (Boss)", "Pick up Orb of Power", "Bolt Charge at max (x10)", "Amplified ends", "New pack", "Critical health",
-"Hit at critical health", "Critical health ends".
+"Hit at critical health", "Critical health ends", "Grenade recharged", "Class ability recharged".
 
 **What the web designer offers.** Only steps that can happen: the abilities, the equipped
 weapons, the pickups on the ground and the **states you declare** — `pack:new` always, `health:critical` while you
 aren't at critical health, when an equipped rule reacts to it or to a hit at it (the designer shows it with the buffs
 **On you**), `health:hit` while you are, when an equipped rule reacts to it (its **hit** button sits beside
 "Critical health" **On you**, with **ends**), `max:` for
-each active buff that stacks and isn't at max yet, `end:` for each active status. A secondary (`melee:slide`, `class:air`)
+each active buff that stacks and isn't at max yet, `recharged:` for the grenade, melee and class ability while it
+isn't surely full (**On you**, a button of its own: "Grenade recharged"), `end:` for each active status. A secondary (`melee:slide`, `class:air`)
 is offered only when an equipped rule names it (without one it fires exactly what the press fires); `finisher` (with
 the abilities) always, as the game always allows one — in a build where no rule reacts to a finisher and none fires on
 a kill from any source, it sets nothing off. Every token still reads anywhere
@@ -251,8 +268,9 @@ many from that ability or weapon in one action ("1 enemy", "2 in 3 s · Arc Siph
 One for All", "2 · Reaper's Tithe",
 "4 enemies · Armor Charge x4, Bolt Charge x10", "7 enemies · grenade full", "12 · Synergy"; rules of one count with
 different windows each say theirs, "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s"). A larger count a rule needs
-is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). The sums only bound the choices: they are
-never game state and decide nothing (ADRs D1, D5) — and it stays picked
+is offered too, and so is a step's own count (a loop file's `grenade:kill:15`). An ability's energy is the state's after
+the step: from the energy it starts with, scaled, its sure part only (ADRs D48). The sums only bound the choices: they
+decide nothing (ADRs D1) — and it stays picked
 for the next step; a secondary's own hit and kill show the same way ("Sliding melee · Tempest Strike"); the class
 ability, its air move and the finisher act at one tap. A row's option (ADRs D36) shows beside its count, a box the
 player ticks: **🛡 shield** on each weapon when an equipped rule reacts to a broken shield (Shield Break Charge), **🎯
@@ -358,8 +376,8 @@ artifact or artifact perk, nothing left out), the **Next trigger** panel is grey
 a line says why ("Equip something first"); this holds for any build in that state. Anything equipped turns it on: the
 finisher, a new pack and the declared states need nothing equipped, so a build with only a fragment (a rule scenario's
 build, Spark of Volts) can tap the Finisher. Once the editor gives it an ability, the panel offers it; an ability slot
-still empty is a dashed square named for its kind in the HUD too (an ability is always possible in the game, ADRs D5,
-so it can still be cast — it sets off what reacts to any cast).
+still empty is a dashed square named for its kind in the HUD too (it can still be cast, and spends its charge, ADRs
+D48 — it sets off what reacts to any cast).
 
 ## Starting from a DIM link
 
@@ -568,8 +586,10 @@ their names, so a new raid's are covered too.
 ## Stats
 
 A build's `stats:` are its six armor stats (`health`, `melee`, `grenade`, `super`, `class`, `weapons` — the game's
-order, which the designer shows as bars and Loopsmith writes; 0..200; one the build doesn't give is "?"). They are facts of the build, never counted down: the engine simulates no
-energy (ADRs D1, D5). What they change is said by the build check, from the elements' `statChecks`
+order, which the designer shows as bars and Loopsmith writes; 0..200; one the build doesn't give is "?"). They are facts of the build, never counted down. In a loop the Grenade,
+Melee and Class stats scale their ability's energy gains (a gain matches its listed value at 70; ADRs D48), and a grant
+per stat point reads the stat (Gambler's Dodge's 2% per Melee point); a stat the build doesn't give makes those
+unknown. What they change in the build is said by the build check, from the elements' `statChecks`
 ([rule-format.md](rule-format.md#elements)) — Gambler's Dodge gives back 1% of a melee charge per Melee point,
 twice that within 15 m of an enemy, so below 50 Melee it warns that even near an enemy the melee doesn't come back
 in full (and from 50 to 99 it says that only near an enemy it does); a Combination Blow kill refills the class
@@ -714,10 +734,15 @@ Each step resolves as in [rule-format.md](rule-format.md#engine-semantics-what-a
 2. **Repeating pass** — the loop is played again from where the previous pass ended (the buffs and
    their declarations, the debuffs on the pack and the pickups on the ground carry over), until a pass
    starts the way an earlier pass started: the same buffs (the same ones declared at max), debuffs
-   and pickups. That pass is the **repeating pass**. The state is only what is present and
-   declared, so this settles within a few passes.
+   and pickups, the same Armor Charge and the same abilities' energy (ADRs D33, D48). That pass is the
+   **repeating pass**. The state is what is present and declared, and energy that only fills to full, so this settles
+   within a few passes.
 3. A **blocked step** — nothing to pick up, no weapon in that slot, a declaration that doesn't hold
    ([action tokens](#action-tokens)) — changes nothing, and the pass goes on with the next step.
+4. A **not-ready step** — a grenade, melee or class ability step whose ability surely had no full charge before it
+   (ADRs D48) — is played, and breaks the loop as a blocked step does; one that **may not be ready** (part of its energy
+   unknown) is a caveat of its step, not a break. Nothing regenerates by itself, so a loop that uses an ability repeats
+   only when its refunds bring it back, or the loop declares it recharged (`recharged:grenade`).
 
 **Verdict**, one of:
 
@@ -730,7 +755,8 @@ The loop has no steps.
 
 The first when no step is blocked; the second when the repeating pass has no blocked step but the
 first pass has one (it names the first pass's first blocked step); the third when the repeating pass
-has a blocked step (the first one, with its message).
+has a blocked step or a not-ready one (the first one, with its message:
+`✗ Breaks at #1 (Grenade (💀 kill)): Grenade not ready: 0% before #1`).
 
 **The steps** of the repeating pass, each with:
 
@@ -756,7 +782,9 @@ has a blocked step (the first one, with its message).
   each *(chance)* one (ADRs D8);
 * **wasted** — a rule that gave way there because it doesn't stack with another element's
   ([rule-format.md](rule-format.md#rules-that-dont-stack), ADRs D6):
-  `Tempest Strike — doesn't stack with Dielectric`.
+  `Tempest Strike — doesn't stack with Dielectric`;
+* **not ready** / **may not be ready** — its ability had no full charge before it, surely or maybe (ADRs D48):
+  `Grenade not ready: 0% before #1`.
 
 **The chain** — the needs drawn as arrows, one per pair of steps: from the step that provided a need
 to the step that needs it, labelled with what flows (`#2 → #3: Slice · Reaper`); one whose needs came

@@ -12,12 +12,12 @@ public sealed class GamblersDodgeTests : BaseE2E
     [TestDescription("""
         @desktop @mobile
         Scenario: Gambler's Dodge gives melee energy on a dodge
-          # Rule hunter-class-abilities-gamblers-dodge-1: Class ability ➜ Gambler's Dodge equipped ➜ Melee energy (?)
+          # Rule hunter-class-abilities-gamblers-dodge-1: Class ability ➜ Gambler's Dodge equipped ➜ Melee energy (2% per Melee point)
           Given the build "gamblers-dodge" is imported, with no steps
           When I tap "Gambler's Dodge" in the trigger panel
           Then card #1's heading is "#1 Class ability"
           And it reads "Class ability"
-          And "Gambler's Dodge" fires "+?% melee energy"
+          And "Gambler's Dodge" fires "+2% melee energy per Melee point"
         """)]
     public async Task GamblersDodgeGivesMeleeEnergyOnADodge(Screen screen)
     {
@@ -34,6 +34,6 @@ public sealed class GamblersDodgeTests : BaseE2E
         Asserting.That(dodged)
             .HasHeading("#1 Class ability")
             .Reads("Class ability")
-            .Fires(new Ability.GamblersDodge(), "+?% melee energy");
+            .Fires(new Ability.GamblersDodge(), "+2% melee energy per Melee point");
     }
 }

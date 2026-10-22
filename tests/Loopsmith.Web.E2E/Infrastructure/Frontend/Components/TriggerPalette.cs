@@ -79,6 +79,11 @@ public sealed class TriggerPalette(IPage page)
         OnYou.Locator(":scope > [data-action=trigger-at-once]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(state.ToShownText(), new() { Exact = true }) });
 
+    // An ability's "… recharged" button in the "On you" group, outside the status chips ("Grenade recharged").
+    private ILocator Recharged(AbilitySlot ability) =>
+        OnYou.Locator(":scope > [data-action=trigger-at-once]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(ability.ToRechargedText(), new() { Exact = true }) });
+
     // A pickup's chip in the panel's "On the ground" group reads "Pick up <its name>".
     private ILocator Pickup(Keyword pickup) =>
         Panel.Locator("[data-testid=trig-group][data-group=ground] [data-action=trigger-at-once]")
@@ -125,6 +130,9 @@ public sealed class TriggerPalette(IPage page)
 
     /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
     public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));
+
+    /// <summary>Clicks "<paramref name="ability"/> recharged" under "On you" ("Grenade recharged"): the loop gets a step that declares it recharged.</summary>
+    public Task ClickRechargedAsync(AbilitySlot ability) => OnScreen.PressAsync(Panel, Recharged(ability));
 
     /// <summary>Clicks "Pick up <paramref name="pickup"/>" under "On the ground": the loop gets a step that picks it up.</summary>
     public Task ClickPickupAsync(Keyword pickup) => OnScreen.PressAsync(Panel, Pickup(pickup));

@@ -1,0 +1,6 @@
+# Shinobu's Vow with Skip Grenade: two grenade charges.
+name: "E2E - Shinobu's Vow with Skip Grenade, two grenades"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+exoticArmor: shinobus-vow

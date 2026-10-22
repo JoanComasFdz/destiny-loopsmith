@@ -1,0 +1,5 @@
+# Skip Grenade and nothing else: a throw spends the grenade, and nothing gives it back.
+name: "E2E - Skip Grenade alone"
+class: hunter
+subclass: arc
+grenade: skip-grenade

@@ -84,6 +84,24 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>"On you" shows "<paramref name="ability"/> recharged" as a button of its own ("Grenade recharged").</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> OffersRecharged(this AssertingThat<TriggerPaletteSnapshot> that, AbilitySlot ability)
+    {
+        Assert.True(
+            that.InstanceToAssert.OnYou.Any(shown => shown.IsButton && shown.Name == ability.ToRechargedText()),
+            $"\"On you\" shows {DescribeOnYou(that.InstanceToAssert)}, but \"{ability.ToRechargedText()}\" was expected.");
+        return that;
+    }
+
+    /// <summary>"On you" shows no "<paramref name="ability"/> recharged" ("Grenade recharged"): the ability is full.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> DoesNotOfferRecharged(this AssertingThat<TriggerPaletteSnapshot> that, AbilitySlot ability)
+    {
+        Assert.True(
+            !that.InstanceToAssert.OnYou.Any(shown => shown.IsButton && shown.Name == ability.ToRechargedText()),
+            $"\"On you\" shows {DescribeOnYou(that.InstanceToAssert)}, but no \"{ability.ToRechargedText()}\" was expected.");
+        return that;
+    }
+
     private static string DescribeOnYou(TriggerPaletteSnapshot shown) =>
         shown.OnYou.IsEmpty
             ? "nothing"

@@ -1,4 +1,5 @@
-@* What is present at the end of a step (LoopDesigning.ShapeStepState), laid out like the game's HUD: the buffs on you on
+@* What is present at the end of a step (LoopDesigning.ShapeStepState), laid out like the game's HUD: first the grenade's,
+   melee's and class ability's energy before the step and after it (LoopDesigning.ShapeStepEnergy, ADRs D48), then the buffs on you on
    the left, your weapons' buffs in the middle (each with the weapon whose perk gives it) and what changes those weapons'
    stats right then, the debuffs on the pack on the right, the pickups on the ground below them. A phone stacks them.
    A status with effects says how many: its own element's (Stats for All's stats: one chip, not two; Spark of Recharge's
@@ -13,6 +14,20 @@
    ("Melee  ?"), each source's own value, never added up; tapping its title shows where each comes from. *@
 <div class="step-hud" data-testid="step-state">
     <div class="hud-title">State after #@Number</div>
+    <div class="hud-group hud-energy" data-testid="state-group" data-group="energy">
+        <span class="hud-label">Energy</span>
+        <span class="chips">
+            @foreach (var line in Energy.Lines)
+            {
+                <span class="hud-energy-line" data-testid="energy-line" data-ability="@line.Ability.ToString().ToLowerInvariant()">
+                    <span class="hud-energy-name">@line.Name</span>
+                    <span class="hud-energy-value" data-testid="energy-before">@line.Before</span>
+                    <span class="hud-energy-arrow" aria-label="then">→</span>
+                    <span class="hud-energy-value" data-testid="energy-after">@line.After</span>
+                </span>
+            }
+        </span>
+    </div>
     <div class="hud-columns">
         @RenderGroup("buffs", "Buffs", State.Buffs, false)
         <div class="hud-group" data-testid="state-group" data-group="weapons">
@@ -116,6 +131,10 @@
 @code {
     [Parameter, EditorRequired]
     public StepState State { get; set; } = null!;
+
+    /// <summary>The grenade's, melee's and class ability's energy before and after the step (ADRs D48).</summary>
+    [Parameter, EditorRequired]
+    public StepEnergy Energy { get; set; } = null!;
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;

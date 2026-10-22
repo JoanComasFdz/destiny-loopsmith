@@ -20,8 +20,8 @@ whether a grenade lands — and almost everything runs on time (cooldowns, durat
 
 | Loopsmith does | Loopsmith doesn't |
 |---|---|
-| Show a source's number as a fact with its outcome: "+12% grenade energy", "Amplified (15s)", "up to x10" | Add numbers up or count stacks to a maximum (two exceptions deciding nothing: the build's stats, D28, and the step's damage resistance, D29; one that decides: Armor Charge's stacks, sure and chance ones, D33) |
-| Keep **what is present**: a buff on you, a debuff on the pack, a pickup on the ground | Track time, energy, health or enemy counts |
+| Show a source's number as a fact with its outcome: "+12% grenade energy", "Amplified (15s)", "up to x10" | Add numbers up or count stacks to a maximum (two exceptions deciding nothing: the build's stats, D28, and the step's damage resistance, D29; two that decide: Armor Charge's stacks, sure and chance ones, D33, and the grenade's, melee's and class ability's energy, D48) |
+| Keep **what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and each ability's energy, spent by its use and filled by the loop's refunds (D48) | Track time, the Super's energy, health or enemy counts; regenerate an ability between steps (the player declares it recharged) |
 | Let the **player declare** what only play decides: "Bolt Charge at max", "Amplified ends", "this grenade kills 3" | Decide when a threshold is reached or a buff ends |
 | Judge a loop by its **order of triggers**: does each step get what it needs from the steps before it, can the order be repeated | Score a loop or add up what it gives |
 
@@ -53,6 +53,7 @@ shared as a link, replayed and analysed.
 | FR-19 | **Reload a weapon** (D37): a Reload step for each weapon (`energy:reload`, "🔄 reload" next to its hit and kill), a `reload` trigger rules react to (`via`, `weapon:this`), and an outcome that reloads a weapon as the step does; an outcome that refills one (`refillWeapon`) is no reload and fires no `reload` rule (D42); no ammo is counted. | Done (web designer, loop files and share links); Demolitionist (grenade energy by the weapon's archetype, and the grenade refills it) and Return Stroke refill |
 | FR-20 | **Pick up an ammo brick** (D41, D43): a step for a Special or a Heavy brick, walked or slid over (`ammo:heavy`, `ammo:special:slide`; "📦 Ammo brick" below the weapons, with "special", "heavy" and "🛝 by sliding" when a rule reacts to a slide), always available, and an `ammoPickedUp` trigger rules react to (`brick:`, `by: slide`); a refill is no reload, and no ammo is counted. | Done (web designer, loop files and share links); Spark of Momentum (a slide only), All-Star and Adhesive Ordnance use it; Overflow and Lead from Gold are inert (ammo) |
 | FR-21 | **Ready a weapon** (D44): a step for each weapon (`kinetic:ready`, "✋ ready" next to its hit and kill, enabled when a rule reacts to it), a `ready` trigger rules react to (`via`), and a damage source by weapon type (`weapon:sidearm`); which weapon is in hand isn't kept. | Done (web designer, loop files and share links); Mechaneer's Tricksleeves uses it |
+| FR-22 | **Keep each ability's energy** (D48): the grenade's, melee's and class ability's energy is part of the loop's state; a use spends a charge, a refund fills it by the receiving ability's chunk scalar at 70 in its stat (a grant per stat point from the build's stat), an unknown part reads as a floor ("≥ 8.44%") or "?", never 0, and the player declares a recharge (`recharged:grenade`); each step card shows the three before and after the step, a step whose ability had no charge is flagged "Not ready" or "May not be ready", and a not-ready step breaks the loop. | Done (web designer, loop files and share links, analysis); the Super's energy stays a fact |
 
 ## 3. Non-functional requirements
 
@@ -71,7 +72,8 @@ shared as a link, replayed and analysed.
 
 ## 4. Out of scope
 
-* Simulating combat: quantities, time, cooldowns, energy, damage, health, DPS (D1).
+* Simulating combat: quantities, time, cooldowns, the Super's energy, damage, health, DPS (D1). The grenade's, melee's
+  and class ability's energy is kept as steps of the loop, not of time (D48, FR-22).
 * PvP numbers (the `[PvP]` part of a value is read and dropped, but for damage resistance: FR-16), enemy AI, positioning.
 * Raid, activity and seasonal armor mods (an encounter's mechanics: the Relic, a Vex relay, Taken enemies; the seasonal
   ones no longer work): no picker offers them ([loop-format.md](loop-format.md#raid-activity-and-seasonal-mods),

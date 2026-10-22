@@ -15,6 +15,8 @@ public sealed class Designer(IPage page)
 
     private ILocator ShowCaveats => page.Locator("[data-action=show-caveats]");
 
+    private ILocator Analyze => page.Locator("[data-action=analyze]");
+
     /// <summary>The Subclass box: the class, the subclass, its super, abilities, aspects and fragments.</summary>
     public SubclassBox Subclass { get; } = new(page);
 
@@ -44,6 +46,12 @@ public sealed class Designer(IPage page)
 
     /// <summary>The loop's steps (Components/LoopTimeline.razor).</summary>
     public LoopTimeline Loop { get; } = new(page);
+
+    /// <summary>The "Loop analysis" popup, opened by "Analyze" (Components/AnalysisView.razor).</summary>
+    public LoopAnalysis Analysis { get; } = new(page);
+
+    /// <summary>Clicks "Analyze" above the loop: the "Loop analysis" popup opens.</summary>
+    public Task ClickAnalyzeAsync() => OnScreen.PressAsync(Analyze, Analyze);
 
     /// <summary>Ticks the "why" checkbox above the loop (it stays ticked when it already is): each step card shows its "why:" reasons.</summary>
     public Task TickWhyAsync() => OnScreen.ActAsync(ShowReasons, ShowReasons, box => box.SetCheckedAsync(true));

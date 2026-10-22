@@ -1,0 +1,7 @@
+# Skip Grenade with Spark of Shock (it jolts) and Spark of Ions (a jolted kill drops an Ionic Trace), and no stats: the
+# trace's grenade energy is unknown.
+name: "E2E - Skip Grenade with Spark of Shock and Spark of Ions"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock, spark-of-ions]

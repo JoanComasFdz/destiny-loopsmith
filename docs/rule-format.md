@@ -100,6 +100,8 @@ subclasses:
   - { class: hunter, subclass: arc, name: Arcstrider, hash: 2328211300 }
 finishers:
   - { class: hunter, name: Blade Carnival, hash: 4012203003 }
+statGains:
+  - { stat: grenade, matchesAt: 70 }
 ```
 
 Each section is optional; ids are unique within a section. All keys shown are required except a
@@ -110,6 +112,11 @@ status's `maxStacks` (a whole number ≥ 2), `duration` and `drawnIcon`, `counte
   the one counted status; `holds`, `spendStacks` and a table by stacks (below) need it. `decay` is how it loses stacks
   over time, as text from the source ("1 stack every 10 s while a passive Armor Charge mod is equipped …"): shown with
   the count, never applied.
+
+* `statGains`: for an armor stat (`grenade`, `melee`, `class`), the points at which the energy its ability gains matches
+  the listed value (`matchesAt`: Bungie's 70; more above it, less below it, by amounts Bungie doesn't publish). A stat
+  is given once (`the stat 'grenade' has its gain given twice`). It is how a grant is scaled in a loop
+  ([Ability energy](#ability-energy), ADRs D48); a stat without one makes every scaled gain to its ability unknown.
 
 * `endsWith` (a buff): the buff whose end ends it too. Spark of Recharge's buff lasts until your shields are full
   again (compendium/2026-10-19/Arc#22), which is when Critical health ends, so it is
@@ -306,9 +313,10 @@ Two keys belong to some kinds only (anywhere else they are an error):
 * `ability: { kind: grenade, charges: 1, chunkScalar: 0.75, baseCooldown: 151.5 }` — super, grenade, melee
   and classAbility elements only, and `kind` must be the element's kind. `charges` defaults to 1,
   `chunkScalar` and `baseCooldown` (game values) to `"?"`. The ability's profile, recorded from the Compendium:
-  `chunkScalar` and `baseCooldown` are facts changing nothing (ADRs D5); `charges`, with every equipped
-  `extraCharges`, says whether a use always spends the ability's last charge or the player marks the one that does
-  (ADRs D36).
+  `charges`, with every equipped `extraCharges`, is how many charges its energy fills up to in a loop and says whether
+  a use always spends the ability's last charge or the player marks the one that does (ADRs D36, D48); `chunkScalar`
+  scales every energy gain it receives ([Ability energy](#ability-energy)); `baseCooldown` is a fact: no time is
+  modelled.
 
 `kind: keyword` elements are active in every build, once; every other kind is equipped through its
 build slot ([Build check](#build-check)). The build's explanation ("What this build does") lists a keyword's rules only when
@@ -435,7 +443,7 @@ tier. The Compendium check (tools/compendium/README.md) checks each citation and
 | `"300% [20%]"` | PvE part `Known(3.0)` | `[…]` is the PvP value: checked, then dropped (kept by `resistDamage` and `fasterRegeneration`; refused by `resistCombatantDamage`) |
 | `2`, `"2"` | `Known(2)` | plain number |
 
-Game values appear in `grantEnergy.amount` (or `full`), `convertStacksToEnergy.perStack`, `modifyDamage.change`,
+Game values appear in `grantEnergy.amount` (or `full`), `grantEnergy.perStat.amount`, `convertStacksToEnergy.perStack`, `modifyDamage.change`,
 `restoreHealth.amount`, `resistDamage`, `resistCombatantDamage.amount`, `fasterRegeneration.rate`, a weapon-stat `change`, `modifyStat.change` (stat points: a percent there is an
 error), and `ability.chunkScalar` / `baseCooldown`.
 Decimals use `.`; quote the value as the examples do (a bare `?` or `~` means something else to YAML).
@@ -768,6 +776,8 @@ sidearm is a fact in its description, as Spark of Momentum's is:
 | YAML | Domain `Outcome` |
 |---|---|
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
+| `{ grantEnergy: { to: melee, perStat: { stat: melee, amount: "2%" } } }` — that much per point of the build's stat, in place of `amount` (Gambler's Dodge) | `GrantEnergy(to, PerStat(stat, v))` |
+| `unscaled: true` on a `grantEnergy` to an ability — neither its chunk scalar nor its stat scales it, where the source says so ("No Chunk or Stat Scalar") | `GrantEnergy(…, Unscaled)` |
 | `{ grantEnergy: { to: leastCharged, amount: "10% \| 13% \| 15%" } }` — the ability with the least energy | `GrantLeastChargedEnergy(Fraction(v) \| Full)` |
 | `{ grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [shotgun, glaive], amount: "20%" } } }` — another amount on a weapon of those archetypes (Demolitionist); `amount` is a fraction, not `full` | `GrantEnergy(to, ByArchetype(v, archetypes, w))` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy(…, PerStack)` |
@@ -805,14 +815,17 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   `at cap: +1 wasted`), and sure stacks at the cap put the buff at max, raising `StacksMaxed` as a declaration does.
 * **`removeBuff`** removes the buff, and its declaration at max; a counted buff spends every stack.
 * **`convertStacksToEnergy`** consumes the buff if it is active — removes it and its declaration — and
-  shows the energy as a fact: `spends Armor Charge → +?% grenade energy per stack`. A table (a counted buff) gives
+  shows the energy with its value: `spends Armor Charge → +?% grenade energy per stack`; the energy fills the ability
+  ([Ability energy](#ability-energy)). A table (a counted buff) gives
   the value for the stacks it spent, and beside it the value with the chance ones:
   `spends Armor Charge x2 · +1 (chance) → +28.4% grenade energy (34.4% with the chance stack)`; a count outside the
   table is `?`. With the buff not active it carries the caveat `nothing to consume`.
 * **`spendStacks`** takes that many of a counted buff's stacks, sure ones first, then chance ones, never below none;
   the buff ends when none are left. With none it carries the caveat `nothing to spend`.
-* **`grantEnergy` to `leastCharged`** (Orbs of Restoration, Restorative Finisher) is a fact like any energy grant:
-  `+10% energy to your least-charged ability` (by copies). The game picks the ability.
+* **`grantEnergy` to `leastCharged`** (Orbs of Restoration, Restorative Finisher) reads `+10% energy to your
+  least-charged ability` (by copies), with the caveat that names where it went (`to your grenade`): the one of the
+  grenade, melee and class ability surely least charged; when that is open, each one it may go to gains something
+  unknown ([Ability energy](#ability-energy)).
 * **`debuffTarget`** puts the debuff on the pack, where it stays until the player ends it; no rule
   removes a debuff.
 * **`collect`** picks the pickup up when it is on the ground — it leaves the ground and its pickup
@@ -834,10 +847,36 @@ must be glossary `buff`s; in `debuffTarget`/`targetHas` glossary `debuff`s
   nothing and sets nothing off.
 
 What changes the state or sets off events: `applyBuff`, `removeBuff`, `debuffTarget`, `spawn`,
-`summon`, `strikeTarget`, `collect`, `spendStacks`, `reloadWeapon` (its reload event), and the consumption of
-`convertStacksToEnergy`. The rest are **facts**, shown with their value and
-certainty and changing nothing: `grantEnergy` (to an ability or `leastCharged`), the energy of `convertStacksToEnergy`, `resetCooldown`,
-`modifyDamage` and `restoreHealth` (ADRs D1, D5).
+`summon`, `strikeTarget`, `collect`, `spendStacks`, `reloadWeapon` (its reload event), the consumption of
+`convertStacksToEnergy`, and the energy outcomes to a grenade, melee or class ability — `grantEnergy` (to an ability or
+`leastCharged`), the energy of `convertStacksToEnergy` and `resetCooldown` — which fill its energy (ADRs D48). The rest
+are **facts**, shown with their value and certainty and changing nothing: the same energy outcomes to a Super,
+`modifyDamage` and `restoreHealth` (ADRs D1).
+
+### Ability energy
+
+The grenade's, melee's and class ability's energy is part of a loop's state (ADRs D48): the charges each holds (its
+profile's `charges` plus every equipped `extraCharges`) and the share of a charge toward the next, exactly, about
+(`~`) or at least that much. A loop starts with every ability full.
+
+* A grenade, melee or class ability step **spends a charge**, before what it sets off. A step whose ability had no full
+  charge before it is still played, and flagged: **not ready** when its energy is known, **may not be ready** when part
+  of it is unknown ("Grenade not ready: 0% before #2").
+* A **grant** fills the ability it names, never past its full charges (the rest is wasted): its value, narrowed to the
+  copies equipped (`"12% | 17% | 20%"` with two copies: 17%), times the **receiving ability's `chunkScalar`**
+  (compendium Game Mechanics#12), at the **stat that matches the listed value** — the glossary's `statGains`
+  (`{ stat: grenade, matchesAt: 70 }`, Bungie's Armor 3.0 preview): exactly that at 70 in the receiving ability's stat
+  (Grenade for a grenade, Melee, Class), at least that above 70, and unknown below 70 or while the build gives no
+  stat. `unscaled: true` takes neither, where the source says so (Gambler's Dodge: "No Chunk or Stat Scalar").
+* `perStat: { stat: melee, amount: "2%" }` in place of `amount` gives that much per point of the build's stat (Gambler's
+  Dodge's 2% per Melee point, Loopsmith taking every dodge as within 15 m of an enemy); without the stat it is unknown.
+* **Unknown is a floor, never 0**: a `"?"` value, an unknown chunk scalar or stat, or a chance rule's grant (it may not
+  come) adds nothing sure, and makes the energy read "at least": `≥ 8.44%`, or `?` with no known part. The floor carries
+  over until the energy is known again: a one-charge ability spent (0%), full, or declared recharged.
+* `full` and `resetCooldown` fill every charge.
+* **Nothing regenerates by itself**: the player declares an ability recharged (`recharged:grenade`, `recharged:melee`,
+  `recharged:class`, [loop-format.md](loop-format.md#action-tokens)). Base cooldowns and `fasterRegeneration` are facts.
+* The Super's energy isn't kept: grants to it stay facts.
 
 ### Rules that don't stack
 
@@ -900,7 +939,7 @@ passives:                               # Spark of Frequency (rules/all-classes/
 | YAML `effect` | Domain `Passive` |
 |---|---|
 | `{ extraStacks: { status, extra } }` (`extra` ≥ 1) | `ExtraStacks` |
-| `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (a fact, ADRs D5) |
+| `{ extraCharges: { ability: grenade, extra: 1 } }` | `ExtraCharges` (more charges for its energy to fill, ADRs D36, D48) |
 | `{ modifyDamage: { against, change } }` (`change` may give its PvP value: `"+100% [10%]"`) | `ModifyDamage` |
 | `{ resistDamage: "25% [10%]" }` (any damage; `[…]` the PvP value) | `ResistDamage` |
 | `{ resistCombatantDamage: { against: arc, amount: "15% \| 25% \| 30%" } }` (combatants only; no `[…]`) | `ResistCombatantDamage(CombatantDamage.OfType(Arc), amount)` |
@@ -938,8 +977,8 @@ shown in the build's explanation and, while its `when` holds, in the step's stat
 It is never added to the build's stats: the build's stat line and the `statChecks` that read it don't count it (ADRs D1, D28).
 
 `fasterRegeneration` is how much faster those abilities' energy regenerates, as the source gives it, with its PvP value
-in `[…]` like `resistDamage` (its PvP value is `?` without one). It is a fact: no ability energy is tracked (ADRs D5), so
-it changes nothing in the loop. It is shown in the build's explanation and, while its `when` holds, in the step's state:
+in `[…]` like `resistDamage` (its PvP value is `?` without one). It is a fact: regeneration is time, which no loop
+models (ADRs D48: the player declares an ability recharged), so it changes nothing in the loop. It is shown in the build's explanation and, while its `when` holds, in the step's state:
 with the status of its own element (`Spark of Recharge · 1 effect`, its tooltip and the "Right then, after #N" card of
 its details `400% [PvP 200%] faster grenade and melee regeneration`), like a status's own changes to the weapons (Stats for All), or
 under the status that switches it on. Spark of Recharge (`rules/all-classes/arc/fragments.yaml`, Arc#22) gives its buff
@@ -1122,7 +1161,8 @@ the ground.
   with it (the glossary's `endsWith`: Spark of Recharge's). `health:hit` ("Hit at critical health")
   emits `HitAtCriticalHealth`, so the `hitAtCriticalHealth` rules fire and cascade; it holds only while
   `critical-health` is on you and changes no state.
-* **Abilities are always available** (ADRs D5). A step is blocked only when it can't happen at all —
+* **An ability step is never blocked** (ADRs D48): one without a charge is played and flagged not ready
+  ([Ability energy](#ability-energy)). A step is blocked only when it can't happen at all —
   the pickup isn't on the ground (`No orb-of-power on the ground — nothing happens.`), no weapon in that
   slot, a `max:` on a buff that doesn't stack, isn't active or is already at max, an `end:` on a status
   that isn't active, a declaration naming no status of the rules
@@ -1159,9 +1199,10 @@ the ground.
 * **Rules that don't stack** (`doesNotStackWith`, ADRs D6): of the rules one event fires, a rule
   that lists another firing rule's element gives way — it is reported with no outcomes and
   `NotStackedWith` = that element's name, and its outcomes take no part in the phase order.
-* **Facts** (ADRs D1, D5): energy outcomes (`leastCharged` too), `modifyDamage` and `restoreHealth` are shown with their
-  value, certainty and a caveat when the value is missing (`amount unknown` / `value unknown`), and
-  change no state. An `Unknown` value stays `?` (never 0). Ability profiles and
-  `extraCharges` are recorded from the Compendium; only their charges are read, for the last charge (ADRs D36).
+* **Values** (ADRs D1, D48): energy outcomes (`leastCharged` too), `modifyDamage` and `restoreHealth` are shown with
+  their value, certainty and a caveat when the value is missing (`amount unknown` / `value unknown`); only the energy
+  outcomes to a grenade, melee or class ability change the state, by filling its energy
+  ([Ability energy](#ability-energy)). An `Unknown` value stays `?` (never 0). Ability profiles and `extraCharges` are
+  recorded from the Compendium: their charges and chunk scalars fill the energy; their base cooldowns are facts.
 * `chance: true` rules fire and are marked *(chance)* in every view (ADRs D8) — on every enemy of a
   multi-target action.
