@@ -144,9 +144,10 @@ short `discrepancies.md` for what differs, pointing to the parent's — see `bui
   `end:<status>` ("Amplified ends"). A counter the game doesn't show as a stacking status ("after 3 kills", "every 2nd trace") is a
   *(chance)* rule (D8). A claim about a count, a duration or a threshold is reproduced as a declaration, a
   *(chance)* rule or a fact — never "not reproduced".
-- **Energy outcomes are facts (D5).** Abilities are always available. "Refills melee" and other energy
-  claims are reproduced as outcomes the trace shows. A step is blocked only when it can't happen at all (nothing of
-  that pickup on the ground, no weapon in that slot, a declaration that doesn't hold).
+- **Energy outcomes are facts (D5, superseded by D48).** Abilities were always available. "Refills melee" and other
+  energy claims were reproduced as outcomes the trace shows. A step was blocked only when it couldn't happen at all
+  (nothing of that pickup on the ground, no weapon in that slot, a declaration that doesn't hold). Since D48 an example
+  loop would also keep each ability's energy, and declare a recharge (`recharged:grenade`) where its creator waits for one.
 - **Target counts (D4).** The player says how many enemies an action hits (`grenade:kill:3`). A claim that
   depends on several targets in one action maps to an action with a count and an `atLeast` trigger.
 - **Rules that don't stack (D6).** When the game says two elements' grants don't stack, one rule gives way
