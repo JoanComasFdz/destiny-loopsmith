@@ -177,7 +177,8 @@ Every pull request from a branch of this repository shows its end-to-end scenari
 [tests/Loopsmith.VsCodeExtension.E2E](../tests/Loopsmith.VsCodeExtension.E2E/README.md), the VS Code extension's, and
 [tests/Loopsmith.RuleViewer.E2E](../tests/Loopsmith.RuleViewer.E2E/README.md), the rule viewer's page's) as GIFs, each with a **▶ Play MP4** link to the
 same run as a sharp video with controls, so a reviewer sees them working without running anything. The session that
-works the PR records them; CI doesn't run, record or build anything for them.
+works the PR records them; CI records nothing, and plays only the rule viewer's, unrecorded, on a PR that changes the
+viewer (`ci.yml`'s `rule-viewer-e2e` job: the rule viewer's [README](../tests/Loopsmith.RuleViewer.E2E/README.md)).
 
 - **What is recorded:** each run (a scenario played on a screen) from Home on, its last frame held 3 s, as a GIF (20 fps;
   800 px wide on desktop, 390 px on a phone) and as an MP4 (H.264 at the recording's own size and frame rate: 1280×800

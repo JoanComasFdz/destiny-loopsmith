@@ -230,7 +230,7 @@ right before a push is posted. Right before its first push:
 
 Every later push that changes scenarios does the same: develop with `--no-video`, record right
 before the push, `push-gifs.sh` right after it. When a scenario or the web app changes after the
-recording and before the push, record again, so the posted GIFs match the pushed head. CI doesn't run or record e2e scenarios: the session's recording is their only run.
+recording and before the push, record again, so the posted GIFs match the pushed head. CI doesn't record e2e scenarios, and plays only the rule viewer's, unrecorded, on a PR that changes the viewer: the session's recording is the only run of the others, and the only recording of any.
 A session can't upload a file to GitHub, which is why the GIFs travel on a branch
 ([docs/hosting.md](../../../docs/hosting.md), "E2E videos on pull requests").
 

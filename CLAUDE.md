@@ -144,7 +144,8 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
   dash, selecting and scrolling, beside or above the flows), one per Gherkin, played in Chromium on desktop and mobile on
   the page `record.sh` draws from its `Fixtures/rules/` (copies of real rule files, so a new rule changes no scenario) and
   serves, with its real icons and fonts from `${E2E_PAGE_CACHE:-~/.cache/loopsmith/rule-viewer-page}` (filled once, never
-  committed); a console error fails a scenario; their GIFs post on the PR like the web app's. Binding rules: its
+  committed); a console error fails a scenario; their GIFs post on the PR like the web app's, and CI plays them
+  unrecorded on a PR that changes the viewer (`ci.yml`, `rule-viewer-e2e`). Binding rules: its
   [E2E-TEST-CODE-RULES.md](tests/Loopsmith.RuleViewer.E2E/E2E-TEST-CODE-RULES.md); how to run: its
   [README](tests/Loopsmith.RuleViewer.E2E/README.md).
 - [docs/given-when-then-test-rules.md](docs/given-when-then-test-rules.md) — how to write a Gherkin, click by click:
@@ -160,7 +161,8 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
   out of scope.
 - `.github/workflows/` — `ci.yml` (build + test on every PR that changes what `dotnet` reads, and every
   push to `main`; on a PR that changes the site it also publishes the web app and hands it to `pr-preview.yml`, so a
-  PR is built once), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
+  PR is built once; on a PR that changes the rule viewer, its e2e scenarios, what plays them or Core, its
+  `rule-viewer-e2e` job plays the rule viewer's e2e scenarios unrecorded, `tools/e2e/record.sh --no-video`), `pages.yml`, `pr-preview.yml` (deploys that site; removes it when the PR closes), `e2e-videos.yml` (records nothing: the session
   records the PR's added or changed e2e scenarios and pushes their GIFs, MP4s and rules' flow PNGs to a throwaway `e2e-gifs/pr-<n>-<sha>` branch
   with `tools/e2e/push-gifs.sh`; the workflow uploads them to their pre-release (a rule scenario's, under
   `tests/Loopsmith.Web.E2E/Rules/<…>/`, to its rule file's `rules-<…>-resources`, created on its first upload and keeping
@@ -310,7 +312,7 @@ Always:
   into it; squash merging flattens it. The one rebase is step 4's, before the branch's first push.
 - Don't change `.github/workflows/`, repository settings, rulesets or secrets unless the task asks
   for exactly that.
-- **e2e scenarios:** a PR that adds or changes e2e scenarios shows them on the PR, recorded by the session (CI doesn't run them):
+- **e2e scenarios:** a PR that adds or changes e2e scenarios shows them on the PR, recorded by the session (CI doesn't record them, and plays only the rule viewer's, unrecorded, on a PR that changes the viewer):
   while developing, run them unrecorded with `tools/e2e/record.sh --no-video` (same selection, fast, no GIFs) and
   never record between pushes; record once, right before the push, with `tools/e2e/record.sh --changed-since
   origin/main` (every scenario passes, or the push waits for a fix), and record again if a scenario or the web app
