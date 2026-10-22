@@ -173,7 +173,7 @@ storms-edge#p0 hunter-arc-supers-storms-edge-1: [Trigger] Always ➜ [Subclass s
 ## hunter/class-abilities.yaml
 
 ### Gambler's Dodge (Subclass ability · Class ability)
-gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (?)
+gamblers-dodge#0 hunter-class-abilities-gamblers-dodge-1: [Trigger] Class ability (Dodge) ➜ [Subclass ability · Class ability] Gambler's Dodge (equipped) ➜ [Effect] Melee energy (2% per Melee point)
 
 ## hunter/exotic-armor.yaml
 
