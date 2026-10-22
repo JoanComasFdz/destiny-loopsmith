@@ -29,7 +29,8 @@ public static class TestCatalog
         }.ToImmutableDictionary(p => p.Id),
         ImmutableDictionary<SummonId, SummonDefinition>.Empty,
         [],
-        []);
+        [],
+        [new StatGain(StatKind.Grenade, StatValue.From(70)), new StatGain(StatKind.Melee, StatValue.From(70)), new StatGain(StatKind.Class, StatValue.From(70))]);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>
         new(RuleId.From("test-rule-1"), trigger, [], [.. then], Optional.None<string>(), Likelihood.Always, []);
@@ -73,6 +74,19 @@ public static class TestCatalog
             Optional.None<string>(),
             []);
 
+    /// <summary>A stat line with only these stats (the rest "?").</summary>
+    public static StatLine Stats(int? grenade = null, int? melee = null, int? @class = null) =>
+        new(
+            Optional.None<StatValue>(),
+            Optional.None<StatValue>(),
+            ToStat(@class),
+            ToStat(grenade),
+            Optional.None<StatValue>(),
+            ToStat(melee));
+
+    private static Optional<StatValue> ToStat(int? points) =>
+        points is { } value ? Optional.Some(StatValue.From(value)) : Optional.None<StatValue>();
+
     public static AbilityProfile Profile(AbilityKind kind, int charges = 1, GameValue? chunkScalar = null) =>
         new(kind, ChargeCount.From(charges), chunkScalar ?? new GameValue.Unknown(), new GameValue.Unknown());
 
@@ -88,14 +102,17 @@ public static class TestCatalog
         BuildElement? grenade = null,
         ImmutableArray<BuildElement> keywords = default,
         Subclass subclass = Subclass.Arc,
-        Optional<Affinity>? super = null)
+        Optional<Affinity>? super = null,
+        StatLine? stats = null,
+        BuildElement? melee = null,
+        BuildElement? classAbility = null)
     {
         var superAffinity = super ?? Optional.Some(Affinity.Arc);
         var abilities = new[]
         {
             grenade ?? Element("test-grenade", ElementKind.Grenade, [], ability: Optional.Some(Profile(AbilityKind.Grenade))),
-            Element("test-melee", ElementKind.Melee, [], ability: Optional.Some(Profile(AbilityKind.Melee))),
-            Element("test-dodge", ElementKind.ClassAbility, [], ability: Optional.Some(Profile(AbilityKind.ClassAbility))),
+            melee ?? Element("test-melee", ElementKind.Melee, [], ability: Optional.Some(Profile(AbilityKind.Melee))),
+            classAbility ?? Element("test-dodge", ElementKind.ClassAbility, [], ability: Optional.Some(Profile(AbilityKind.ClassAbility))),
             Element("test-super", ElementKind.Super, [], ability: Optional.Some(Profile(AbilityKind.Super))) with { Affinity = superAffinity.UnwrapOr(Affinity.Arc) },
             Element("test-aspect", ElementKind.Aspect, [], fragmentSlots: 4),
         };
@@ -127,7 +144,7 @@ public static class TestCatalog
             modOrder.IsDefault ? allMods.Select(m => m.Id).ToImmutableArray() : modOrder,
             [],
             [new WeaponLoadout(WeaponSlot.Energy, "Test Rifle", DamageType.Arc, Optional.None<AmmoType>(), Optional.None<string>(), [], Optional.None<ItemHash>(), [], false, Optional.None<ItemInstanceId>(), Optional.None<ItemHash>())],
-            new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
+            stats ?? new StatLine(Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>(),
                 Optional.None<StatValue>(), Optional.None<StatValue>(), Optional.None<StatValue>()),
             [],
             [],

@@ -68,10 +68,28 @@ public sealed class KillCountsCatalogTests
         // strike is the kill's one Bolt Charge.
         Assert.Equal(["1 enemy", "2 · Spark of Amplitude in 4 s, Harmonic Siphon in 3 s", "3 · Spark of Discharge", "4 enemies", "5 enemies"], arcTexts.Take(5));
         Assert.Equal("9 enemies · Bolt Charge x10", arcTexts[8]);
-        Assert.Equal("20 enemies", arcTexts[^1]);   // each Bolt Charge gained gives 2.5% melee energy, at the cap too (Arc#5): still filling at the most a step offers
+        Assert.Equal("9 enemies · Bolt Charge x10", arcTexts[^1]);   // the melee is full already (ADRs D48): Bolt Charge's 2.5% melee energy fills nothing more
+        // The build gives no stats, so no refund has a sure part (ADRs D48: a gain matches its value only at 70 in its stat):
+        // no count fills an ability.
         Assert.Equal(
-            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies · melee full", "7 enemies · grenade full", "8 enemies · class ability full"],
+            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10"],
             grenade.Select(choice => glossary.DescribeTargetCountChoice(choice)));
+    }
+
+    [Fact]
+    public void With_70_in_each_stat_the_count_selector_says_where_an_ability_is_full()
+    {
+        var session = LoopDesigning.StartDesign(Catalog, new SourceText("kill-counts.build.yaml", BuildText + "\nstats: { grenade: 70, melee: 70, class: 70 }\n"), "Kill counts loop")
+            .Match(ok => ok.Value, error => throw new InvalidOperationException(error.Failure));
+        var build = session.Build;
+
+        var grenade = LoopDesigning.ListTargetCountChoices(build, session.Current, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
+
+        // ADRs D48: at 70 a refund is its value times the receiving ability's chunk scalar. The throw spends one of
+        // Shinobu's Vow's two grenades, and the kills' refunds fill it back at 9; the melee and class ability were full.
+        Assert.Equal(
+            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies", "7 enemies", "8 enemies", "9 enemies · grenade full"],
+            grenade.Select(choice => build.Catalog.Glossary.DescribeTargetCountChoice(choice)));
     }
 
     [Fact]

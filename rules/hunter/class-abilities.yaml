@@ -31,12 +31,14 @@ elements:
     description: "Ground dodge. Grants 1% [PvP 0.35%] melee energy per Melee stat point (max 100% at 100 Melee), doubled within 15 m of an enemy. No chunk or stat scalar applies to that energy."
     source: "compendium/2026-10-09/Class Abilities#5"
     rules:
-      # The refund scales with the Melee stat (79 Melee near an enemy = 158%, a full charge), but a
-      # rule amount cannot depend on a stat, so it is "?" rather than a build-specific number.
+      # The refund goes by the Melee stat: 1% per point, doubled within 15 m of an enemy, which Loopsmith
+      # assumes of every dodge (ADRs D48), so 2% per point (79 Melee = 158%, a full charge). The build's
+      # Melee stat fills it; without one it is unknown. Unscaled: "No Chunk or Stat Scalar"
+      # (compendium/2026-10-21/Class Abilities#5).
       - id: gamblers-dodge-1
         on: { abilityCast: classAbility }
         then:
-          - { grantEnergy: { to: melee, amount: "?" } }
+          - { grantEnergy: { to: melee, perStat: { stat: melee, amount: "2%" }, unscaled: true } }
         reason: "Dodging near enemies refunds melee energy - 1% per Melee stat point, doubled within 15 m - so with enough Melee your punch comes straight back."
     passives: []
     statChecks:

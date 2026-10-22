@@ -86,7 +86,8 @@ public static class ElementNumberReading
         grant.Match<IEnumerable<StatedNumber>>(
             fraction => ReadValue(label, fraction.Amount),
             _ => [],
-            archetype => [.. ReadValue(label, archetype.Otherwise), .. ReadValue(label, archetype.OnArchetypes)]);
+            archetype => [.. ReadValue(label, archetype.Otherwise), .. ReadValue(label, archetype.OnArchetypes)],
+            perStat => ReadValue(label, perStat.PerPoint));
 
     private static IEnumerable<StatedNumber> ReadStackEnergy(StackEnergy energy) =>
         energy.Match<IEnumerable<StatedNumber>>(

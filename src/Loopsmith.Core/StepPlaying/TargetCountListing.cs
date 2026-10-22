@@ -10,8 +10,9 @@ namespace Loopsmith.Core.StepPlaying;
 /// more each time until one more fills nothing the build can still gain — a stacking buff below its cap (Bolt Charge
 /// x10, Armor Charge at the build's cap), an ability's energy below a full charge (Ionic Traces refilling the grenade) —
 /// and names what each count is for: the equipped rules that need that many from that ability or weapon in one action
-/// (Arc Siphon's two kills, Synergy's twelve) and what fills up there. The sums only bound the choices: they are never
-/// game state and never decide what a step fires (ADRs D1, D5, D33).
+/// (Arc Siphon's two kills, Synergy's twelve) and what fills up there. The grenade's, melee's and class ability's energy
+/// is the state's after the step (ADRs D48: from the energy it starts with, scaled, its sure part only); a Super's, the
+/// sum of its known grants. The sums only bound the choices: they never decide what a step fires (ADRs D1, D33).
 /// </summary>
 public static class TargetCountListing
 {
@@ -100,7 +101,7 @@ public static class TargetCountListing
     private static ImmutableArray<ImmutableArray<CountFill>> ListFills(ValidatedBuild build, GameState state, PlayerAction action, int named)
     {
         var fills = ImmutableArray.CreateBuilder<ImmutableArray<CountFill>>();
-        var held = new Filling(ReadStacks(build, state, []), ImmutableDictionary<AbilityKind, decimal>.Empty);
+        var held = new Filling(ReadStacks(build, state, []), ReadTrackedEnergy(build, state));
         var previous = ReadFilling(build, state, action, 1);
         fills.Add(ListReached(build, held, previous));
         var last = 1;
@@ -129,7 +130,7 @@ public static class TargetCountListing
             .Where(fired => !fired.NotStackedWith.IsSome())
             .SelectMany(fired => fired.Outcomes.Select(outcome => (fired.Source, Applied: outcome)))
             .ToImmutableArray();
-        return new Filling(ReadStacks(build, resolution.State, applied), ReadEnergy(build, applied));
+        return new Filling(ReadStacks(build, resolution.State, applied), ReadTrackedEnergy(build, resolution.State).AddRange(ReadSuperEnergy(build, applied)));
     }
 
     private static PlayerAction AimAt(PlayerAction action, TargetCount count) =>
@@ -165,12 +166,27 @@ public static class TargetCountListing
         build.ReadStackCap(status).Bind(cap => cap is GameValue.Known known ? Optional.Some((int)known.Value) : Optional.None<int>());
 
     /// <summary>
-    /// The energy the step gave each ability, as a share of one charge and capped at a full one: its grants of a known
-    /// amount for the copies equipped, a refill, the energy a Kickstart's spend gives (with its chance stacks).
+    /// The grenade's, melee's and class ability's energy in the state, as a share of all its charges: its sure part (the
+    /// floor of an "at least"), 1 when full (ADRs D48).
     /// </summary>
-    private static ImmutableDictionary<AbilityKind, decimal> ReadEnergy(ValidatedBuild build, ImmutableArray<(ElementId Source, AppliedOutcome Applied)> applied) =>
+    private static ImmutableDictionary<AbilityKind, decimal> ReadTrackedEnergy(ValidatedBuild build, GameState state) =>
+        GameStateReading.EnergyAbilities.ToImmutableDictionary(
+            ability => ability,
+            ability =>
+            {
+                var energy = build.ReadEnergy(state, ability);
+                return Math.Min((energy.Charges + energy.Progress) / build.CountCharges(ability).Value, 1m);
+            });
+
+    /// <summary>
+    /// The energy the step gave the Super, as a share of one charge and capped at a full one: its grants of a known amount
+    /// for the copies equipped, a refill, the energy a Kickstart's spend gives (with its chance stacks). Its energy isn't
+    /// kept in the state (ADRs D48), so this adds up the step's own grants.
+    /// </summary>
+    private static ImmutableDictionary<AbilityKind, decimal> ReadSuperEnergy(ValidatedBuild build, ImmutableArray<(ElementId Source, AppliedOutcome Applied)> applied) =>
         applied
             .SelectMany(x => ReadGrant(x.Applied, build.CountCopies(x.Source)))
+            .Where(grant => grant.Ability == AbilityKind.Super)
             .GroupBy(grant => grant.Ability)
             .ToImmutableDictionary(group => group.Key, group => Math.Min(group.Sum(grant => grant.Amount), 1m));
 

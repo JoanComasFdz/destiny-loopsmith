@@ -13,7 +13,7 @@ public static class ActionTokenParsing
     private static readonly CultureInfo Invariant = CultureInfo.InvariantCulture;
 
     public const string Grammar =
-        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], a kill or a finisher [:elite|miniboss|champion|boss], kinetic|energy|power:reload, kinetic|energy|power:ready, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit";
+        "grenade[:hold]|melee[:slide|air]|super[:air|combo|guard][:hit|kill[:N]] (grenade and melee [:last]), class[:air][:last], kinetic|energy|power[:hit|kill[:N]][:shield][:precision], a kill or a finisher [:elite|miniboss|champion|boss], kinetic|energy|power:reload, kinetic|energy|power:ready, ammo:special|heavy[:slide], finisher, pickup:<id>, max:<status>, end:<status>, pack:new, health:critical, health:hit, recharged:grenade|melee|class";
 
     /// <summary>
     /// <c>grenade</c>, <c>grenade:kill</c>, <c>grenade:kill:3</c>, <c>kinetic:hit:5</c>, <c>class</c>, <c>class:air</c> (an air move
@@ -23,7 +23,8 @@ public static class ActionTokenParsing
     /// of the pack: it kills it),
     /// <c>pickup:orb-of-power</c>, and the states the player declares (ADRs D3): <c>max:bolt-charge</c>, <c>end:amplified</c>,
     /// <c>pack:new</c> (the next enemies are a new pack, ADRs D7), <c>health:critical</c> (you reached critical health),
-    /// <c>health:hit</c> (you are damaged while at critical health).
+    /// <c>health:hit</c> (you are damaged while at critical health), <c>recharged:grenade</c>, <c>recharged:melee</c>,
+    /// <c>recharged:class</c> (the ability recharged over time: every charge full, ADRs D48).
     /// Without <c>:kill</c> the hit only damages; without a count it hits one enemy. The count is validated here, at the
     /// boundary (<see cref="TargetCount"/>: 1..20); whether a declaration holds is the engine's (a blocked step).
     /// An option goes last (ADRs D36): <c>:last</c>, the use that spends the grenade's, melee's or class ability's last
@@ -75,6 +76,9 @@ public static class ActionTokenParsing
             ("pack", _) when parts.Length == 2 && parts[1] == "new" => Ok(new PlayerAction.Declare(new StateDeclaration.NewPack())),
             ("health", _) when parts.Length == 2 && parts[1] == "critical" => Ok(new PlayerAction.Declare(new StateDeclaration.CriticalHealth())),
             ("health", _) when parts.Length == 2 && parts[1] == "hit" => Ok(new PlayerAction.Declare(new StateDeclaration.HitAtCriticalHealth())),
+            ("recharged", _) when parts.Length == 2 && parts[1] == "grenade" => Ok(new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.Grenade))),
+            ("recharged", _) when parts.Length == 2 && parts[1] == "melee" => Ok(new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.Melee))),
+            ("recharged", _) when parts.Length == 2 && parts[1] == "class" => Ok(new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.ClassAbility))),
             _ => FailUnknown(token),
         };
         return action.Bind(read => SetRank(token, read, rank));

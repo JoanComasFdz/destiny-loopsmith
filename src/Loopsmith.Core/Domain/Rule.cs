@@ -133,9 +133,10 @@ public partial record StackGrant
 }
 
 /// <summary>
-/// The energy a grant gives: a fraction of one charge, a full charge, or a fraction that goes by the archetype of the
-/// weapon holding the element (<see cref="ByArchetype"/>: Demolitionist's 10%, 20% on a Shotgun). The build check binds
-/// it to the weapon's archetype when that is known (<c>WeaponBinding</c>); unbound, it reads both.
+/// The energy a grant gives: a fraction of one charge, a full charge, a fraction that goes by the archetype of the
+/// weapon holding the element (<see cref="ByArchetype"/>: Demolitionist's 10%, 20% on a Shotgun), or a fraction per point
+/// of one of the build's stats (<see cref="PerStat"/>: Gambler's Dodge's 2% per Melee point). The build check binds a
+/// grant by archetype to the weapon's archetype when that is known (<c>WeaponBinding</c>); unbound, it reads both.
 /// </summary>
 [Union]
 public partial record EnergyGrant
@@ -143,7 +144,15 @@ public partial record EnergyGrant
     partial record Fraction(GameValue Amount);   // of one charge: 0.15 = 15 %
     partial record Full();
     partial record ByArchetype(GameValue Otherwise, ImmutableArray<string> Archetypes, GameValue OnArchetypes);   // OnArchetypes on a weapon of one of those archetypes, Otherwise on any other
+    partial record PerStat(StatKind Stat, GameValue PerPoint);   // of one charge per point of the build's stat: unknown while the stat is
 }
+
+/// <summary>
+/// Whether a grant's energy is scaled the way the game scales ability energy gains (ADRs D48): by the receiving ability's
+/// chunk scalar and its stat (Grenade, Melee, Class) — every grant unless its source says it isn't (Gambler's Dodge:
+/// "No Chunk or Stat Scalar").
+/// </summary>
+public enum EnergyScaling { Scaled, Unscaled }
 
 /// <summary>How much a heal restores: a share of your health ("?" when the source gives none), or HP (Unrelenting's 65).</summary>
 [Union]
@@ -156,13 +165,14 @@ public partial record HealAmount
 /// <summary>
 /// The game's consequences.
 /// Energy outcomes (<see cref="GrantEnergy"/>, <see cref="ConvertStacksToEnergy"/>'s energy, <see cref="ResetCooldown"/>,
-/// <see cref="GrantLeastChargedEnergy"/>), <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts shown with
-/// their value (ADRs D1, D5).
+/// <see cref="GrantLeastChargedEnergy"/>) fill the grenade's, melee's or class ability's energy in the state, and are shown
+/// with their value (ADRs D48; a Super's stays a fact); <see cref="ModifyDamage"/> and <see cref="RestoreHealth"/> are facts
+/// shown with their value (ADRs D1).
 /// </summary>
 [Union]
 public partial record Outcome
 {
-    partial record GrantEnergy(AbilityKind To, EnergyGrant Amount);
+    partial record GrantEnergy(AbilityKind To, EnergyGrant Amount, EnergyScaling Scaling = EnergyScaling.Scaled);
     partial record ConvertStacksToEnergy(StatusId Consumed, AbilityKind To, StackEnergy Energy);   // spends every stack
     partial record ApplyBuff(StatusId Status, BuffDuration Duration, StackGrant Stacks);   // Stacks: the grant, a fact ("+1 Bolt Charge")
     partial record RemoveBuff(StatusId Status);
@@ -174,7 +184,7 @@ public partial record Outcome
     partial record RestoreHealth(HealAmount Amount, bool IncludesAllies, int Pulses);   // Pulses: how many times it restores Amount (To Shreds' 3 pulses), a fact never added up
     partial record ResetCooldown(AbilityKind Which);
     partial record Collect(PickupId Pickup);   // picks it up from the ground when it is there (Powerful Attraction): a pickup event
-    partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy: the game picks, so a fact
+    partial record GrantLeastChargedEnergy(EnergyGrant Amount);   // to whichever ability has the least energy (ADRs D48: the least of the three tracked, when that is sure)
     partial record SpendStacks(StatusId Status, StackCount Count);   // a fixed number of a counted buff's stacks (Healthy Finisher's x1, ADRs D33)
     partial record WeaponStrike(DamageSource Weapon, Optional<DamageType> Type, HitOutcome Hit);   // this weapon's damage dealt by an effect (Veteran's Wisdom's shockwave): Weapon is "this weapon" until bound to its slot; Type none: the weapon's own
     partial record ReloadWeapon(DamageSource Weapon);   // reloads that weapon (weapon:this, slot:power): a reload, as if the player had reloaded it (ADRs D37)
@@ -216,7 +226,7 @@ public partial record ChangedWeapons
 public partial record Passive
 {
     partial record ExtraStacks(StatusId Status, StackCount Extra);           // Spark of Frequency: a caveat on each grant
-    partial record ExtraCharges(AbilityKind Ability, ChargeCount Extra);            // a fact (ADRs D5)
+    partial record ExtraCharges(AbilityKind Ability, ChargeCount Extra);            // more charges of the ability (ADRs D36, D48)
     partial record ModifyDamage(DamageSource Against, GameValue Change, Optional<GameValue> Pvp);   // Flashover, stat bonuses; Pvp as the outcome's
     partial record ResistDamage(PveAndPvp Amount);                           // Spark of Resistance: any damage, "25% [10%]"
     partial record ModifyWeaponStats(ChangedWeapons Weapons, ImmutableArray<WeaponStatChange> Changes);

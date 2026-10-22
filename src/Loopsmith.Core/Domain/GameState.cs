@@ -44,19 +44,48 @@ public partial record StackMove
 /// <summary>"The pack in front of you" (ADRs D7): one tier plus the debuffs present on it.</summary>
 public sealed record TargetState(EnemyTier Tier, ImmutableArray<StatusId> Debuffs);
 
+/// <summary>How sure an ability's energy is (ADRs D48): exact, approximate (a "~" refund), or at least that much (a "?" or chance refund).</summary>
+public enum EnergyCertainty { Exact, Approximate, AtLeast }
+
+/// <summary>
+/// The energy of a grenade, melee or class ability below a full charge (ADRs D48): the full charges it holds, the share
+/// of one charge toward the next (0 to just under 1), and how sure that is — at least, when part of what it gained is
+/// unknown. An ability at its build's full charges has no entry: it is full, exactly.
+/// </summary>
+public sealed record AbilityEnergy(AbilityKind Ability, int Charges, decimal Progress, EnergyCertainty Certainty);
+
+/// <summary>Whether a step's ability had a charge before it (ADRs D48): surely, maybe (part of its energy is unknown), or surely not.</summary>
+public enum Readiness { Ready, MayNotBeReady, NotReady }
+
+/// <summary>
+/// Where a least-charged grant goes (ADRs D48): to one ability for sure, nowhere kept (every one is full: the Super, which
+/// isn't kept, may take it), or to one of several, which an unknown part or a tie leaves open.
+/// </summary>
+[Union]
+public partial record LeastCharged
+{
+    partial record Sure(AbilityKind Ability);
+    partial record AllFull();
+    partial record Open(ImmutableArray<AbilityKind> Candidates);
+}
+
+/// <summary>The grenade, melee or class ability a step casts, whether it was ready, and its energy right before the step.</summary>
+public sealed record AbilityReadiness(AbilityKind Ability, Readiness Readiness, AbilityEnergy Before);
+
 /// <summary>
 /// Immutable snapshot of what is present — buffs on you, debuffs on the pack, pickups on the ground — and what the
-/// player declared. It holds no number but the step and a counted buff's stacks (ADRs D1, D33); the StepPlaying slice
-/// plays steps against it, (state, step) → (state, fired). Abilities are always available (ADRs D5).
-/// <see cref="Casting"/> is the ability the step casts, under way right then (Flow State's dodge,
-/// <see cref="Condition.During"/>); none for any other step.
+/// player declared. Its numbers are the step, a counted buff's stacks (ADRs D1, D33) and the grenade's, melee's and class
+/// ability's energy (<see cref="Energy"/>, ADRs D48: only those below a full charge); the StepPlaying slice plays steps
+/// against it, (state, step) → (state, fired). <see cref="Casting"/> is the ability the step casts, under way right then
+/// (Flow State's dodge, <see cref="Condition.During"/>); none for any other step.
 /// </summary>
 public sealed record GameState(
     int Step,
     ImmutableArray<ActiveBuff> Buffs,
     TargetState Target,
     ImmutableArray<GroundPickup> Pickups,
-    Optional<AbilityKind> Casting);
+    Optional<AbilityKind> Casting,
+    ImmutableArray<AbilityEnergy> Energy);
 
 /// <summary>
 /// A pickup on the ground, and whether only chance rules dropped it (ADRs D8): what picking it up gives is then a chance
@@ -81,7 +110,7 @@ public partial record PlayerAction
 
 /// <summary>
 /// What the player declares as a step of its own (ADRs D3): <c>max:&lt;status&gt;</c>, <c>end:&lt;status&gt;</c>,
-/// <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>.
+/// <c>pack:new</c>, <c>health:critical</c>, <c>health:hit</c>, <c>recharged:&lt;ability&gt;</c>.
 /// </summary>
 [Union]
 public partial record StateDeclaration
@@ -91,6 +120,7 @@ public partial record StateDeclaration
     partial record NewPack();                    // the next enemies are a new pack, with no debuffs (ADRs D7)
     partial record CriticalHealth();             // your shields broke: you are at critical health until you declare it ended (no damage is modelled, ADRs D1)
     partial record HitAtCriticalHealth();        // you are damaged while at critical health (no damage is modelled, ADRs D1)
+    partial record Recharged(AbilityKind Ability);   // the grenade, melee or class ability recharged over time: all its charges full (no time is modelled, ADRs D48)
 }
 
 /// <summary>
@@ -125,7 +155,7 @@ public partial record GameEvent
 }
 
 /// <summary>
-/// An outcome as it was applied, with how far to trust it (an energy grant only explains — ADRs D5). <see cref="Spend"/>:
+/// An outcome as it was applied, with how far to trust it (an energy grant's value; what the ability gets is the state's, ADRs D48). <see cref="Spend"/>:
 /// the stacks of a counted buff it spent, and what a table gives for them (ADRs D33).
 /// </summary>
 public sealed record AppliedOutcome(Outcome Outcome, Certainty Certainty, Optional<string> Caveat, Optional<StackSpend> Spend);
@@ -171,7 +201,8 @@ public sealed record ActivePassive(ElementId Source, string SourceName, Affinity
 /// <summary>
 /// Result of one step: new state, ordered fired rules, and what the player can do now.
 /// <see cref="Blocked"/> holds the reason when the step could not happen at all (nothing to pick up, no weapon in
-/// that slot, a declaration that doesn't hold) — abilities are never blocked.
+/// that slot, a declaration that doesn't hold) — abilities are never blocked: one without a charge is still played, and
+/// <see cref="Readiness"/> says so (ADRs D48). <see cref="Before"/>: the state the step started in.
 /// </summary>
 public sealed record Resolution(
     PlayerAction Action,
@@ -180,4 +211,6 @@ public sealed record Resolution(
     ImmutableArray<ActivePassive> ActivePassives,
     ImmutableArray<PlayerAction> NowAvailable,
     ImmutableArray<string> Notes,
-    Optional<string> Blocked);
+    Optional<string> Blocked,
+    GameState Before,
+    Optional<AbilityReadiness> Readiness);

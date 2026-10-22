@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Functional;
 
 namespace Loopsmith.Core.StepPlaying;
@@ -8,20 +9,35 @@ namespace Loopsmith.Core.StepPlaying;
 /// <summary>Pure entry point: no I/O, no randomness. Same build + state + step ⇒ same resolution.</summary>
 public static class ActionResolution
 {
-    /// <summary>Fresh spawn: no buffs, a clean pack, nothing on the ground (abilities are always available, ADRs D5).</summary>
+    /// <summary>Fresh spawn: no buffs, a clean pack, nothing on the ground, every ability full (ADRs D48).</summary>
     public static GameState CreateInitialState() =>
-        new(0, [], new TargetState(EnemyTier.Minor, []), [], Optional.None<AbilityKind>());
+        new(0, [], new TargetState(EnemyTier.Minor, []), [], Optional.None<AbilityKind>(), []);
 
     public static Resolution ResolveAction(ValidatedBuild build, GameState state, PlayerAction action)
     {
         var stepped = state with { Step = state.Step + 1, Casting = ReadCast(action) };
+        var readiness = ReadReadiness(build, stepped, action);
         var opening = OpenAction(build, stepped, action);
-        var seed = new Cascade(opening.State, [], opening.Notes, 0);
+        var notes = readiness.Bind(ready => DomainPhrasing.DescribeReadiness(ready, build.CountCharges(ready.Ability), stepped.Step)).Match(note => [note.Value], _ => ImmutableArray<string>.Empty);
+        var seed = new Cascade(opening.State, [], [.. notes, .. opening.Notes], 0);
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0, opening.ByChance));
         var passives = ListActivePassives(build, finished.State);
         var available = ListAvailableActions(build, finished.State);
-        return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes, opening.Blocked);
+        return new Resolution(action, finished.State, finished.Fired, passives, available, finished.Notes, opening.Blocked, state, readiness);
     }
+
+    /// <summary>
+    /// The grenade, melee or class ability a step uses, whether it had a charge right before it, and its energy then
+    /// (ADRs D48); none for any other step and for a Super (its energy isn't kept).
+    /// </summary>
+    public static Optional<AbilityReadiness> ReadReadiness(ValidatedBuild build, GameState state, PlayerAction action) =>
+        ReadCast(action).Bind(ability => ability == AbilityKind.Super
+            ? Optional.None<AbilityReadiness>()
+            : Optional.Some(ToReadiness(build.ReadEnergy(state, ability))));
+
+    private static AbilityReadiness ToReadiness(AbilityEnergy energy) =>
+        new(energy.Ability, energy.ReadReadiness(), energy);
+
 
     /// <summary>Resolves a sequence of steps: each starts from the previous resolution's state.</summary>
     public static ImmutableArray<Resolution> ResolveSequence(ValidatedBuild build, GameState state, ImmutableArray<PlayerAction> actions)
@@ -71,7 +87,8 @@ public static class ActionResolution
     /// <summary>
     /// The declarations that hold now (ADRs D3): a new pack (always, ADRs D7), critical health or a hit at it when an
     /// equipped rule reacts to them (<see cref="ListCriticalHealthDeclarations"/>), <c>max:</c> for each active buff that stacks and isn't at max
-    /// yet, <c>end:</c> for each active buff and each debuff on the pack.
+    /// yet, <c>recharged:</c> for the grenade, melee and class ability while it isn't surely full (ADRs D48), <c>end:</c> for each
+    /// active buff and each debuff on the pack.
     /// </summary>
     public static ImmutableArray<StateDeclaration> ListDeclarations(ValidatedBuild build, GameState state)
     {
@@ -82,7 +99,10 @@ public static class ActionResolution
             .Select(buff => (StateDeclaration)new StateDeclaration.ReachMax(buff.Status));
         var ends = state.Buffs.Select(buff => buff.Status).Concat(state.Target.Debuffs)
             .Select(status => (StateDeclaration)new StateDeclaration.EndStatus(status));
-        return [new StateDeclaration.NewPack(), .. criticalHealth, .. maxes, .. ends];
+        var recharges = GameStateReading.EnergyAbilities
+            .Where(ability => !state.IsFull(ability))
+            .Select(ability => (StateDeclaration)new StateDeclaration.Recharged(ability));
+        return [new StateDeclaration.NewPack(), .. criticalHealth, .. maxes, .. recharges, .. ends];
     }
 
     /// <summary>
@@ -182,23 +202,25 @@ public static class ActionResolution
     }
 
     /// <summary>
-    /// Never blocked: casting, its energy fully expended when the use spends the last charge (<see cref="ListExpendedEvents"/>),
-    /// then the strike on every target (ADRs D4, D5).
+    /// Never blocked: casting spends a charge (ADRs D48: a grenade or melee; a Super's energy isn't kept), its energy fully
+    /// expended when the use spends the last charge (<see cref="ListExpendedEvents"/>), then the strike on every target
+    /// (ADRs D4). One without a charge is still played: its readiness says so.
     /// </summary>
     private static Opening CastAbility(ValidatedBuild build, GameState state, PlayerAction.CastAbility cast)
     {
         var kind = cast.Kind.ToAbilityKind();
         var origin = new DamageOrigin.Ability(kind, build.Build.Subclass.ToDamageType(), cast.Input);
         var strike = ListStrikeEvents(origin, cast.Hit, cast.Targets, ShieldBreak.None, HitZone.Body, cast.Rank);
-        return new Opening(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. ListExpendedEvents(build, kind, cast.Charge), .. strike], []);
+        var spent = kind == AbilityKind.Super ? state : EnergyTracking.SpendCharge(build, state, kind);
+        return new Opening(spent, [new PendingEvent.Ready(new GameEvent.AbilityCast(kind, cast.Input)), .. ListExpendedEvents(build, kind, cast.Charge), .. strike], []);
     }
 
     /// <summary>
-    /// On the ground or with its air move, the class ability is cast: every class ability rule fires either way. Its energy
-    /// is fully expended when the use spends the last charge (<see cref="ListExpendedEvents"/>).
+    /// On the ground or with its air move, the class ability is cast and spends a charge (ADRs D48): every class ability
+    /// rule fires either way. Its energy is fully expended when the use spends the last charge (<see cref="ListExpendedEvents"/>).
     /// </summary>
     private static Opening UseClassAbility(ValidatedBuild build, GameState state, PlayerAction.UseClassAbility use) =>
-        new(state, [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, use.Input)), .. ListExpendedEvents(build, AbilityKind.ClassAbility, use.Charge)], []);
+        new(EnergyTracking.SpendCharge(build, state, AbilityKind.ClassAbility), [new PendingEvent.Ready(new GameEvent.AbilityCast(AbilityKind.ClassAbility, use.Input)), .. ListExpendedEvents(build, AbilityKind.ClassAbility, use.Charge)], []);
 
     /// <summary>
     /// The grenade's, melee's or class ability's energy fully expended (ADRs D36): on every use when the build gives it one
@@ -333,7 +355,18 @@ public static class ActionResolution
             end => DeclareEnd(build.Catalog.Glossary, state, end.Status),
             _ => new Opening(state.ReplacePack(), [], []),   // always holds: the next enemies are a new pack
             _ => DeclareCriticalHealth(state),
-            _ => DeclareHitAtCriticalHealth(state));
+            _ => DeclareHitAtCriticalHealth(state),
+            recharged => DeclareRecharged(state, recharged.Ability));
+
+    /// <summary>
+    /// "Grenade recharged" (ADRs D48): no time is modelled, so the player says the ability recharged; every charge is full
+    /// again. It always holds — an ability already full stays full (a loop's first pass starts with every one full) — but
+    /// for a Super, whose energy isn't kept. No event: nothing in the game reacts to a recharge.
+    /// </summary>
+    private static Opening DeclareRecharged(GameState state, AbilityKind ability) =>
+        ability == AbilityKind.Super
+            ? BlockAction(state, "A Super's energy isn't kept — nothing to recharge.")
+            : new Opening(EnergyTracking.RechargeFully(state, ability), [], []);
 
     /// <summary>
     /// "Critical health" (ADRs D3): no damage is modelled (ADRs D1), so the player says their shields broke. It puts

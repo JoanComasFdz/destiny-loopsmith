@@ -19,6 +19,8 @@ public class LoopAnalysisTests
     private static readonly PlayerAction PickUpOrbs = new PlayerAction.CollectPickups(Pickup("orb-of-power"));
     private static readonly PlayerAction BoltChargeAtMax = new PlayerAction.Declare(new StateDeclaration.ReachMax(Status("bolt-charge")));
     private static readonly PlayerAction AmplifiedEnds = new PlayerAction.Declare(new StateDeclaration.EndStatus(Status("amplified")));
+    private static readonly PlayerAction RechargeGrenade = new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.Grenade));
+    private static readonly PlayerAction RechargeClass = new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.ClassAbility));
 
     private static ImmutableArray<LoopStep> ToSteps(params PlayerAction[] actions) =>
         [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))];
@@ -45,26 +47,27 @@ public class LoopAnalysisTests
     [Fact]
     public void A_loop_of_abilities_repeats_from_its_first_pass()
     {
-        var report = RunLoop(ValidateBuild([]), GrenadeKill, GrenadeKill, Dodge, GrenadeKill);
+        // ADRs D48: nothing regenerates by itself, so the loop declares each ability recharged before the next pass.
+        var report = RunLoop(ValidateBuild([]), GrenadeKill, RechargeGrenade, GrenadeKill, Dodge, RechargeGrenade, RechargeClass);
 
         Assert.Equal(new LoopVerdict.Repeats(Optional.None<BlockedStep>()), report.Verdict);
         Assert.True(report.FirstPassRepeats);
         Assert.Same(report.FirstPass, report.RepeatingPass);
         Assert.Empty(report.FirstPassDifferences);
-        Assert.Equal([0, 1, 2, 3], report.Steps.Select(step => step.StepIndex));
-        Assert.Equal(["grenade:kill", "grenade:kill", "class", "grenade:kill"], report.Steps.Select(step => step.Token));
-        Assert.Equal(("Test loop", "Test build", 4), (report.LoopName, report.BuildName, report.StepLabels.Length));
+        Assert.Equal([0, 1, 2, 3, 4, 5], report.Steps.Select(step => step.StepIndex));
+        Assert.Equal(["grenade:kill", "recharged:grenade", "grenade:kill", "class", "recharged:grenade", "recharged:class"], report.Steps.Select(step => step.Token));
+        Assert.Equal(("Test loop", "Test build", 6), (report.LoopName, report.BuildName, report.StepLabels.Length));
     }
 
     [Fact]
     public void A_step_that_cannot_happen_in_the_repeating_pass_breaks_the_loop()
     {
-        var report = RunLoop(ValidateBuild([]), GrenadeKill, PowerKill, RifleKill);
+        var report = RunLoop(ValidateBuild([]), GrenadeKill, PowerKill, RifleKill, RechargeGrenade);
 
         var breaks = Assert.IsType<LoopVerdict.Breaks>(report.Verdict);
         Assert.Equal(new BlockedStep(1, report.StepLabels[1], "No weapon in the Power slot — nothing happens."), breaks.Blocked);
         Assert.True(report.Steps[1].Blocked.IsSome());
-        Assert.Equal(3, report.RepeatingPass.Resolutions.Length);   // the pass is played to its end
+        Assert.Equal(4, report.RepeatingPass.Resolutions.Length);   // the pass is played to its end
     }
 
     [Fact]
@@ -239,13 +242,13 @@ public class LoopAnalysisTests
                 new Outcome.RemoveBuff(Status("bolt-charge"))),
         ]);
 
-        var report = RunLoop(ValidateBuild([stacker, spender]), GrenadeKill, BoltChargeAtMax, GrenadeKill);
+        var report = RunLoop(ValidateBuild([stacker, spender]), GrenadeKill, BoltChargeAtMax, RechargeGrenade, GrenadeKill, RechargeGrenade);
 
         Assert.Equal(new LoopVerdict.Repeats(Optional.None<BlockedStep>()), report.Verdict);
         Assert.Equal(["Bolt Charge ← #1 [Stacker]"], DescribeNeeds(report.Steps[1]));
-        Assert.Equal(["Bolt Charge at max ← #2"], DescribeNeeds(report.Steps[2]));   // the Bolt Charge it spends, its own cast gave first
+        Assert.Equal(["Bolt Charge at max ← #2"], DescribeNeeds(report.Steps[3]));   // the Bolt Charge it spends, its own cast gave first
         Assert.Equal([Mention("stacker")], report.Steps[0].SetsOff);   // not at max yet: the spender stays quiet
-        Assert.Equal([Mention("stacker"), Mention("spender")], report.Steps[2].SetsOff);
+        Assert.Equal([Mention("stacker"), Mention("spender")], report.Steps[3].SetsOff);
     }
 
     [Fact]

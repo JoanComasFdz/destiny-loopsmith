@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Loopsmith.Core.Causality;
 using Loopsmith.Core.Domain;
+using Loopsmith.Core.Phrasing;
 using Loopsmith.Functional;
 
 namespace Loopsmith.Core.StepPlaying;
@@ -21,12 +22,13 @@ public static class OutcomeApplication
 {
     /// <summary>
     /// What an outcome changes in the state (a buff, a debuff or a pickup becomes present or goes, a counted buff's stacks
-    /// go up or down) and the events it sets off. Numbers are facts shown with their certainty, never added up (ADRs D1);
-    /// a counted buff's stacks are the one count (ADRs D33).
+    /// go up or down, an ability's energy fills) and the events it sets off. Other numbers are facts shown with their
+    /// certainty, never added up (ADRs D1); a counted buff's stacks (ADRs D33) and the grenade's, melee's and class
+    /// ability's energy (ADRs D48) are the counts.
     /// </summary>
     public static Application ApplyOutcome(ValidatedBuild build, GameState state, Outcome outcome, OutcomeSource source) =>
         outcome.Match(
-            grantEnergy => AnnotateFact(state, outcome, ReadGrantCertainty(grantEnergy.Amount), "amount unknown"),
+            grantEnergy => GrantEnergy(build, state, outcome, grantEnergy, source),
             convert => ConvertStacksToEnergy(build, state, outcome, convert, source),
             applyBuff => ApplyBuff(build, state, outcome, applyBuff, source),
             removeBuff => RemoveBuff(build, state, outcome, removeBuff),
@@ -36,9 +38,11 @@ public static class OutcomeApplication
             strikeTarget => StrikeTarget(build, state, outcome, strikeTarget),
             modifyDamage => AnnotateFact(state, outcome, modifyDamage.Change.ReadCertainty(), "value unknown"),
             restoreHealth => AnnotateFact(state, outcome, restoreHealth.Amount.Match(share => share.Value, points => points.Value).ReadCertainty(), "value unknown"),
-            resetCooldown => KeepUnchanged(state, outcome, ""),
+            resetCooldown => resetCooldown.Which == AbilityKind.Super
+                ? KeepUnchanged(state, outcome, "")
+                : new Application(EnergyTracking.RechargeFully(state, resetCooldown.Which), ToApplied(outcome, Certainty.Known, Optional.None<string>()), []),
             collect => Collect(state, outcome, collect),
-            least => AnnotateFact(state, outcome, ReadGrantCertainty(least.Amount), "amount unknown"),
+            least => GrantLeastChargedEnergy(build, state, outcome, least, source),
             spend => SpendStacks(build, state, outcome, spend, source),
             weapon => StrikeWithWeapon(build, state, outcome, weapon),
             reload => ReloadWeapon(build, state, outcome, reload),
@@ -47,15 +51,57 @@ public static class OutcomeApplication
 
     /// <summary>
     /// <c>full</c> is one whole charge (known); a fraction is as certain as its value; a fraction by archetype not bound to
-    /// the weapon's, as its two values together.
+    /// the weapon's, as its two values together; a fraction per stat point, as its value with the build's stat.
     /// </summary>
-    private static Certainty ReadGrantCertainty(EnergyGrant grant) =>
+    private static Certainty ReadGrantCertainty(ValidatedBuild build, EnergyGrant grant) =>
         grant.Match(
             fraction => fraction.Amount.ReadCertainty(),
             _ => Certainty.Known,
             byArchetype => byArchetype.Otherwise.ReadCertainty() == Certainty.Known && byArchetype.OnArchetypes.ReadCertainty() == Certainty.Known
                 ? Certainty.Known
-                : Certainty.Unknown);
+                : Certainty.Unknown,
+            perStat => build.Build.Stats.ReadStat(perStat.Stat).IsSome() ? perStat.PerPoint.ReadCertainty() : Certainty.Unknown);
+
+    /// <summary>
+    /// Energy to the grenade, melee or class ability fills it in the state, scaled the way the game scales it (ADRs D48);
+    /// a Super's is a fact. The outcome shows the grant's own value.
+    /// </summary>
+    private static Application GrantEnergy(ValidatedBuild build, GameState state, Outcome outcome, Outcome.GrantEnergy grant, OutcomeSource source)
+    {
+        var certainty = ReadGrantCertainty(build, grant.Amount);
+        if (grant.To == AbilityKind.Super)
+        {
+            return AnnotateFact(state, outcome, certainty, "amount unknown");
+        }
+
+        var gain = EnergyTracking.ScaleGrant(build, grant.To, grant.Amount, grant.Scaling, source.Equipped.Count, source.Likelihood);
+        return AnnotateFact(EnergyTracking.GainEnergy(build, state, grant.To, gain), outcome, certainty, "amount unknown");
+    }
+
+    /// <summary>
+    /// Energy to the least-charged ability (ADRs D48): to the one surely least charged of the grenade, melee and class
+    /// ability, scaled as its own; none of them when every one is full; and, when that is open, a part none of them
+    /// surely gets: each one it may go to gains something unknown. The caveat says which.
+    /// </summary>
+    private static Application GrantLeastChargedEnergy(ValidatedBuild build, GameState state, Outcome outcome, Outcome.GrantLeastChargedEnergy least, OutcomeSource source)
+    {
+        var certainty = ReadGrantCertainty(build, least.Amount);
+        var unknown = certainty == Certainty.Unknown ? "amount unknown" : "";
+        return EnergyTracking.FindLeastCharged(build, state).Match(
+            sure =>
+            {
+                var gain = EnergyTracking.ScaleGrant(build, sure.Ability, least.Amount, EnergyScaling.Scaled, source.Equipped.Count, source.Likelihood);
+                var filled = EnergyTracking.GainEnergy(build, state, sure.Ability, gain);
+                return new Application(filled, ToApplied(outcome, certainty, JoinCaveats($"to your {DomainPhrasing.DescribeAbility(sure.Ability)}", unknown)), []);
+            },
+            _ => new Application(state, ToApplied(outcome, certainty, JoinCaveats("every ability is full: maybe to your Super", unknown)), []),
+            open =>
+            {
+                var marked = open.Candidates.Aggregate(state, (acc, ability) => EnergyTracking.MarkMaybeGained(build, acc, ability));
+                var names = string.Join(" or ", open.Candidates.Select(DomainPhrasing.DescribeAbility));
+                return new Application(marked, ToApplied(outcome, certainty, JoinCaveats($"to your {names}: which is least charged is unknown", unknown)), []);
+            });
+    }
 
     /// <summary>
     /// Reloads the weapon in the slot "this weapon" was bound to, or that the rule names (ADRs D37): a reload event from it,
@@ -99,7 +145,27 @@ public static class OutcomeApplication
 
         return state.ReadTally(convert.Consumed).Match(
             tally => SpendAllForEnergy(build, state, outcome, convert, tally.Value, source),
-            _ => AnnotateFact(state.EndBuff(build.Catalog.Glossary, convert.Consumed), outcome, ReadStackEnergyCertainty(convert.Energy), "amount unknown"));
+            _ => AnnotateFact(
+                FillConverted(build, state.EndBuff(build.Catalog.Glossary, convert.Consumed), convert.To, Optional.None<GameValue>(), false, source),
+                outcome, ReadStackEnergyCertainty(convert.Energy), "amount unknown"));
+    }
+
+    /// <summary>
+    /// The energy stacks convert into fills the ability (ADRs D48): the table's value for the sure stacks, scaled; more,
+    /// unknown, when chance stacks were spent too or the value isn't known. A Super's is a fact.
+    /// </summary>
+    private static GameState FillConverted(ValidatedBuild build, GameState state, AbilityKind ability, Optional<GameValue> atSure, bool withChance, OutcomeSource source)
+    {
+        if (ability == AbilityKind.Super)
+        {
+            return state;
+        }
+
+        var sure = atSure.Match(
+            value => EnergyTracking.ScaleValue(build, ability, value.Value, source.Likelihood),
+            _ => new EnergyGain(0m, EnergyCertainty.AtLeast));
+        var gain = withChance ? sure with { Certainty = EnergyCertainty.AtLeast } : sure;
+        return EnergyTracking.GainEnergy(build, state, ability, gain);
     }
 
     private static Application SpendAllForEnergy(
@@ -114,7 +180,8 @@ public static class OutcomeApplication
             ? perStackEnergy.Amount.ReadCertainty()
             : values.AtSure.IsSome() || values.WithChance.IsSome() ? Certainty.Known : Certainty.Unknown;
         var caveat = certainty == Certainty.Unknown ? "amount unknown" : "";
-        return new Application(state.EndBuff(build.Catalog.Glossary, convert.Consumed), new AppliedOutcome(outcome, certainty, JoinCaveats(caveat), Optional.Some(spend)), []);
+        var filled = FillConverted(build, state.EndBuff(build.Catalog.Glossary, convert.Consumed), convert.To, values.AtSure, tally.Chance.Value > 0, source);
+        return new Application(filled, new AppliedOutcome(outcome, certainty, JoinCaveats(caveat), Optional.Some(spend)), []);
     }
 
     private static Certainty ReadStackEnergyCertainty(StackEnergy energy) =>

@@ -53,8 +53,16 @@ public static partial class LoopAnalysis
             inOrder,
             [.. setsOff.Where(element => !inOrder.Any(other => other.Source == element.Source))],
             ListWasted(resolution),
-            resolution.Blocked);
+            resolution.Blocked,
+            DescribeReadiness(build, resolution, index, Readiness.NotReady),
+            DescribeReadiness(build, resolution, index, Readiness.MayNotBeReady));
     }
+
+    /// <summary>"Grenade not ready: 0% before #2" when the step's ability had that readiness (ADRs D48); none otherwise.</summary>
+    private static Optional<string> DescribeReadiness(ValidatedBuild build, Resolution resolution, int index, Readiness readiness) =>
+        resolution.Readiness
+            .Bind(ready => ready.Readiness == readiness ? Optional.Some(ready) : Optional.None<AbilityReadiness>())
+            .Bind(ready => DomainPhrasing.DescribeReadiness(ready, build.CountCharges(ready.Ability), index + 1));
 
     /// <summary>
     /// The elements that fire because an earlier step provided what they needed: all of them when the step's own action
@@ -355,7 +363,7 @@ public static partial class LoopAnalysis
 
     private static Optional<BlockedStep> FindFirstBlocked(ImmutableArray<StepAnalysis> steps) =>
         steps
-            .Select(step => step.Blocked.Map(reason => new BlockedStep(step.StepIndex, step.Label, reason)))
+            .Select(step => (step.Blocked.IsSome() ? step.Blocked : step.NotReady).Map(reason => new BlockedStep(step.StepIndex, step.Label, reason)))
             .FindFirstSome();
 
     /// <summary>The steps that do something else on the first pass than in the repeating one.</summary>

@@ -34,7 +34,9 @@ public sealed record WastedMention(ElementMention Source, string PartnerName);
 /// One step of a pass, in the order of the loop: what it needs and from where, what it sets off, what is wasted.
 /// <see cref="InOrder"/> are the elements of <see cref="SetsOff"/> that fire there because an earlier step provided
 /// what their rule needed (or what the step itself needs: the orb it picks up, the buff it declares at max);
-/// <see cref="OnItsOwn"/> the others, which fire wherever the step goes.
+/// <see cref="OnItsOwn"/> the others, which fire wherever the step goes. <see cref="NotReady"/>: its ability surely had
+/// no charge before it, which breaks the loop as a blocked step does; <see cref="MayNotBeReady"/>: maybe not, part of its
+/// energy unknown — a caveat (ADRs D48).
 /// </summary>
 public sealed record StepAnalysis(
     int StepIndex,
@@ -45,7 +47,9 @@ public sealed record StepAnalysis(
     ImmutableArray<ElementMention> InOrder,
     ImmutableArray<ElementMention> OnItsOwn,
     ImmutableArray<WastedMention> Wasted,
-    Optional<string> Blocked);
+    Optional<string> Blocked,
+    Optional<string> NotReady,
+    Optional<string> MayNotBeReady);
 
 /// <summary>
 /// An arrow of the step chain: step <see cref="From"/> provided what step <see cref="To"/> needs — in the pass before
@@ -68,10 +72,10 @@ public partial record LoopVerdict
 {
     partial record NoSteps();
 
-    /// <summary>The repeating pass has no blocked step; <see cref="FirstPassBlocked"/> names one the first pass has.</summary>
+    /// <summary>The repeating pass has no blocked or not-ready step; <see cref="FirstPassBlocked"/> names one the first pass has.</summary>
     partial record Repeats(Optional<BlockedStep> FirstPassBlocked);
 
-    /// <summary>The repeating pass has a blocked step (its first one).</summary>
+    /// <summary>The repeating pass has a blocked step, or one whose ability surely isn't ready (its first one, ADRs D48).</summary>
     partial record Breaks(BlockedStep Blocked);
 }
 

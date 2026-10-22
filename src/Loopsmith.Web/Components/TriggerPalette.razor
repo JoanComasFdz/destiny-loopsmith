@@ -29,10 +29,10 @@
         <p class="palette-hint">@Hint</p>
     }
     <div class="trig-hud aff-@hud.Subclass.ToString().ToLowerInvariant()" data-testid="trigger-hud" inert="@disabled">
-        @if (!hud.OnYou.IsEmpty || !hud.CriticalHealth.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
+        @if (!hud.OnYou.IsEmpty || !hud.CriticalHealth.IsEmpty || !hud.Recharges.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
         {
             <div class="trig-status" aria-label="States you declare, and what is on the ground">
-                @RenderStatuses("you", "On you", hud.OnYou, hud.CriticalHealth)
+                @RenderStatuses("you", "On you", hud.OnYou, [.. hud.CriticalHealth, .. hud.Recharges])
                 @RenderStatuses("weapons", "Your weapons", hud.OnWeapons, [])
                 @RenderStatuses("pack", "The pack", hud.OnPack, hud.NewPack)
                 @if (!hud.Ground.IsEmpty)

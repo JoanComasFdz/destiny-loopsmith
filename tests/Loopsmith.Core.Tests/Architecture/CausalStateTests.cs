@@ -7,10 +7,10 @@ namespace Loopsmith.Core.Tests.Architecture;
 
 /// <summary>
 /// ADRs D1: the game state says what is present (a buff, a debuff on the pack, a pickup on the ground) and what the
-/// player declared — never a count, an amount or a time. Walks <see cref="GameState"/> member by member (through
-/// records, arrays, optionals and value objects) and fails on any number but the step's ordinal and a counted buff's
-/// stacks (ADRs D33: Armor Charge's, with the step of each change), so a clock, an energy gauge or another counter
-/// can't come back unnoticed.
+/// player declared — never a time, nor a count or amount but two. Walks <see cref="GameState"/> member by member
+/// (through records, arrays, optionals and value objects) and fails on any number but the step's ordinal, a counted
+/// buff's stacks (ADRs D33: Armor Charge's, with the step of each change) and the grenade's, melee's and class ability's
+/// energy (ADRs D48: charges and the progress toward the next), so a clock or another counter can't come in unnoticed.
 /// </summary>
 public sealed class CausalStateTests
 {
@@ -25,20 +25,22 @@ public sealed class CausalStateTests
         "GameState.Buffs[].Tally?.Changes[].Move.Sure",
         "GameState.Buffs[].Tally?.Changes[].Move.Chance",
         "GameState.Buffs[].Tally?.Changes[].Move.Wasted",
+        "GameState.Energy[].Charges",
+        "GameState.Energy[].Progress",
     ];
 
     private static readonly ImmutableHashSet<Type> Numbers =
         [typeof(int), typeof(long), typeof(short), typeof(byte), typeof(uint), typeof(ulong), typeof(float), typeof(double), typeof(decimal)];
 
     [Fact]
-    public void Game_state_holds_no_number_but_the_step()
+    public void Game_state_holds_no_number_but_the_step_the_stacks_and_the_energy()
     {
         var numbers = ListLeaves(typeof(GameState), nameof(GameState), [])
             .Where(leaf => Numbers.Contains(leaf.Type) && !Allowed.Contains(leaf.Path))
             .Select(leaf => $"{leaf.Path} ({leaf.Type.Name})");
 
         Violations.AssertNone(
-            "GameState holds what is present and what the player declared — no count, amount or time (ADRs D1).",
+            "GameState holds what is present and what the player declared — no time, and no count or amount but a counted buff's stacks and the abilities' energy (ADRs D1, D33, D48).",
             numbers);
     }
 

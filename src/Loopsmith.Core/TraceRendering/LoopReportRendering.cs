@@ -41,6 +41,8 @@ public static class LoopReportRendering
         Blank,
         StyledText.ToLine(0, $"#{(step.StepIndex + 1).ToString(Invariant)} ".ToSpan(Tone.Muted), step.Label.ToSpan(Tone.Strong)),
         .. step.Blocked.Match(reason => new[] { RenderField("blocked", reason.Value.ToSpan(Tone.Warning)) }, _ => []),
+        .. step.NotReady.Match(reason => new[] { RenderField("not ready", reason.Value.ToSpan(Tone.Warning)) }, _ => []),
+        .. step.MayNotBeReady.Match(reason => new[] { RenderField("may not be ready", reason.Value.ToSpan(Tone.Warning)) }, _ => []),
         .. step.Needs.IsEmpty ? [] : new[] { RenderField("needs", JoinSpans(step.Needs.Select(need => need.DescribeNeed().ToSpan(need.Affinity.ToTone())))) },
         .. step.InOrder.IsEmpty ? [] : new[] { RenderField("in this order", JoinSpans(step.InOrder.Select(ToMentionSpan))) },
         .. step.OnItsOwn.IsEmpty ? [] : new[] { RenderField("on its own", JoinSpans(step.OnItsOwn.Select(ToMentionSpan))) },

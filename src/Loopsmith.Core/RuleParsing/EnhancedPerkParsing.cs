@@ -198,7 +198,8 @@ internal static class EnhancedPerkParsing
         grant.Match(
             fraction => new[] { fraction.Amount },
             _ => [],
-            byArchetype => [byArchetype.Otherwise, byArchetype.OnArchetypes]);
+            byArchetype => [byArchetype.Otherwise, byArchetype.OnArchetypes],
+            perStat => [perStat.PerPoint]);
 
     private static IEnumerable<GameValue> ListValues(Passive passive) =>
         passive.Match(
@@ -250,7 +251,8 @@ internal static class EnhancedPerkParsing
             {
                 Otherwise = Replace(byArchetype.Otherwise, values),
                 OnArchetypes = Replace(byArchetype.OnArchetypes, values),
-            });
+            },
+            perStat => perStat with { PerPoint = Replace(perStat.PerPoint, values) });
 
     private static Passive ReplaceValues(Passive passive, EnhancedValues values) =>
         passive.Match<Passive>(
