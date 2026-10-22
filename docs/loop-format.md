@@ -216,7 +216,10 @@ recharge makes it known. An ability with two charges (Shinobu's Vow's grenade) r
 step whose ability had no full charge before it is still played, flagged **Not ready** in its header with the note
 `Grenade not ready: 0% before #2`, or **May not be ready** when part of the energy is unknown
 (`Grenade may not be ready: ≥ 8.44% before #2`). Energy reads to two decimals at most, never rounded up to a full charge.
-The next pass starts with the energy the last one ended with.
+The next pass starts with the energy the last one ended with. The **Next trigger** panel's grenade, melee and class
+ability squares show it too, after the loop's last step: the square is gray and its colour grows from below to the
+energy's sure share of all its charges, like a vertical bar — full colour when full, all gray when spent (its tooltip
+reads it: "Grenade: Skip Grenade · energy 8.44%").
 
 **Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
 fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a

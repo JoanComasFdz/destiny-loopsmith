@@ -880,7 +880,8 @@ scaling 2026-10-22).** It replaces D5 and narrows D1:
   fills every charge, and always holds.
 * **The step card shows each ability's energy before and after the step** (ENERGY: "Grenade 100% → 0%"), to two
   decimals at most, never rounded up to a full charge; a step whose ability wasn't ready says so in its header and its
-  note ("Grenade not ready: 0% before #2").
+  note ("Grenade not ready: 0% before #2"). The trigger panel's ability squares show the energy after the last step:
+  gray, their colour growing from below to its sure share, like a vertical bar.
 
 **Consequence.** Energy is the second count in the state, after a counted buff's stacks (D33): `CausalStateTests` allows
 it and nothing else. `StepPlaying.EnergyTracking` spends, scales and fills it; the loop's repeat check (`LoopPlaying`)

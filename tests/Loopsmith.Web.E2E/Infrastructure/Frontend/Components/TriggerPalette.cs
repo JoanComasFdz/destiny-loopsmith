@@ -131,6 +131,13 @@ public sealed class TriggerPalette(IPage page)
     /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
     public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));
 
+    /// <summary>
+    /// How full <paramref name="ability"/>'s square in the step HUD is: the share, from below, its colour fills ("8.44%";
+    /// "100%" full, "0%" gray), its energy after the loop's last step (ADRs D48).
+    /// </summary>
+    public Task<AbilitySquareFill> ReadFillAsync(Ability ability) => OnScreen.ReadAsync(Panel, async () =>
+        new AbilitySquareFill(ability, $"{await AbilityButton(ability).GetAttributeAsync("data-energy-fill")}%"));
+
     /// <summary>Clicks "<paramref name="ability"/> recharged" under "On you" ("Grenade recharged"): the loop gets a step that declares it recharged.</summary>
     public Task ClickRechargedAsync(AbilitySlot ability) => OnScreen.PressAsync(Panel, Recharged(ability));
 
@@ -303,3 +310,6 @@ public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
 
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);
+
+/// <summary>An ability's square in the step HUD and how full its colour is, from below ("8.44%", ADRs D48).</summary>
+public sealed record AbilitySquareFill(Ability Ability, string Fill);

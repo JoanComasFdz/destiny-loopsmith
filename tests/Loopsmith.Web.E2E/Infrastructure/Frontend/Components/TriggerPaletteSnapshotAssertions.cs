@@ -182,3 +182,15 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 }
+
+/// <summary>What a test checks on how full an ability's square in the step HUD is.</summary>
+public static class AbilitySquareFillAssertions
+{
+    /// <summary>The square's colour fills <paramref name="expected"/> of it from below ("8.44%", "0%": all gray).</summary>
+    public static AssertingThat<AbilitySquareFill> IsFilledTo(this AssertingThat<AbilitySquareFill> that, string expected)
+    {
+        var shown = that.InstanceToAssert;
+        Assert.True(shown.Fill == expected, $"The \"{shown.Ability.ToShownText()}\" square is filled to {shown.Fill}, but {expected} was expected.");
+        return that;
+    }
+}

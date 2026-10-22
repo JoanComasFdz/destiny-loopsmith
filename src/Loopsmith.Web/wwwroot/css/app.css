@@ -708,6 +708,13 @@ textarea { resize: vertical; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
 .trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .trig-super.empty, .trig-ability.empty { border-style: dashed; background: transparent; }
+/* an ability's energy after the last step (ADRs D48): gray, its colour growing from below to the energy, like a vertical
+   bar — the icon gray under a coloured copy clipped to the same height, a faint bar of its colour behind them */
+.trig-ability.gauge { overflow: hidden; }
+.trig-ability.gauge-empty { border-color: var(--muted); }
+.trig-gauge-bar { position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill); background: var(--aff); opacity: .25; pointer-events: none; }
+.trig-icon-spent { position: absolute; inset: 0; filter: grayscale(1) brightness(.55); }
+.trig-icon-filled { position: relative; clip-path: inset(calc(100% - var(--fill)) 0 0 0); }
 .trig-ability.empty .trig-caption { padding: 0 2px; text-align: center; line-height: 1.15; }
 .trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
 /* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */

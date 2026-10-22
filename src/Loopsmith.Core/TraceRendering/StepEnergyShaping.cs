@@ -14,9 +14,29 @@ public sealed record EnergyLine(AbilityKind Ability, string Name, string Before,
 /// </summary>
 public sealed record StepEnergy(ImmutableArray<EnergyLine> Lines, Readiness Readiness, Optional<string> NotReadyText);
 
+/// <summary>
+/// An ability's energy as its HUD square fills (ADRs D48): the share of all its charges surely there (0 to 1: an "at
+/// least" fills to its floor, "?" to nothing), and how it reads ("62.5%", "≥ 8.44%", "1 charge + 25%").
+/// </summary>
+public sealed record EnergyGauge(decimal Fill, string Text);
+
 /// <summary>Pure: a step's resolution → its energy, in the designer's words.</summary>
 public static class StepEnergyShaping
 {
+    /// <summary>The grenade's, melee's or class ability's energy in <paramref name="state"/>, as its HUD square fills; none for a Super (its energy isn't kept).</summary>
+    public static Optional<EnergyGauge> ShapeGauge(ValidatedBuild build, GameState state, AbilityKind ability)
+    {
+        if (!GameStateReading.EnergyAbilities.Contains(ability))
+        {
+            return Optional.None<EnergyGauge>();
+        }
+
+        var charges = build.CountCharges(ability);
+        var energy = state.ReadEnergy(ability, charges);
+        var fill = Math.Min((energy.Charges + energy.Progress) / charges.Value, 1m);
+        return Optional.Some(new EnergyGauge(fill, DomainPhrasing.DescribeEnergy(energy, charges)));
+    }
+
     public static StepEnergy ShapeStepEnergy(ValidatedBuild build, Resolution resolution) =>
         new(
             [
