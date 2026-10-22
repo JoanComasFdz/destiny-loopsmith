@@ -10,7 +10,7 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// </summary>
 public sealed class LoopAnalysis(IPage page)
 {
-    private ILocator Box => page.Locator(".analysis");
+    private ILocator Box => page.Locator("[data-testid=loop-analysis]");
 
     private ILocator Verdict => Box.Locator("[data-testid=verdict]");
 
@@ -31,12 +31,12 @@ public sealed class LoopAnalysis(IPage page)
     private const string ReadScript = """
         box => {
           const text = el => (el ? el.innerText : '').replace(/\s+/g, ' ').trim();
-          const field = (step, id) => { const el = step.querySelector(`[data-testid=${id}] span:last-child`); return el ? text(el) : null; };
+          const field = (step, id) => { const el = step.querySelector(`[data-testid=${id}] [data-testid=readiness-note]`); return el ? text(el) : null; };
           return {
             verdict: text(box.querySelector('[data-testid=verdict]')),
             verdictText: text(box.querySelector('[data-testid=verdict-text]')),
             steps: [...box.querySelectorAll('[data-testid=analysis-step]')].map(step => ({
-              heading: text(step.querySelector('.analysis-step-head')),
+              heading: text(step.querySelector("[data-testid=analysis-step-heading]")),
               notReady: field(step, 'not-ready'),
               mayNotBeReady: field(step, 'may-not-be-ready'),
             })),

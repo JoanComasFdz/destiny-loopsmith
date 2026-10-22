@@ -445,7 +445,7 @@ public sealed class ArmorModMechanicsTests
 
         // ADRs D48: the dodge spent the class ability, so it is the least charged; its chunk scalar is "?" here, so what it
         // gets back is unknown: at least nothing.
-        Assert.Equal([new AbilityEnergy(AbilityKind.ClassAbility, 0, 0m, EnergyCertainty.AtLeast)], dodge.State.Energy);
+        Assert.Equal([EnergyOf(AbilityKind.ClassAbility, 0, 0m, EnergyCertainty.AtLeast)], dodge.State.Energy);
         Assert.Equal(Optional.Some("to your class ability"), dodge.Fired[0].Outcomes[0].Caveat);
         Assert.Equal(
             "#1 Class ability\n  Class ability → +13% energy to your least-charged ability [Orbs Of Restoration] + +?% energy to your least-charged ability [Unknown Restoration]",

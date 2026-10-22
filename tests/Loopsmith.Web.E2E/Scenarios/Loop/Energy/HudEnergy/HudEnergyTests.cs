@@ -31,8 +31,8 @@ public sealed class HudEnergyTests : BaseE2E
         await Frontend.Designer.WaitUntilShownAsync();
 
         // Then
-        var fresh = await Frontend.Designer.TriggerPalette.ReadFillAsync(new Ability.SkipGrenade());
-        Asserting.That(fresh).IsFilledTo("100%");
+        var fresh = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(fresh).FillsSquare(new Ability.SkipGrenade(), "100%");
 
         // When
         await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.SkipGrenade());
@@ -41,8 +41,8 @@ public sealed class HudEnergyTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
 
         // Then
-        var thrown = await Frontend.Designer.TriggerPalette.ReadFillAsync(new Ability.SkipGrenade());
-        Asserting.That(thrown).IsFilledTo("0%");
+        var thrown = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(thrown).FillsSquare(new Ability.SkipGrenade(), "0%");
 
         // When
         // keeping step #1: its throw spent the grenade #2 declares recharged
@@ -50,8 +50,8 @@ public sealed class HudEnergyTests : BaseE2E
         await Frontend.Designer.Loop.WaitUntilStepShownAsync(2);
 
         // Then
-        var recharged = await Frontend.Designer.TriggerPalette.ReadFillAsync(new Ability.SkipGrenade());
-        Asserting.That(recharged).IsFilledTo("100%");
+        var recharged = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(recharged).FillsSquare(new Ability.SkipGrenade(), "100%");
     }
 
     [Theory, PlayInDesktop, PlayInMobile]
@@ -78,7 +78,7 @@ public sealed class HudEnergyTests : BaseE2E
 
         // Then
         // The Ionic Trace's 11.25% × Skip Grenade's 0.75 chunk scalar, at 70 Grenade.
-        var refilled = await Frontend.Designer.TriggerPalette.ReadFillAsync(new Ability.SkipGrenade());
-        Asserting.That(refilled).IsFilledTo("8.44%");
+        var refilled = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(refilled).FillsSquare(new Ability.SkipGrenade(), "8.44%");
     }
 }

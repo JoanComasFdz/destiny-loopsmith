@@ -174,8 +174,8 @@ public static class DomainPhrasing
     public static string DescribeEnergy(AbilityEnergy energy, ChargeCount charges)
     {
         var total = charges.Value;
-        var full = energy.Charges >= total;
-        var text = (total, full, energy.Charges, energy.Progress) switch
+        var full = energy.Charges.Value >= total;
+        var text = (total, full, energy.Charges.Value, energy.Progress.Value) switch
         {
             (1, true, _, _) => "100%",
             (_, true, _, _) => $"{total} charges",
@@ -183,7 +183,7 @@ public static class DomainPhrasing
             (_, false, var count, 0m) => DescribeCharges(count),
             (_, false, var count, var progress) => $"{DescribeCharges(count)} + {FormatEnergyShare(progress)}",
         };
-        return (full, energy.Certainty, energy.Charges + energy.Progress) switch
+        return (full, energy.Certainty, energy.ReadTotal()) switch
         {
             (true, _, _) => text,
             (false, EnergyCertainty.AtLeast, 0m) => "?",
@@ -197,13 +197,31 @@ public static class DomainPhrasing
     /// "Grenade not ready: 0% before #2", "Grenade may not be ready: ≥ 8.44% before #2" (ADRs D48); none when the step's
     /// ability was ready.
     /// </summary>
-    public static Optional<string> DescribeReadiness(AbilityReadiness readiness, ChargeCount charges, int step) =>
+    public static Optional<ReadinessFlag> DescribeReadiness(AbilityReadiness readiness, ChargeCount charges, int step) =>
         readiness.Readiness switch
         {
-            Readiness.NotReady => Optional.Some($"{Capitalize(readiness.Ability.DescribeAbility())} not ready: {DescribeEnergy(readiness.Before, charges)} before #{step}"),
-            Readiness.MayNotBeReady => Optional.Some($"{Capitalize(readiness.Ability.DescribeAbility())} may not be ready: {DescribeEnergy(readiness.Before, charges)} before #{step}"),
-            _ => Optional.None<string>(),
+            Readiness.NotReady => Optional.Some<ReadinessFlag>(new ReadinessFlag.NotReady($"{Capitalize(readiness.Ability.DescribeAbility())} not ready: {DescribeEnergy(readiness.Before, charges)} before #{step}")),
+            Readiness.MayNotBeReady => Optional.Some<ReadinessFlag>(new ReadinessFlag.MayNotBeReady($"{Capitalize(readiness.Ability.DescribeAbility())} may not be ready: {DescribeEnergy(readiness.Before, charges)} before #{step}")),
+            _ => Optional.None<ReadinessFlag>(),
         };
+
+    /// <summary>The note of a step whose ability wasn't ready: "Grenade not ready: 0% before #2".</summary>
+    public static string ReadNote(this ReadinessFlag flag) =>
+        flag.Match(notReady => notReady.Note, mayNotBeReady => mayNotBeReady.Note);
+
+    /// <summary>The badge in the step's header: "Not ready", "May not be ready".</summary>
+    public static string DescribeReadinessBadge(this ReadinessFlag flag) =>
+        flag.Match(_ => "Not ready", _ => "May not be ready");
+
+    /// <summary>
+    /// Where a least-charged grant went (ADRs D48), as its caveat: "to your grenade"; "to your grenade or melee: which is
+    /// least charged is unknown"; "every ability is full: maybe to your Super".
+    /// </summary>
+    public static string DescribeLeastCharged(LeastCharged least) =>
+        least.Match(
+            sure => $"to your {sure.Ability.DescribeAbility()}",
+            _ => "every ability is full: maybe to your Super",
+            open => $"to your {string.Join(" or ", open.Candidates.Select(ability => ability.DescribeAbility()))}: which is least charged is unknown");
 
     private static string DescribeCharges(int count) =>
         count == 1 ? "1 charge" : $"{count} charges";

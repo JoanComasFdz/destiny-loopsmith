@@ -60,13 +60,13 @@ public sealed class StepCard(IPage page, int number)
     public Task ClickKeywordAsync(Keyword keyword, string line) => OnScreen.PressAsync(Card, FindKeyword(keyword, line));
 
     /// <summary>Where the card's ENERGY row is on the screen.</summary>
-    public Task<EnergyRowLayout> ReadEnergyLayoutAsync() => OnScreen.ReadAsync(Energy, ReadEnergyLayoutShownAsync);
+    public Task<StepCardLayout> ReadLayoutAsync() => OnScreen.ReadAsync(Energy, ReadLayoutShownAsync);
 
-    private async Task<EnergyRowLayout> ReadEnergyLayoutShownAsync() =>
-        (await Energy.EvaluateAsync<JsonElement>(EnergyLayoutScript)).Deserialize<EnergyRowLayout>(ShownJson.Options)!;
+    private async Task<StepCardLayout> ReadLayoutShownAsync() =>
+        (await Energy.EvaluateAsync<JsonElement>(LayoutScript)).Deserialize<StepCardLayout>(ShownJson.Options)!;
 
     // The ENERGY row's box, the screen's width and the page's (wider when it scrolls sideways).
-    private const string EnergyLayoutScript = """
+    private const string LayoutScript = """
         row => {
           const r = row.getBoundingClientRect();
           return { row: { left: r.left, top: r.top, right: r.right, bottom: r.bottom }, screenWidth: window.innerWidth, pageWidth: document.documentElement.scrollWidth };
@@ -146,7 +146,7 @@ public sealed class StepCard(IPage page, int number)
             })),
             nothingTriggers: card.querySelector('[data-testid=outcome-none]') !== null,
             energy: [...card.querySelectorAll('[data-testid=step-state] [data-testid=energy-line]')].map(line => ({
-              name: text(line.querySelector('.hud-energy-name')),
+              name: text(line.querySelector('[data-testid=energy-name]')),
               before: text(line.querySelector('[data-testid=energy-before]')),
               after: text(line.querySelector('[data-testid=energy-after]')),
             })),
@@ -211,7 +211,7 @@ public sealed record StepCardSnapshot(
 public sealed record EnergyRow(string Name, string Before, string After);
 
 /// <summary>Where a card's ENERGY row is on the screen, in CSS pixels, with the screen's width and the page's.</summary>
-public sealed record EnergyRowLayout(ScreenBox Row, double ScreenWidth, double PageWidth);
+public sealed record StepCardLayout(ScreenBox Row, double ScreenWidth, double PageWidth);
 
 /// <summary>An event the step fired ("Festival Flight 🥊 hit 1 enemy") and the elements that fired from it.</summary>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);

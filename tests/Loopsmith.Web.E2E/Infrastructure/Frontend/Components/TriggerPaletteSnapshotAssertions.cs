@@ -183,14 +183,16 @@ public static class TriggerPaletteSnapshotAssertions
     }
 }
 
-/// <summary>What a test checks on how full an ability's square in the step HUD is.</summary>
-public static class AbilitySquareFillAssertions
+/// <summary>What a test checks on how full an ability's square in the step HUD is (ADRs D48).</summary>
+public static class SquareFillAssertions
 {
-    /// <summary>The square's colour fills <paramref name="expected"/> of it from below ("8.44%", "0%": all gray).</summary>
-    public static AssertingThat<AbilitySquareFill> IsFilledTo(this AssertingThat<AbilitySquareFill> that, string expected)
+    /// <summary><paramref name="ability"/>'s square's colour fills <paramref name="expected"/> of it from below ("8.44%", "0%": all gray).</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> FillsSquare(this AssertingThat<TriggerPaletteSnapshot> that, Ability ability, string expected)
     {
-        var shown = that.InstanceToAssert;
-        Assert.True(shown.Fill == expected, $"The \"{shown.Ability.ToShownText()}\" square is filled to {shown.Fill}, but {expected} was expected.");
+        var shown = that.InstanceToAssert.Squares.FirstOrDefault(square => square.Name == ability.ToShownText());
+        Assert.True(
+            shown is not null && shown.Fill == expected,
+            $"The \"{ability.ToShownText()}\" square is filled to {shown?.Fill ?? "nothing (it shows no energy)"}, but {expected} was expected.");
         return that;
     }
 }

@@ -2,7 +2,7 @@
    each step of the repeating pass with what it needs and which step provided it, what it sets off in this order and on
    its own, what is wasted there, and where the first pass from a fresh spawn differs. Every word comes from the core's
    Phrasing; this only lays it out. *@
-<div class="analysis">
+<div class="analysis" data-testid="loop-analysis">
     <div class="analysis-head">
         <div>
             <div class="analysis-name">@Report.LoopName</div>
@@ -33,19 +33,17 @@
         <ol class="analysis-steps" data-testid="steps">
             @foreach (var step in Report.Steps)
             {
-                <li class="analysis-step @(step.Blocked.IsSome() || step.NotReady.IsSome() ? "blocked" : "")" data-testid="analysis-step">
-                    <div class="analysis-step-head"><span class="muted">#@(step.StepIndex + 1)</span> <strong>@step.Label</strong></div>
+                <li class="analysis-step @(step.Blocked.IsSome() || step.Readiness is Optional<ReadinessFlag>.Some { Value: ReadinessFlag.NotReady } ? "blocked" : "")" data-testid="analysis-step">
+                    <div class="analysis-step-head" data-testid="analysis-step-heading"><span class="muted">#@(step.StepIndex + 1)</span> <strong>@step.Label</strong></div>
                     @if (step.Blocked is Optional<string>.Some blocked)
                     {
                         <div class="analysis-field warn"><span class="field-label">blocked</span><span>@blocked.Value</span></div>
                     }
-                    @if (step.NotReady is Optional<string>.Some notReady)
+                    @if (step.Readiness is Optional<ReadinessFlag>.Some readiness)
                     {
-                        <div class="analysis-field warn" data-testid="not-ready"><span class="field-label">not ready</span><span>@notReady.Value</span></div>
-                    }
-                    @if (step.MayNotBeReady is Optional<string>.Some mayNotBeReady)
-                    {
-                        <div class="analysis-field warn" data-testid="may-not-be-ready"><span class="field-label">may not be ready</span><span>@mayNotBeReady.Value</span></div>
+                        <div class="analysis-field warn" data-testid="@(readiness.Value is ReadinessFlag.NotReady ? "not-ready" : "may-not-be-ready")">
+                            <span class="field-label">@readiness.Value.DescribeReadinessBadge().ToLowerInvariant()</span><span data-testid="readiness-note">@readiness.Value.ReadNote()</span>
+                        </div>
                     }
                     @if (!step.Needs.IsEmpty)
                     {

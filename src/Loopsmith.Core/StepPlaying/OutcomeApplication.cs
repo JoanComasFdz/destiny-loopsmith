@@ -83,24 +83,18 @@ public static class OutcomeApplication
     /// ability, scaled as its own; none of them when every one is full; and, when that is open, a part none of them
     /// surely gets: each one it may go to gains something unknown. The caveat says which.
     /// </summary>
-    private static Application GrantLeastChargedEnergy(ValidatedBuild build, GameState state, Outcome outcome, Outcome.GrantLeastChargedEnergy least, OutcomeSource source)
+    private static Application GrantLeastChargedEnergy(ValidatedBuild build, GameState state, Outcome outcome, Outcome.GrantLeastChargedEnergy grant, OutcomeSource source)
     {
-        var certainty = ReadGrantCertainty(build, least.Amount);
+        var certainty = ReadGrantCertainty(build, grant.Amount);
         var unknown = certainty == Certainty.Unknown ? "amount unknown" : "";
-        return EnergyTracking.FindLeastCharged(build, state).Match(
-            sure =>
-            {
-                var gain = EnergyTracking.ScaleGrant(build, sure.Ability, least.Amount, EnergyScaling.Scaled, source.Equipped.Count, source.Likelihood);
-                var filled = EnergyTracking.GainEnergy(build, state, sure.Ability, gain);
-                return new Application(filled, ToApplied(outcome, certainty, JoinCaveats($"to your {DomainPhrasing.DescribeAbility(sure.Ability)}", unknown)), []);
-            },
-            _ => new Application(state, ToApplied(outcome, certainty, JoinCaveats("every ability is full: maybe to your Super", unknown)), []),
-            open =>
-            {
-                var marked = open.Candidates.Aggregate(state, (acc, ability) => EnergyTracking.MarkMaybeGained(build, acc, ability));
-                var names = string.Join(" or ", open.Candidates.Select(DomainPhrasing.DescribeAbility));
-                return new Application(marked, ToApplied(outcome, certainty, JoinCaveats($"to your {names}: which is least charged is unknown", unknown)), []);
-            });
+        var least = EnergyTracking.FindLeastCharged(build, state);
+        var applied = ToApplied(outcome, certainty, JoinCaveats(DomainPhrasing.DescribeLeastCharged(least), unknown));
+        var filled = least.Match(
+            sure => EnergyTracking.GainEnergy(build, state, sure.Ability,
+                EnergyTracking.ScaleGrant(build, sure.Ability, grant.Amount, EnergyScaling.Scaled, source.Equipped.Count, source.Likelihood)),
+            _ => state,
+            open => open.Candidates.Aggregate(state, (acc, ability) => EnergyTracking.MarkMaybeGained(build, acc, ability)));
+        return new Application(filled, applied, []);
     }
 
     /// <summary>

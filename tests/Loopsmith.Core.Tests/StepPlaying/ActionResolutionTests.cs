@@ -430,7 +430,7 @@ public class ActionResolutionTests
         Assert.Equal([Certainty.Known, Certainty.Known], outcomes.Select(o => o.Certainty));
         Assert.All(outcomes, outcome => Assert.False(outcome.Caveat.IsSome()));
         // ADRs D48: the throw spends the grenade, its refund fills a quarter of it back; the reset refills the melee.
-        Assert.Equal([new AbilityEnergy(AbilityKind.Grenade, 0, 0.25m, EnergyCertainty.Exact)], resolution.State.Energy);
+        Assert.Equal([EnergyOf(AbilityKind.Grenade, 0, 0.25m, EnergyCertainty.Exact)], resolution.State.Energy);
     }
 
     [Fact]

@@ -54,10 +54,10 @@
                 {
                     <span class="badge blocked" title="@resolution.Blocked.UnwrapOr("")">Blocked</span>
                 }
-                @if (energy.Readiness != Readiness.Ready)
+                @if (energy.Flag is Optional<ReadinessFlag>.Some flag)
                 {
-                    <span class="badge @(energy.Readiness == Readiness.NotReady ? "not-ready" : "may-not-be-ready")" data-testid="readiness-badge"
-                          title="@energy.NotReadyText.UnwrapOr("")">@(energy.Readiness == Readiness.NotReady ? "Not ready" : "May not be ready")</span>
+                    <span class="badge @(flag.Value is ReadinessFlag.NotReady ? "not-ready" : "may-not-be-ready")" data-testid="readiness-badge"
+                          title="@flag.Value.ReadNote()">@energy.Badge.UnwrapOr("")</span>
                 }
                 <span class="step-tools" @onclick:stopPropagation="true">
                     <button type="button" class="icon-btn" disabled="@(index == 0)" title="Move up" aria-label="@($"Move step {number} up")"

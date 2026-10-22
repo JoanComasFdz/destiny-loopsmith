@@ -74,6 +74,10 @@ public static class TestCatalog
             Optional.None<string>(),
             []);
 
+    /// <summary>An ability's energy: <paramref name="charges"/> held and <paramref name="progress"/> of a charge toward the next (ADRs D48).</summary>
+    public static AbilityEnergy EnergyOf(AbilityKind ability, int charges, decimal progress, EnergyCertainty certainty) =>
+        new(ability, HeldCharges.From(charges), ChargeShare.From(progress), certainty);
+
     /// <summary>A stat line with only these stats (the rest "?").</summary>
     public static StatLine Stats(int? grenade = null, int? melee = null, int? @class = null) =>
         new(

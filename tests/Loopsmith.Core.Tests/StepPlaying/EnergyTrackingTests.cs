@@ -40,10 +40,10 @@ public sealed class EnergyTrackingTests
         Assert.Equal(
             [("Grenade", "100%", "0%"), ("Melee", "100%", "100%"), ("Class ability", "100%", "100%")],
             energy.Lines.Select(line => (line.Name, line.Before, line.After)));
-        Assert.Equal(Readiness.Ready, energy.Readiness);
+        Assert.Equal("ready", ReadBadge(energy));
         var again = StepEnergyShaping.ShapeStepEnergy(build, steps[1]);
-        Assert.Equal(Readiness.NotReady, again.Readiness);
-        Assert.Equal(Optional.Some("Grenade not ready: 0% before #2"), again.NotReadyText);
+        Assert.Equal("Not ready", ReadBadge(again));
+        Assert.Equal(Optional.Some<ReadinessFlag>(new ReadinessFlag.NotReady("Grenade not ready: 0% before #2")), again.Flag);
         Assert.False(steps[1].Blocked.IsSome());   // played all the same
     }
 
@@ -69,7 +69,7 @@ public sealed class EnergyTrackingTests
         var next = ActionResolution.ResolveAction(build, thrown.State, GrenadeKill);
 
         Assert.Equal("?", StepEnergyShaping.ShapeStepEnergy(build, thrown).Lines[0].After);
-        Assert.Equal(Readiness.MayNotBeReady, StepEnergyShaping.ShapeStepEnergy(build, next).Readiness);
+        Assert.Equal("May not be ready", ReadBadge(StepEnergyShaping.ShapeStepEnergy(build, next)));
         Assert.Equal(["Grenade may not be ready: ? before #2"], next.Notes);
     }
 
@@ -84,7 +84,7 @@ public sealed class EnergyTrackingTests
 
         Assert.Equal("≥ 8.44%", StepEnergyShaping.ShapeStepEnergy(build, steps[0]).Lines[0].After);
         Assert.Equal(("≥ 8.44%", "100%"), (StepEnergyShaping.ShapeStepEnergy(build, steps[1]).Lines[0].Before, StepEnergyShaping.ShapeStepEnergy(build, steps[1]).Lines[0].After));
-        Assert.Equal(Readiness.Ready, StepEnergyShaping.ShapeStepEnergy(build, steps[2]).Readiness);
+        Assert.Equal("ready", ReadBadge(StepEnergyShaping.ShapeStepEnergy(build, steps[2])));
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class EnergyTrackingTests
 
         var thrown = ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), GrenadeKill);
 
-        Assert.Equal([new AbilityEnergy(AbilityKind.Grenade, 0, 0m, EnergyCertainty.AtLeast)], thrown.State.Energy);
+        Assert.Equal([EnergyOf(AbilityKind.Grenade, 0, 0m, EnergyCertainty.AtLeast)], thrown.State.Energy);
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public sealed class EnergyTrackingTests
             [("2 charges", "1 charge + 25%"), ("1 charge + 25%", "50%"), ("50%", "25%")],   // the third, played without a charge, empties it
             steps.Select(step => StepEnergyShaping.ShapeStepEnergy(build, step).Lines[0]).Select(line => (line.Before, line.After)));
         Assert.Equal(
-            [Readiness.Ready, Readiness.Ready, Readiness.NotReady],
-            steps.Select(step => StepEnergyShaping.ShapeStepEnergy(build, step).Readiness));
+            ["ready", "ready", "Not ready"],
+            steps.Select(step => ReadBadge(StepEnergyShaping.ShapeStepEnergy(build, step))));
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public sealed class EnergyTrackingTests
         var sure = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), [GrenadeKill, rifleKill]);
         var open = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), [GrenadeKill, MeleeKill, rifleKill]);
 
-        Assert.Equal([new AbilityEnergy(AbilityKind.Grenade, 0, 0.5m, EnergyCertainty.Exact)], sure[^1].State.Energy);
+        Assert.Equal([EnergyOf(AbilityKind.Grenade, 0, 0.5m, EnergyCertainty.Exact)], sure[^1].State.Energy);
         Assert.Equal(Optional.Some("to your grenade"), sure[^1].Fired.Single(fired => fired.Source.Value == "restoration").Outcomes[0].Caveat);
         Assert.Equal(
             [EnergyCertainty.AtLeast, EnergyCertainty.AtLeast],
@@ -193,8 +193,7 @@ public sealed class EnergyTrackingTests
         var report = LoopAnalysis.AnalyzeLoop(build, "Test loop", LoopPlaying.PlayLoop(build, ToSteps([GrenadeKill])));
 
         Assert.IsType<LoopVerdict.Repeats>(report.Verdict);
-        Assert.Equal(Optional.Some("Grenade may not be ready: ? before #1"), report.Steps[0].MayNotBeReady);
-        Assert.False(report.Steps[0].NotReady.IsSome());
+        Assert.Equal(Optional.Some<ReadinessFlag>(new ReadinessFlag.MayNotBeReady("Grenade may not be ready: ? before #1")), report.Steps[0].Readiness);
     }
 
     [Theory]
@@ -206,7 +205,11 @@ public sealed class EnergyTrackingTests
     [InlineData(1, 0.0, EnergyCertainty.Exact, 1, "100%")]
     [InlineData(2, 0.0, EnergyCertainty.Exact, 2, "2 charges")]
     public void Energy_reads_to_two_decimals_at_most_with_its_certainty(int charges, double progress, EnergyCertainty certainty, int total, string text) =>
-        Assert.Equal(text, DomainPhrasing.DescribeEnergy(new AbilityEnergy(AbilityKind.Grenade, charges, (decimal)progress, certainty), ChargeCount.From(total)));
+        Assert.Equal(text, DomainPhrasing.DescribeEnergy(EnergyOf(AbilityKind.Grenade, charges, (decimal)progress, certainty), ChargeCount.From(total)));
+
+    /// <summary>The step card's badge ("Not ready", "May not be ready"), or "ready" when it shows none.</summary>
+    private static string ReadBadge(StepEnergy energy) =>
+        energy.Badge.UnwrapOr("ready");
 
     private static ImmutableArray<LoopStep> ToSteps(ImmutableArray<PlayerAction> actions) =>
         [.. actions.Select(action => new LoopStep(action, Optional.None<string>()))];

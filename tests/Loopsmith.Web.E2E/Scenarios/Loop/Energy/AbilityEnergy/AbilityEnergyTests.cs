@@ -60,7 +60,7 @@ public sealed class AbilityEnergyTests : BaseE2E
 
         // Then
         var again = await Frontend.Designer.Loop.Step(2).ReadAsync();
-        var layout = await Frontend.Designer.Loop.Step(2).ReadEnergyLayoutAsync();
+        var layout = await Frontend.Designer.Loop.Step(2).ReadLayoutAsync();
         Asserting.That(again)
             .IsFlagged("NOT READY")
             .HasNote("Grenade not ready: 0% before #2")

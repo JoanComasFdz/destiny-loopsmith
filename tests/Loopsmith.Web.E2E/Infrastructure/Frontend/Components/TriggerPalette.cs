@@ -131,13 +131,6 @@ public sealed class TriggerPalette(IPage page)
     /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
     public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));
 
-    /// <summary>
-    /// How full <paramref name="ability"/>'s square in the step HUD is: the share, from below, its colour fills ("8.44%";
-    /// "100%" full, "0%" gray), its energy after the loop's last step (ADRs D48).
-    /// </summary>
-    public Task<AbilitySquareFill> ReadFillAsync(Ability ability) => OnScreen.ReadAsync(Panel, async () =>
-        new AbilitySquareFill(ability, $"{await AbilityButton(ability).GetAttributeAsync("data-energy-fill")}%"));
-
     /// <summary>Clicks "<paramref name="ability"/> recharged" under "On you" ("Grenade recharged"): the loop gets a step that declares it recharged.</summary>
     public Task ClickRechargedAsync(AbilitySlot ability) => OnScreen.PressAsync(Panel, Recharged(ability));
 
@@ -211,7 +204,20 @@ public sealed class TriggerPalette(IPage page)
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
             await ReadOnYouAsync(),
-            await ReadRankAsync());
+            await ReadRankAsync(),
+            [.. (await Panel.EvaluateAsync<JsonElement>(SquaresScript)).Deserialize<ShownSquare[]>(ShownJson.Options)!
+                .Select(square => new SquareFill(square.Name, square.Fill))]);
+
+    private sealed record ShownSquare(string Name, string Fill);
+
+    // Each ability square that shows its energy (ADRs D48): its ability's name (its label after "Grenade: ") and how full
+    // its colour is, from below ("8.44%").
+    private const string SquaresScript = """
+        panel => [...panel.querySelectorAll('[data-action=trigger-ability][data-energy-fill]')].map(square => ({
+          name: square.getAttribute('aria-label').split(': ').slice(1).join(': '),
+          fill: `${square.getAttribute('data-energy-fill')}%`,
+        }))
+        """;
 
     private async Task<RankPickerShown?> ReadRankAsync() =>
         await RankPicker.CountAsync() == 0
@@ -273,7 +279,8 @@ public sealed class TriggerPalette(IPage page)
 /// disabled (no rule of the build reacts to them: a weapon's Ready step), and the boxes the player ticks (its options);
 /// whether the whole panel
 /// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); the chips of its
-/// "On you" group, in order; and the row's "Rank" picker (none when the row has no kill).
+/// "On you" group, in order; the row's "Rank" picker (none when the row has no kill); and how full each ability square's
+/// colour is with its energy (ADRs D48).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
@@ -285,7 +292,8 @@ public sealed record TriggerPaletteSnapshot(
     bool IsGreyedOut,
     string DisabledNote,
     ImmutableArray<OnYouChip> OnYou,
-    RankPickerShown? Rank);
+    RankPickerShown? Rank,
+    ImmutableArray<SquareFill> Squares);
 
 /// <summary>The picked row's "Rank" picker (ADRs D45): the rank it is at, and whether it can be changed (greyed out when no rule reacts to a rank).</summary>
 public sealed record RankPickerShown(EnemyRank Picked, bool IsEnabled);
@@ -311,5 +319,5 @@ public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);
 
-/// <summary>An ability's square in the step HUD and how full its colour is, from below ("8.44%", ADRs D48).</summary>
-public sealed record AbilitySquareFill(Ability Ability, string Fill);
+/// <summary>An ability's square in the step HUD, by its ability's name ("Skip Grenade"), and how full its colour is, from below ("8.44%", ADRs D48).</summary>
+public sealed record SquareFill(string Name, string Fill);

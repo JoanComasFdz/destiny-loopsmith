@@ -18,7 +18,7 @@ public static class ActionResolution
         var stepped = state with { Step = state.Step + 1, Casting = ReadCast(action) };
         var readiness = ReadReadiness(build, stepped, action);
         var opening = OpenAction(build, stepped, action);
-        var notes = readiness.Bind(ready => DomainPhrasing.DescribeReadiness(ready, build.CountCharges(ready.Ability), stepped.Step)).Match(note => [note.Value], _ => ImmutableArray<string>.Empty);
+        var notes = readiness.Bind(ready => DomainPhrasing.DescribeReadiness(ready, build.CountCharges(ready.Ability), stepped.Step)).Match(flag => [flag.Value.ReadNote()], _ => ImmutableArray<string>.Empty);
         var seed = new Cascade(opening.State, [], [.. notes, .. opening.Notes], 0);
         var finished = opening.Events.Aggregate(seed, (acc, pending) => EventCascading.CascadeEvent(build, acc, pending, 0, opening.ByChance));
         var passives = ListActivePassives(build, finished.State);

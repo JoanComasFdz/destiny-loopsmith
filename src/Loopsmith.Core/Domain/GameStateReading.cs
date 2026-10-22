@@ -53,18 +53,13 @@ public static class GameStateReading
             .Where(energy => energy.Ability == ability)
             .Select(Optional.Some)
             .FindFirstSome()
-            .UnwrapOr(new AbilityEnergy(ability, charges.Value, 0m, EnergyCertainty.Exact));
+            .UnwrapOr(new AbilityEnergy(ability, HeldCharges.From(charges.Value), ChargeShare.Nothing, EnergyCertainty.Exact));
 
     /// <summary>The ability holds every charge the build gives it: no entry in the state.</summary>
     public static bool IsFull(this GameState state, AbilityKind ability) =>
         state.Energy.All(energy => energy.Ability != ability);
 
-    /// <summary>Whether an ability with this energy can be used: a full charge surely there, maybe there (part unknown), or surely not.</summary>
-    public static Readiness ReadReadiness(this AbilityEnergy energy) =>
-        (energy.Charges >= 1, energy.Certainty) switch
-        {
-            (true, _) => Readiness.Ready,
-            (false, EnergyCertainty.AtLeast) => Readiness.MayNotBeReady,
-            _ => Readiness.NotReady,
-        };
+    /// <summary>The energy as a number of charges: the held ones plus the share toward the next (1.25: one charge and a quarter).</summary>
+    public static decimal ReadTotal(this AbilityEnergy energy) =>
+        energy.Charges.Value + energy.Progress.Value;
 }

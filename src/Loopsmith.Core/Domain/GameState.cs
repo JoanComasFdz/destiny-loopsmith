@@ -52,7 +52,7 @@ public enum EnergyCertainty { Exact, Approximate, AtLeast }
 /// of one charge toward the next (0 to just under 1), and how sure that is — at least, when part of what it gained is
 /// unknown. An ability at its build's full charges has no entry: it is full, exactly.
 /// </summary>
-public sealed record AbilityEnergy(AbilityKind Ability, int Charges, decimal Progress, EnergyCertainty Certainty);
+public sealed record AbilityEnergy(AbilityKind Ability, HeldCharges Charges, ChargeShare Progress, EnergyCertainty Certainty);
 
 /// <summary>Whether a step's ability had a charge before it (ADRs D48): surely, maybe (part of its energy is unknown), or surely not.</summary>
 public enum Readiness { Ready, MayNotBeReady, NotReady }
@@ -67,6 +67,17 @@ public partial record LeastCharged
     partial record Sure(AbilityKind Ability);
     partial record AllFull();
     partial record Open(ImmutableArray<AbilityKind> Candidates);
+}
+
+/// <summary>
+/// A step whose ability wasn't ready (ADRs D48): surely not (its energy is known and below a charge), or maybe not (part
+/// of it is unknown), with the note that says so ("Grenade not ready: 0% before #2").
+/// </summary>
+[Union]
+public partial record ReadinessFlag
+{
+    partial record NotReady(string Note);
+    partial record MayNotBeReady(string Note);
 }
 
 /// <summary>The grenade, melee or class ability a step casts, whether it was ready, and its energy right before the step.</summary>

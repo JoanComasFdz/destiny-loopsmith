@@ -20,7 +20,7 @@
             @foreach (var line in Energy.Lines)
             {
                 <span class="hud-energy-line" data-testid="energy-line" data-ability="@line.Ability.ToString().ToLowerInvariant()">
-                    <span class="hud-energy-name">@line.Name</span>
+                    <span class="hud-energy-name" data-testid="energy-name">@line.Name</span>
                     <span class="hud-energy-value" data-testid="energy-before">@line.Before</span>
                     <span class="hud-energy-arrow" aria-label="then">→</span>
                     <span class="hud-energy-value" data-testid="energy-after">@line.After</span>

@@ -175,7 +175,7 @@ public static class TargetCountListing
             ability =>
             {
                 var energy = build.ReadEnergy(state, ability);
-                return Math.Min((energy.Charges + energy.Progress) / build.CountCharges(ability).Value, 1m);
+                return Math.Min(energy.ReadTotal() / build.CountCharges(ability).Value, 1m);
             });
 
     /// <summary>

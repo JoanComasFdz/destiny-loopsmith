@@ -3,13 +3,13 @@ using JoanComasFdz.AssertingThat;
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 
 /// <summary>What a test checks on where a step card's ENERGY row is on the screen (layout, from its box).</summary>
-public static class EnergyRowLayoutAssertions
+public static class StepCardLayoutAssertions
 {
     // Less than a pixel over is inside: boxes are measured in fractions of a pixel.
     private const double Tolerance = 1;
 
     /// <summary>The ENERGY row fits inside the screen, and the page doesn't scroll sideways.</summary>
-    public static AssertingThat<EnergyRowLayout> FitsInsideTheScreen(this AssertingThat<EnergyRowLayout> that)
+    public static AssertingThat<StepCardLayout> FitsInsideTheScreen(this AssertingThat<StepCardLayout> that)
     {
         var shown = that.InstanceToAssert;
         Assert.True(

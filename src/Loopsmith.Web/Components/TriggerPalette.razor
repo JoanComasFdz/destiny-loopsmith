@@ -239,8 +239,8 @@
     {
         var isPicked = pickedKey == Optional.Some(slot.Choice.Key);
         var affinity = slot.Affinity.ToString().ToLowerInvariant();
-        var fill = gauge.Match(found => (found.Value.Fill * 100m).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture), _ => "");
-        var gaugeClass = gauge.Match(found => found.Value.Fill <= 0m ? "gauge gauge-empty" : "gauge", _ => "");
+        var fill = gauge.Match(found => found.Value.FillPercent, _ => "");
+        var gaugeClass = gauge.Match(found => found.Value.IsEmpty ? "gauge gauge-empty" : "gauge", _ => "");
         var energy = gauge.Match(found => $" · energy {found.Value.Text}", _ => "");
         @if (slot.AtOnce is Optional<TriggerButton>.Some once)
         {

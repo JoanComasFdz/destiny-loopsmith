@@ -29,12 +29,21 @@ public static class EnergyTracking
     public static GameState SpendCharge(ValidatedBuild build, GameState state, AbilityKind ability)
     {
         var energy = build.ReadEnergy(state, ability);
-        var spent = energy.Charges >= 1
-            ? energy with { Charges = energy.Charges - 1 }
-            : energy with { Progress = 0m };
-        var known = build.CountCharges(ability) == ChargeCount.One ? spent with { Progress = 0m, Certainty = EnergyCertainty.Exact } : spent;
+        var spent = energy.Charges.Value >= 1
+            ? energy with { Charges = HeldCharges.From(energy.Charges.Value - 1) }
+            : energy with { Progress = ChargeShare.Nothing };
+        var known = build.CountCharges(ability) == ChargeCount.One ? spent with { Progress = ChargeShare.Nothing, Certainty = EnergyCertainty.Exact } : spent;
         return PutEnergy(build, state, known);
     }
+
+    /// <summary>Whether an ability with this energy can be used: a full charge surely there, maybe there (part unknown), or surely not.</summary>
+    public static Readiness ReadReadiness(this AbilityEnergy energy) =>
+        (energy.Charges.Value >= 1, energy.Certainty) switch
+        {
+            (true, _) => Readiness.Ready,
+            (false, EnergyCertainty.AtLeast) => Readiness.MayNotBeReady,
+            _ => Readiness.NotReady,
+        };
 
     /// <summary>"Grenade recharged" (ADRs D48): every charge full again, exactly.</summary>
     public static GameState RechargeFully(GameState state, AbilityKind ability) =>
@@ -48,14 +57,14 @@ public static class EnergyTracking
     {
         var energy = build.ReadEnergy(state, ability);
         var total = build.CountCharges(ability).Value;
-        if (energy.Charges >= total)
+        if (energy.Charges.Value >= total)
         {
             return state;
         }
 
-        var value = Math.Min(energy.Charges + energy.Progress + gain.Floor, total);
+        var value = Math.Min(energy.ReadTotal() + gain.Floor, total);
         var charges = (int)Math.Floor(value);
-        var gained = new AbilityEnergy(ability, charges, value - charges, CombineCertainties(energy.Certainty, gain.Certainty));
+        var gained = new AbilityEnergy(ability, HeldCharges.From(charges), ChargeShare.From(value - charges), CombineCertainties(energy.Certainty, gain.Certainty));
         return PutEnergy(build, state, gained);
     }
 
@@ -162,7 +171,7 @@ public static class EnergyTracking
             AbilityKind.Grenade => StatKind.Grenade,
             AbilityKind.Melee => StatKind.Melee,
             AbilityKind.ClassAbility => StatKind.Class,
-            _ => StatKind.Super,
+            _ => StatKind.Super,   // the Super: its energy isn't kept
         };
 
     /// <summary>
@@ -174,7 +183,7 @@ public static class EnergyTracking
     {
         var candidates = GameStateReading.EnergyAbilities
             .Select(ability => (Energy: build.ReadEnergy(state, ability), Share: ReadShare(build, state, ability)))
-            .Where(candidate => candidate.Energy.Charges < build.CountCharges(candidate.Energy.Ability).Value)
+            .Where(candidate => candidate.Energy.Charges.Value < build.CountCharges(candidate.Energy.Ability).Value)
             .ToImmutableArray();
         if (candidates.IsEmpty)
         {
@@ -192,7 +201,7 @@ public static class EnergyTracking
     private static decimal ReadShare(ValidatedBuild build, GameState state, AbilityKind ability)
     {
         var energy = build.ReadEnergy(state, ability);
-        return (energy.Charges + energy.Progress) / build.CountCharges(ability).Value;
+        return energy.ReadTotal() / build.CountCharges(ability).Value;
     }
 
     /// <summary>
@@ -206,7 +215,7 @@ public static class EnergyTracking
     private static GameState PutEnergy(ValidatedBuild build, GameState state, AbilityEnergy energy)
     {
         var others = state.Energy.RemoveAll(entry => entry.Ability == energy.Ability);
-        var isFull = energy.Charges >= build.CountCharges(energy.Ability).Value;
+        var isFull = energy.Charges.Value >= build.CountCharges(energy.Ability).Value;
         return state with { Energy = isFull ? others : others.Add(energy) };
     }
 }
