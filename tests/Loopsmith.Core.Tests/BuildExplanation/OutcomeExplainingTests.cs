@@ -17,7 +17,7 @@ public class OutcomeExplainingTests
             [On(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), Debuff("jolt"), Buff("amplified"))]);
         var build = ValidateBuild([shock, ascension]);
 
-        var lines = OutcomeExplaining.RenderOutcomes(build.Catalog.Glossary, OutcomeExplaining.ExplainOutcomes(build)).ToPlainText();
+        var lines = OutcomeExplaining.RenderOutcomes(build, OutcomeExplaining.ExplainOutcomes(build)).ToPlainText();
 
         Assert.Equal("""
             Amplified · Arc buff
@@ -28,6 +28,21 @@ public class OutcomeExplainingTests
                 ├ Grenade damage → Jolt target (4s)            [Spark Of Shock]
                 └ Class ability in the air → Jolt target (4s)  [Ascension]
             """, lines);
+    }
+
+    [Fact]
+    public void An_outcomes_heading_keyword_and_a_rows_source_open_their_elements()
+    {
+        var ascension = Element("ascension", ElementKind.Fragment,
+            [On(new Trigger.AbilityCastAs(AbilityKind.ClassAbility, AbilityInput.Air), Debuff("jolt"))]);
+        var jolt = Element("jolt", ElementKind.Keyword, [On(new Trigger.Finisher(), Buff("amplified"))]);
+        var build = ValidateBuild([ascension], keywords: [jolt]);
+
+        var lines = OutcomeExplaining.RenderOutcomes(build, OutcomeExplaining.ExplainOutcomes(build));
+
+        var heading = Assert.Single(lines, line => line.ToPlainText() == "Jolt · Arc debuff");
+        Assert.Equal(Optional.Some(ElementId.From("jolt")), heading.Spans[0].Opens);
+        Assert.Equal(Optional.Some(ElementId.From("ascension")), lines.SelectMany(line => line.Spans).First(span => span.Text == "Ascension").Opens);
     }
 
     [Fact]
@@ -70,7 +85,7 @@ public class OutcomeExplainingTests
             [new PassiveRule(RuleId.From("test-rule-2"), new Passive.ExtraStacks(Status("bolt-charge"), StackCount.From(1)), [], Optional.None<string>())]);
         var build = ValidateBuild([resistance, frequency]);
 
-        var lines = OutcomeExplaining.RenderOutcomes(build.Catalog.Glossary, OutcomeExplaining.ExplainOutcomes(build)).ToPlainText();
+        var lines = OutcomeExplaining.RenderOutcomes(build, OutcomeExplaining.ExplainOutcomes(build)).ToPlainText();
 
         Assert.Equal("""
             Bolt Charge · Arc buff

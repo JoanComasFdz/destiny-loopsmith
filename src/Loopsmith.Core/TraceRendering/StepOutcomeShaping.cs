@@ -188,23 +188,8 @@ public static class StepOutcomeShaping
     [
         .. catalog.Glossary.SplitKeywords(text).Select(part => new TextPart(
             part.Text,
-            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, FindShownElement(catalog, keyword.Keyword, givenBy, equipped), catalog.FindKeywordIcon(keyword.Keyword))))),
+            part.Keyword.Map(keyword => new KeywordPart(keyword.Affinity, catalog.FindShownElement(keyword.Keyword, givenBy, equipped), catalog.FindKeywordIcon(keyword.Keyword))))),
     ];
-
-    /// <summary>
-    /// The element a keyword's name opens: a status's that gave it when that is its own (the enhanced trait that fired),
-    /// else the only one of its own the build equips (the enhanced Stats for All without the base perk), else the element
-    /// of its id.
-    /// </summary>
-    private static Optional<ElementId> FindShownElement(RuleCatalog catalog, KeywordRef keyword, Optional<ElementId> givenBy, ImmutableArray<ElementId> equipped) =>
-        keyword is KeywordRef.Status status
-            ? catalog.FindGivingElement(status.Id, new[] { givenBy.Bind(giver => catalog.IsOwnElementOf(giver, status.Id) ? givenBy : Optional.None<ElementId>()), FindOnlyOwnElement(catalog, status.Id, equipped) }.FindFirstSome())
-            : catalog.FindKeywordElement(keyword);
-
-    private static Optional<ElementId> FindOnlyOwnElement(RuleCatalog catalog, StatusId status, ImmutableArray<ElementId> equipped) =>
-        equipped.Where(element => catalog.IsOwnElementOf(element, status)).Distinct().ToImmutableArray() is [var only]
-            ? Optional.Some(only)
-            : Optional.None<ElementId>();
 
     private static ImmutableArray<ElementId> ListEquipped(ValidatedBuild build) =>
         [.. build.Equipped.Select(equipped => equipped.Element.Id)];

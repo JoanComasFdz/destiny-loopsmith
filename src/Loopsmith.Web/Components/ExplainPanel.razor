@@ -1,6 +1,7 @@
 @* "What this build does": two tabs, "Triggers" (every trigger and what it sets off, LoopDesigning.ExplainBuild) and
    "Outcomes" (everything the build can get you and every way to it, LoopDesigning.ExplainOutcomes), without simulating.
-   It opens on Triggers each time. *@
+   It opens on Triggers each time. Each keyword and source with an element is tappable, as in a step card: a tap opens
+   its item details popup, the mouse on it shows its preview. *@
 <details class="panel explain-panel" data-testid="build-explanation" @ontoggle="ShowTriggers">
     <summary data-action="build-explanation-toggle">
         <span class="explain-title">What this build does</span>
@@ -12,21 +13,36 @@
         <button type="button" role="tab" class="explain-tab @(byOutcome ? "on" : "")" aria-selected="@(byOutcome ? "true" : "false")"
                 data-action="build-explanation-outcomes" @onclick="ShowOutcomes">Outcomes</button>
     </div>
-    <StyledLines Lines="@(byOutcome ? RenderOutcomes() : RenderTriggers())" Preformatted="true" />
+    @RenderLines(byOutcome ? RenderOutcomes() : RenderTriggers())
 </details>
+
+@if (details is Optional<ItemDetails>.Some shown && ItemInfoShaping.ShapeInfo(Build, shown.Value) is Optional<ItemInfo>.Some info)
+{
+    <ItemInfoDialog Info="info.Value" OnClose="CloseDetails" />
+}
 
 @code {
     private bool byOutcome;
     private ImmutableArray<StyledLine> triggers = [];
     private ImmutableArray<StyledLine> outcomes = [];
     private object explained = new();
+    private Optional<ItemDetails> details = Optional.None<ItemDetails>();
+    private Optional<string> hovered = Optional.None<string>();
 
     [Parameter, EditorRequired]
     public ValidatedBuild Build { get; set; } = null!;
 
-    private void ShowTriggers() => byOutcome = false;
+    private void ShowTriggers()
+    {
+        byOutcome = false;
+        hovered = Optional.None<string>();
+    }
 
-    private void ShowOutcomes() => byOutcome = true;
+    private void ShowOutcomes()
+    {
+        byOutcome = true;
+        hovered = Optional.None<string>();
+    }
 
     /// <summary>The tree by trigger, computed once per build.</summary>
     private ImmutableArray<StyledLine> RenderTriggers()
@@ -49,6 +65,59 @@
             triggers = LoopDesigning.ExplainBuild(Build);
             outcomes = LoopDesigning.ExplainOutcomes(Build);
             explained = Build;
+            hovered = Optional.None<string>();
         }
     }
+
+    /// <summary>The lines as StyledLines draws them (preformatted, one CSS class per tone), a name with an element a button.</summary>
+    private RenderFragment RenderLines(ImmutableArray<StyledLine> lines) => __builder =>
+    {
+        <div class="slines pre">
+            @for (var l = 0; l < lines.Length; l++)
+            {
+                var line = lines[l];
+                var lineKey = $"{(byOutcome ? "o" : "t")}{l}";
+                <div class="sline" data-testid="styled-line" style="--indent:@line.Indent">@for (var s = 0; s < line.Spans.Length; s++){@RenderSpan(line.Spans[s], $"{lineKey}s{s}")}</div>
+            }
+        </div>
+    };
+
+    private RenderFragment RenderSpan(StyledSpan span, string key) => __builder =>
+    {
+        if (span.Opens is Optional<ElementId>.Some element)
+        {
+            <span class="outcome-name-wrap"><button type="button" class="outcome-keyword @ToneStyling.ToToneClass(span.Tone)" data-action="explanation-open-details" data-element="@element.Value.Value"
+                    @onclick="() => ShowDetails(element.Value)"
+                    @onmouseenter="() => Hover(key)" @onmouseleave="() => Unhover(key)" @onfocus="() => Hover(key)" @onblur="() => Unhover(key)">@span.Text</button>@RenderPreview(element.Value, key)</span>
+        }
+        else
+        {
+            <span class="@ToneStyling.ToToneClass(span.Tone)">@span.Text</span>
+        }
+    };
+
+    private RenderFragment RenderPreview(ElementId element, string key) => __builder =>
+    {
+        if (hovered.Match(some => some.Value == key, _ => false)
+            && ItemInfoShaping.ShapePreview(Build, new ItemDetails.OfElement(element)) is Optional<ItemPreview>.Some preview)
+        {
+            <ItemPreviewCard Preview="preview.Value" />
+        }
+    };
+
+    private void Hover(string key) =>
+        hovered = Optional.Some(key);
+
+    /// <summary>Only the name left hides its preview (a focused name keeps its own while the mouse passes another).</summary>
+    private void Unhover(string key) =>
+        hovered = hovered.Match(some => some.Value == key, _ => false) ? Optional.None<string>() : hovered;
+
+    private void ShowDetails(ElementId element)
+    {
+        hovered = Optional.None<string>();
+        details = Optional.Some<ItemDetails>(new ItemDetails.OfElement(element));
+    }
+
+    private void CloseDetails() =>
+        details = Optional.None<ItemDetails>();
 }

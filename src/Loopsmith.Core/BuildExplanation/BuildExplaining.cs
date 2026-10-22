@@ -10,6 +10,7 @@ namespace Loopsmith.Core.BuildExplanation;
 public sealed record ExplanationItem(
     string Outcomes,
     string SourceName,
+    ElementId Source,
     ElementKind SourceKind,
     Affinity Affinity,
     Likelihood Likelihood,
@@ -90,6 +91,29 @@ public static class BuildExplaining
     internal static ImmutableArray<StyledSpan> SplitKeywords(KeywordGlossary glossary, string text, Tone rest) =>
         [.. glossary.SplitKeywords(text).Select(part => part.Text.ToSpan(part.Keyword.Match(keyword => keyword.Value.Affinity.ToHighlightTone(), _ => rest)))];
 
+    /// <summary>
+    /// A text as spans, each keyword the glossary knows in its affinity's tone and opening the element a step card's name
+    /// opens (<paramref name="givenBy"/>: the row's source, when it has one), the rest in the given tone.
+    /// </summary>
+    internal static ImmutableArray<StyledSpan> SplitOpeningKeywords(ValidatedBuild build, string text, Tone rest, Optional<ElementId> givenBy)
+    {
+        var equipped = build.Equipped.Select(element => element.Element.Id).ToImmutableArray();
+        return
+        [
+            .. build.Catalog.Glossary.SplitKeywords(text).Select(part => part.Keyword.Match(
+                keyword => part.Text.ToOpeningSpan(keyword.Value.Affinity.ToHighlightTone(), build.Catalog.FindShownElement(keyword.Value.Keyword, givenBy, equipped)),
+                _ => part.Text.ToSpan(rest))),
+        ];
+    }
+
+    /// <summary>A row's source in brackets ("  [Ascension]"), its name opening its details.</summary>
+    internal static ImmutableArray<StyledSpan> RenderSource(string name, ElementId source, Affinity affinity) =>
+    [
+        "  [".ToSpan(Tone.Muted),
+        name.ToOpeningSpan(affinity.ToTone(), Optional.Some(source)),
+        "]".ToSpan(Tone.Muted),
+    ];
+
     private static ImmutableArray<ExplanationGroup> ExplainEquipped(ValidatedBuild build, ImmutableArray<EquippedElement> equippedElements)
     {
         var glossary = build.Catalog.Glossary;
@@ -104,6 +128,7 @@ public static class BuildExplaining
                 Item: new ExplanationItem(
                     glossary.DescribeOutcomes(x.Rule.Then.Select(o => new OutcomeMention(o, x.Count)), superType),
                     x.Element.Name,
+                    x.Element.Id,
                     x.Element.Kind,
                     x.Element.Affinity,
                     x.Rule.Likelihood,
@@ -119,6 +144,7 @@ public static class BuildExplaining
                 Item: new ExplanationItem(
                     glossary.DescribePassive(x.Passive.Modifier, x.Count, superType),
                     x.Element.Name,
+                    x.Element.Id,
                     x.Element.Kind,
                     x.Element.Affinity,
                     Likelihood.Always,
@@ -138,10 +164,10 @@ public static class BuildExplaining
 
     /// <summary>
     /// A build's explanation as a tree: each trigger, then one line per outcome with its source, the sources aligned; every
-    /// keyword it names in its affinity's tone.
+    /// keyword it names in its affinity's tone; each keyword and source opening its element's details.
     /// </summary>
-    public static ImmutableArray<StyledLine> RenderExplanation(KeywordGlossary glossary, ImmutableArray<ExplanationGroup> groups) =>
-        [.. groups.SelectMany(group => RenderTree(glossary, group))];
+    public static ImmutableArray<StyledLine> RenderExplanation(ValidatedBuild build, ImmutableArray<ExplanationGroup> groups) =>
+        [.. groups.SelectMany(group => RenderTree(build, group))];
 
     /// <summary>The trigger; a stacking buff's max also names the build's cap ("Max Bolt Charge (x10)", Charged Up raises it), a fact.</summary>
     internal static string DescribeHeading(ValidatedBuild build, Trigger trigger) =>
@@ -164,21 +190,19 @@ public static class BuildExplaining
         return parts.IsEmpty ? Optional.None<string>() : Optional.Some(string.Join("; ", parts));
     }
 
-    private static IEnumerable<StyledLine> RenderTree(KeywordGlossary glossary, ExplanationGroup group)
+    private static IEnumerable<StyledLine> RenderTree(ValidatedBuild build, ExplanationGroup group)
     {
         var texts = group.Items
             .Select(item => item.Outcomes + item.Condition.Match(c => $" ({c.Value})", _ => "") + (item.Likelihood == Likelihood.Chance ? " (chance)" : ""))
             .ToImmutableArray();
         var width = texts.Max(text => text.Length);
-        var header = StyledText.ToLine(0, group.Heading.ToSpan(group.Affinity.ToHighlightTone()));
+        var header = new StyledLine(0, SplitOpeningKeywords(build, group.Heading, group.Affinity.ToHighlightTone(), Optional.None<ElementId>()));
         var rows = group.Items.Select((item, index) => new StyledLine(1,
         [
             (index == group.Items.Length - 1 ? "└ " : "├ ").ToSpan(Tone.Muted),
-            .. SplitKeywords(glossary, texts[index], Tone.Plain),
+            .. SplitOpeningKeywords(build, texts[index], Tone.Plain, Optional.Some(item.Source)),
             new string(' ', width - texts[index].Length).ToSpan(Tone.Plain),
-            "  [".ToSpan(Tone.Muted),
-            item.SourceName.ToSpan(item.Affinity.ToTone()),
-            "]".ToSpan(Tone.Muted),
+            .. RenderSource(item.SourceName, item.Source, item.Affinity),
         ]));
         return [header, .. rows];
     }

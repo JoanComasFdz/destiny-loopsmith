@@ -61,6 +61,13 @@ public static class ExplainPanelSnapshotAssertions
         return that;
     }
 
+    /// <summary>The panel is open: it shows its tabs and its lines.</summary>
+    public static AssertingThat<ExplainPanelSnapshot> IsOpen(this AssertingThat<ExplainPanelSnapshot> that)
+    {
+        Assert.True(that.InstanceToAssert.Open, "\"What this build does\" is closed, but it was expected to be open.");
+        return that;
+    }
+
     /// <summary>The panel's <paramref name="tab"/> tab is the one selected.</summary>
     public static AssertingThat<ExplainPanelSnapshot> HasSelectedTab(this AssertingThat<ExplainPanelSnapshot> that, string tab)
     {

@@ -1,5 +1,7 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Loopsmith.Web.E2E.Infrastructure.Vocabulary;
 using Microsoft.Playwright;
 
 namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
@@ -8,7 +10,8 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// The "What this build does" panel above the loop (Components/ExplainPanel.razor), closed until its title is tapped. Its
 /// "Triggers" tab is a tree, each trigger's heading followed by one row per outcome ("└ Sidearms: … [Mechaneer's
 /// Tricksleeves]"); its "Outcomes" tab lists each outcome ("Jolt · Arc debuff"), each block of ways to it ("Is given by")
-/// and their rows ("├ Class ability in the air → Jolt target (10s)  [Ascension]").
+/// and their rows ("├ Class ability in the air → Jolt target (10s)  [Ascension]"). A keyword or a source with details is
+/// a button: a tap opens its item details popup, the mouse on it its preview.
 /// </summary>
 public sealed class ExplainPanel(IPage page)
 {
@@ -33,6 +36,72 @@ public sealed class ExplainPanel(IPage page)
     /// <summary>Clicks the panel's "Outcomes" tab.</summary>
     public Task ClickOutcomesTabAsync() => OnScreen.PressAsync(Box, OutcomesTab);
 
+    /// <summary>Clicks <paramref name="name"/> in the line <paramref name="line"/> (a heading, or a row as the Gherkin quotes it, without its "├ " and its padding).</summary>
+    public Task ClickNameAsync(string line, Keyword name) => ClickNameAsync(line, name.ToShownText());
+
+    /// <summary>Clicks the source <paramref name="name"/> in the row <paramref name="line"/>.</summary>
+    public Task ClickNameAsync(string line, Aspect name) => ClickNameAsync(line, name.ToShownText());
+
+    /// <summary>Clicks <paramref name="name"/> in the row <paramref name="line"/> under the outcome <paramref name="outcome"/> ("Jolt · Arc debuff").</summary>
+    public async Task ClickNameUnderAsync(string outcome, string line, Keyword name) =>
+        await OnScreen.PressAsync(Box, FindName(await FindLineUnderAsync(outcome, line), name.ToShownText()));
+
+    /// <summary>Moves the mouse onto <paramref name="name"/> in the line <paramref name="line"/>.</summary>
+    public async Task HoverNameAsync(string line, Keyword name) =>
+        await OnScreen.ActAsync(Box, FindName(await FindLineAsync(line), name.ToShownText()), target => target.HoverAsync());
+
+    /// <summary>Waits until a name's preview shows.</summary>
+    public Task WaitUntilPreviewShownAsync() => Preview.WaitForAsync(new() { State = WaitForSelectorState.Visible });
+
+    /// <summary>The preview a name shows: its title, its box and the name's, and the screen's size.</summary>
+    public Task<ItemPreviewLayout> ReadPreviewLayoutAsync() => OnScreen.ReadAsync(Box, ReadPreviewShownAsync);
+
+    private ILocator Preview => Box.Locator("[data-testid=item-preview]");
+
+    private async Task ClickNameAsync(string line, string name) =>
+        await OnScreen.PressAsync(Box, FindName(await FindLineAsync(line), name));
+
+    private static ILocator FindName(ILocator line, string name) =>
+        line.GetByRole(AriaRole.Button, new() { Name = name, Exact = true });
+
+    private async Task<ILocator> FindLineAsync(string line) =>
+        Lines.Nth(FindIndex(await ReadLineTextsAsync(), line, 0));
+
+    private async Task<ILocator> FindLineUnderAsync(string outcome, string line)
+    {
+        var texts = await ReadLineTextsAsync();
+        return Lines.Nth(FindIndex(texts, line, FindIndex(texts, outcome, 0) + 1));
+    }
+
+    private async Task<string[]> ReadLineTextsAsync() => [.. (await Lines.AllInnerTextsAsync()).Select(ReadLineText)];
+
+    private static int FindIndex(string[] texts, string line, int from)
+    {
+        var index = Array.FindIndex(texts, from, text => text == line);
+        return index >= 0 ? index : throw new InvalidOperationException($"The panel shows no line \"{line}\" (it shows {string.Join(", ", texts.Select(text => $"\"{text}\""))}).");
+    }
+
+    // "  ├ Class ability in the air → Jolt target (10s)  [Ascension]" → "Class ability in the air → Jolt target (10s) [Ascension]".
+    private static string ReadLineText(string line) =>
+        Regex.Replace(Regex.Replace(line.Trim(), "^[├└] ", ""), "\\s+", " ");
+
+    private async Task<ItemPreviewLayout> ReadPreviewShownAsync() =>
+        (await Preview.EvaluateAsync<JsonElement>(PreviewScript)).Deserialize<ItemPreviewLayout>(ShownJson.Options)!;
+
+    // The preview's title, its box and the box of the name it is for (the button beside it), and the screen's size.
+    private const string PreviewScript = """
+        preview => {
+          const box = r => ({ left: r.left, top: r.top, right: r.right, bottom: r.bottom });
+          return {
+            title: preview.querySelector('[data-testid=item-preview-name]')?.innerText.trim() ?? '',
+            box: box(preview.getBoundingClientRect()),
+            name: box(preview.parentElement.querySelector('[data-action=explanation-open-details]').getBoundingClientRect()),
+            screenWidth: window.innerWidth,
+            screenHeight: window.innerHeight,
+          };
+        }
+        """;
+
     /// <summary>Waits until the panel's "Outcomes" tab is selected.</summary>
     public Task WaitUntilOutcomesShownAsync() =>
         Box.GetByRole(AriaRole.Tab, new() { Name = "Outcomes", Selected = true }).WaitForAsync(new() { State = WaitForSelectorState.Visible });
@@ -51,6 +120,7 @@ public sealed class ExplainPanel(IPage page)
 
     private async Task<ExplainPanelSnapshot> ReadShownAsync() =>
         new(
+            await Box.EvaluateAsync<bool>("panel => panel.open"),
             [.. (await Lines.AllInnerTextsAsync()).Select(line => line.Trim())],
             [.. await Choices.EvaluateAllAsync<string[]>("choices => choices.map(choice => (choice.labels[0]?.innerText ?? '').trim())")],
             [.. (await Tabs.EvaluateAllAsync<JsonElement>(TabsScript)).Deserialize<ShownTab[]>(ShownJson.Options)!]);
@@ -76,7 +146,13 @@ public sealed class ExplainPanel(IPage page)
             tabs: [...panel.querySelectorAll('[role=tab]')].map(tab => ({ name: tab.innerText.trim(), box: box(tab.getBoundingClientRect()) })),
             lines: lines.map(line => {
               // Only the parts with text: the spaces that align the sources hang past a wrapped line's end, unseen.
-              const rects = [...line.children].flatMap(part => [...part.childNodes]).flatMap(text => {
+              // Its texts, a name's inside its button too (a name's preview, when it shows, isn't the line's).
+              const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
+              const texts = [];
+              for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+                if (!node.parentElement.closest('[data-testid=item-preview]')) texts.push(node);
+              }
+              const rects = texts.flatMap(text => {
                 const start = text.textContent.search(/\S/);
                 if (start < 0) return [];
                 const range = document.createRange();
@@ -106,9 +182,9 @@ public sealed class ExplainPanel(IPage page)
 
 /// <summary>
 /// What the "What this build does" panel shows: its lines, in order (a trigger's heading, "Always", then its rows, "└ Sidearms:
-/// … [Mechaneer's Tricksleeves]"), the captions of the choices it offers (none), and its tabs.
+/// … [Mechaneer's Tricksleeves]"), the captions of the choices it offers (none), and its tabs; whether it is open.
 /// </summary>
-public sealed record ExplainPanelSnapshot(ImmutableArray<string> Lines, ImmutableArray<string> Choices, ImmutableArray<ShownTab> Tabs);
+public sealed record ExplainPanelSnapshot(bool Open, ImmutableArray<string> Lines, ImmutableArray<string> Choices, ImmutableArray<ShownTab> Tabs);
 
 /// <summary>A tab of the panel ("Triggers") and whether it is selected.</summary>
 public sealed record ShownTab(string Name, bool Selected);

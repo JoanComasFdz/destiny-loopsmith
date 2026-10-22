@@ -19,7 +19,7 @@ public class BuildExplainingTests
         var build = ValidateBuild([shock, vow]);
 
         var groups = BuildExplaining.ExplainBuild(build);
-        var lines = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups).ToPlainText();
+        var lines = BuildExplaining.RenderExplanation(build, groups).ToPlainText();
 
         Assert.Equal("""
             Grenade damage
@@ -36,7 +36,7 @@ public class BuildExplainingTests
         var build = ValidateBuild([vow]);
         var groups = BuildExplaining.ExplainBuild(build);
 
-        var tree = BuildExplaining.RenderExplanation(build.Catalog.Glossary, groups);
+        var tree = BuildExplaining.RenderExplanation(build, groups);
         var details = BuildExplaining.RenderElementExplanation(build.Catalog.Glossary, groups);
 
         Assert.Contains(tree[1].Spans, span => span == new StyledSpan("Bolt Charge", Tone.Arc));
@@ -109,6 +109,20 @@ public class BuildExplainingTests
 
         Assert.Contains(reading.SelectMany(group => group.Items), item => item.SourceName == "Orb Of Power");
         Assert.Empty(notReading);
+    }
+
+    [Fact]
+    public void A_keyword_and_a_source_in_the_tree_open_their_elements_and_a_keyword_with_none_opens_nothing()
+    {
+        var shock = Element("spark-of-shock", ElementKind.Fragment,
+            [On(new Trigger.Damage(new DamageSource.AbilityOf(AbilityKind.Grenade)), Debuff("jolt"), Buff("amplified"))]);
+        var build = ValidateBuild([shock], keywords: [Jolt]);
+
+        var spans = BuildExplaining.RenderExplanation(build, BuildExplaining.ExplainBuild(build)).SelectMany(line => line.Spans).ToImmutableArray();
+
+        Assert.Equal(Optional.Some(ElementId.From("jolt")), spans.First(span => span.Text == "Jolt").Opens);
+        Assert.Equal(Optional.Some(ElementId.From("spark-of-shock")), spans.Single(span => span.Text == "Spark Of Shock").Opens);
+        Assert.Equal(Optional.None<ElementId>(), spans.Single(span => span.Text == "Amplified").Opens);
     }
 
     private static BuildElement CreateBoltCharge(params Outcome[] onGain) =>

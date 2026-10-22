@@ -188,23 +188,7 @@
         if (hovered.Match(some => some.Value == key, _ => false)
             && ItemInfoShaping.ShapePreview(Build, new ItemDetails.OfElement(element)) is Optional<ItemPreview>.Some preview)
         {
-            <span class="item-preview @ToneStyling.ToAffinityClass(preview.Value.Affinity)" role="tooltip" data-testid="item-preview">
-                <span class="item-preview-head">
-                    @if (preview.Value.Icon is Optional<string>.Some icon)
-                    {
-                        <img class="item-preview-icon" src="@icon.Value" alt="" />
-                    }
-                    <span>
-                        <span class="item-preview-name">@preview.Value.Name</span>
-                        <span class="item-preview-type">@preview.Value.TypeLine</span>
-                    </span>
-                </span>
-                @if (preview.Value.Text is Optional<string>.Some text)
-                {
-                    <span class="item-preview-text">@text.Value</span>
-                }
-                <span class="item-preview-hint">Tap for details</span>
-            </span>
+            <ItemPreviewCard Preview="preview.Value" />
         }
     };
 

@@ -26,6 +26,19 @@ public static class ItemInfoDialogSnapshotAssertions
     public static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, Keyword keyword) =>
         that.IsTitled(keyword.ToShownText());
 
+    /// <summary>The popup is titled with <paramref name="aspect"/>'s name.</summary>
+    public static AssertingThat<ItemInfoDialogSnapshot> IsTitled(this AssertingThat<ItemInfoDialogSnapshot> that, Aspect aspect) =>
+        that.IsTitled(aspect.ToShownText());
+
+    /// <summary>Its "In this build" section names each of <paramref name="sources"/> as an element that interacts with it.</summary>
+    public static AssertingThat<ItemInfoDialogSnapshot> NamesInBuild(this AssertingThat<ItemInfoDialogSnapshot> that, params Aspect[] sources)
+    {
+        var shown = that.InstanceToAssert.InBuild.SelectMany(role => role.Items).Select(item => item.Source).Distinct().ToArray();
+        var missing = sources.Select(source => source.ToShownText()).Where(source => !shown.Contains(source)).ToArray();
+        Assert.True(missing.Length == 0, $"The item details popup's \"In this build\" names {Describe(shown)}, but {Describe(missing)} was expected there too.");
+        return that;
+    }
+
     /// <summary>Its "<paramref name="title"/>" card reads only <paramref name="lines"/>, in order.</summary>
     public static AssertingThat<ItemInfoDialogSnapshot> HasRightThen(this AssertingThat<ItemInfoDialogSnapshot> that, string title, params string[] lines)
     {
