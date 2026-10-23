@@ -129,7 +129,7 @@ repos (Microsoft's download hosts are blocked by the network policy), restores, 
   shares with the extension's e2e project (Gherkin, `[TestDescription]`, screens, naming) is `tests/Loopsmith.E2E.Shared`. Binding
   rules: its [E2E-TEST-CODE-RULES.md](tests/Loopsmith.Web.E2E/E2E-TEST-CODE-RULES.md), not
   [docs/CODING_RULES.md](docs/CODING_RULES.md); how to run, isolation and the cache: its [README](tests/Loopsmith.Web.E2E/README.md). Playwright is pinned
-  (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1194` → 1.56.0; never
+  (`Directory.Packages.props`) to the cloud image's Chromium (`/opt/pw-browsers/chromium-1243` → 1.63.0; never
   `playwright install`): if the image's Chromium changes, bump the pin to match. The scenarios never reach bungie.net
   except to fill `${E2E_MANIFEST_CACHE:-~/.cache/loopsmith/bungie-manifest}` once, and read the manifest version
   pinned as `ManifestContentId` in `src/Loopsmith.Web/wwwroot/appsettings.json` (bumping it downloads the new version
