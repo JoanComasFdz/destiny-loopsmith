@@ -715,6 +715,11 @@ textarea { resize: vertical; }
 .trig-gauge-bar { position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill); background: var(--aff); opacity: .25; pointer-events: none; }
 .trig-icon-spent { position: absolute; inset: 0; filter: grayscale(1) brightness(.55); }
 .trig-icon-filled { position: relative; clip-path: inset(calc(100% - var(--fill)) 0 0 0); }
+/* a further charge (Shinobu's Vow's second grenade) as the game's HUD shows it: a thin bar under the square, its colour
+   filling from the left as the charge comes back, faint until it is full */
+.trig-charge-bar { position: relative; display: block; width: 62px; height: 6px; border-radius: 1px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.trig-charge-bar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--fill); background: var(--aff); opacity: .45; }
+.trig-charge-bar.full::after { opacity: 1; }
 .trig-ability.empty .trig-caption { padding: 0 2px; text-align: center; line-height: 1.15; }
 .trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
 /* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */
@@ -793,6 +798,7 @@ textarea { resize: vertical; }
        screen less the page's and the panel's padding and the row's gaps (at most 58 px) */
     .trig-abilities { --sq: clamp(40px, calc((100vw - 112px) / 5), 58px); }
     .trig-super, .trig-ability { width: var(--sq); height: var(--sq); }
+    .trig-charge-bar { width: var(--sq); }
     .trig-super { width: calc(var(--sq) - 4px); height: calc(var(--sq) - 4px); }
 }
 
