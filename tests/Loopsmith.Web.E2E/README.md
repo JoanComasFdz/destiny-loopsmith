@@ -171,5 +171,5 @@ run download the new version once. The cache is Bungie's data: never copy it int
 ## The browser
 
 Playwright is pinned in `Directory.Packages.props` to the release that matches the cloud image's Chromium
-(`/opt/pw-browsers/chromium-1194` → Microsoft.Playwright 1.56.0); sessions never run `playwright install`. If the
+(`/opt/pw-browsers/chromium-1243` → Microsoft.Playwright 1.63.0); sessions never run `playwright install`. If the
 image's Chromium changes, bump the pin to match. Videos need `ffmpeg` (the session-start hook installs it).

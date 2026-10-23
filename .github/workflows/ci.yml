@@ -80,7 +80,7 @@ jobs:
   # The rule viewer's e2e scenarios (tests/Loopsmith.RuleViewer.E2E), played unrecorded on desktop and mobile as a session
   # plays them while developing (tools/e2e/record.sh --no-video, every domain folder of the project's Scenarios/): it
   # fails when a run fails or none ran. Recording them stays the session's job. The Chromium Playwright's pin expects
-  # (1.56.0 → chromium-1194, the cloud image's) is installed by Playwright and cached by its version; the page's icons and
+  # (1.63.0 → chromium-1243, the cloud image's) is installed by Playwright and cached by its version; the page's icons and
   # fonts are cached by the fixtures they are named by, and fetched from bungie.net and Google Fonts only on a miss.
   rule-viewer-e2e:
     needs: changes
