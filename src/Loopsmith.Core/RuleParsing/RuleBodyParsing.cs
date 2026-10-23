@@ -443,25 +443,34 @@ internal static class RuleBodyParsing
     /// archetypes (Demolitionist): the weapon holding the element, its amount picked when the build is composed.
     /// </summary>
     /// <c>perStat: { stat: melee, amount: "2%" }</c> in place of <c>amount</c> gives that much per point of the build's stat
-    /// (Gambler's Dodge), and <c>unscaled: true</c> says the source doesn't scale it by the ability's chunk scalar or stat
-    /// (ADRs D48).
+    /// (Gambler's Dodge), <c>unscaled: true</c> says the source doesn't scale it by the ability's chunk scalar or stat, and
+    /// <c>chunkScalar: false</c> by its chunk scalar only, the stat still applying (Shinobu's Vow) (ADRs D48).
     private static Result<Outcome, Errors> ReadGrantEnergy(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["to", "amount", "perStat", "byArchetype", "unscaled"]),
+                map.CheckKeys(["to", "amount", "perStat", "byArchetype", "unscaled", "chunkScalar"]),
                 map.ReadRequired("to", ReadEnergyRecipient),
                 map.ReadOptional("amount", ReadEnergyGrant),
                 map.ReadOptional("perStat", ReadStatAmount),
                 map.ReadOptional("byArchetype", ReadArchetypeAmount),
                 map.ReadOrDefault("unscaled", ReadBoolean, false),
-                (_, to, amount, perStat, byArchetype, unscaled) => (to, amount, perStat, byArchetype, unscaled))
+                map.ReadOrDefault("chunkScalar", ReadBoolean, true),
+                (_, to, amount, perStat, byArchetype, unscaled, chunkScalar) => (to, amount, perStat, byArchetype, Scaling: ToScaling(unscaled, chunkScalar)))
             .Bind(read => ChooseGrantAmount(map, read.amount, read.perStat)
                 .Bind(amount => ToArchetypeGrant(map, amount, read.byArchetype))
-                .Bind(amount => read.to is EnergyRecipient.LeastCharged && read.unscaled
-                    ? map.FailAtKey<EnergyGrant>("unscaled", "a grant to the least-charged ability is scaled as the ability it goes to")
+                .Bind(amount => read.to is EnergyRecipient.LeastCharged && read.Scaling != EnergyScaling.Scaled
+                    ? map.FailAtKey<EnergyGrant>("to", "a grant to the least-charged ability is scaled as the ability it goes to: no unscaled or chunkScalar")
                     : Succeed(amount))
                 .Map(amount => read.to.Match<Outcome>(
-                    ability => new Outcome.GrantEnergy(ability.Kind, amount, read.unscaled ? EnergyScaling.Unscaled : EnergyScaling.Scaled),
+                    ability => new Outcome.GrantEnergy(ability.Kind, amount, read.Scaling),
                     _ => new Outcome.GrantLeastChargedEnergy(amount)))));
+
+    private static EnergyScaling ToScaling(bool unscaled, bool chunkScalar) =>
+        (unscaled, chunkScalar) switch
+        {
+            (true, _) => EnergyScaling.Unscaled,
+            (false, false) => EnergyScaling.StatOnly,
+            _ => EnergyScaling.Scaled,
+        };
 
     /// <summary>Exactly one of <c>amount</c> and <c>perStat</c>.</summary>
     private static Result<EnergyGrant, Errors> ChooseGrantAmount(YamlMap map, Optional<EnergyGrant> amount, Optional<EnergyGrant> perStat) =>

@@ -136,6 +136,39 @@ public sealed class EnergyTrackingTests
             steps.Select(step => ReadBadge(StepEnergyShaping.ShapeStepEnergy(build, step))));
     }
 
+    [Theory]
+    [InlineData(70, "25%")]   // its value, at 70 Grenade, without Skip Grenade's 0.75 chunk scalar
+    [InlineData(40, "?")]     // the stat still applies: below 70 it is unknown
+    public void A_grant_without_its_chunk_scalar_is_still_scaled_by_its_stat(int grenade, string after)
+    {
+        var refund = Element("refund", ElementKind.Fragment,
+            [On(new Trigger.KillAny(new DamageSource.AbilityOf(AbilityKind.Grenade)), new Outcome.GrantEnergy(AbilityKind.Grenade, new EnergyGrant.Fraction(new GameValue.Known(0.25m)), EnergyScaling.StatOnly))]);
+        var build = ValidateBuild([refund], grenade: SkipLike, stats: Stats(grenade: grenade));
+
+        var thrown = ActionResolution.ResolveAction(build, ActionResolution.CreateInitialState(), GrenadeKill);
+
+        Assert.Equal(after, StepEnergyShaping.ShapeStepEnergy(build, thrown).Lines[0].After);
+    }
+
+    [Fact]
+    public void The_square_is_the_first_charge_and_a_bar_under_it_each_further_one()
+    {
+        var twoCharges = Element("test-grenade", ElementKind.Grenade, [],
+            ability: Optional.Some(Profile(AbilityKind.Grenade, charges: 2, chunkScalar: new GameValue.Known(1m))));
+        var refund = Element("refund", ElementKind.Fragment,
+            [On(new Trigger.KillAny(new DamageSource.AbilityOf(AbilityKind.Grenade)), Energy(AbilityKind.Grenade, new GameValue.Known(0.4m)))]);
+        var build = ValidateBuild([refund], grenade: twoCharges, stats: Stats(grenade: 70));
+        var steps = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), [GrenadeKill, GrenadeKill]);
+
+        var full = Assert.IsType<Optional<EnergyGauge>.Some>(StepEnergyShaping.ShapeGauge(build, ActionResolution.CreateInitialState(), AbilityKind.Grenade)).Value;
+        var oneAndForty = Assert.IsType<Optional<EnergyGauge>.Some>(StepEnergyShaping.ShapeGauge(build, steps[0].State, AbilityKind.Grenade)).Value;
+        var eighty = Assert.IsType<Optional<EnergyGauge>.Some>(StepEnergyShaping.ShapeGauge(build, steps[1].State, AbilityKind.Grenade)).Value;
+
+        Assert.Equal(("100", new ChargeBar("100", true)), (full.FillPercent, Assert.Single(full.ExtraCharges)));
+        Assert.Equal(("100", new ChargeBar("40", false)), (oneAndForty.FillPercent, Assert.Single(oneAndForty.ExtraCharges)));
+        Assert.Equal(("80", new ChargeBar("0", false)), (eighty.FillPercent, Assert.Single(eighty.ExtraCharges)));
+    }
+
     [Fact]
     public void Recharged_is_offered_while_an_ability_is_not_full_and_fills_every_charge()
     {

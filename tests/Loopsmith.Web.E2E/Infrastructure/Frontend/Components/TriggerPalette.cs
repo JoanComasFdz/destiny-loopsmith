@@ -206,16 +206,18 @@ public sealed class TriggerPalette(IPage page)
             await ReadOnYouAsync(),
             await ReadRankAsync(),
             [.. (await Panel.EvaluateAsync<JsonElement>(SquaresScript)).Deserialize<ShownSquare[]>(ShownJson.Options)!
-                .Select(square => new SquareFill(square.Name, square.Fill))]);
+                .Select(square => new SquareFill(square.Name, square.Fill, [.. square.ChargeBars]))]);
 
-    private sealed record ShownSquare(string Name, string Fill);
+    private sealed record ShownSquare(string Name, string Fill, string[] ChargeBars);
 
-    // Each ability square that shows its energy (ADRs D48): its ability's name (its label after "Grenade: ") and how full
-    // its colour is, from below ("8.44%").
+    // Each ability square that shows its energy (ADRs D48): its ability's name (its label after "Grenade: "), how full
+    // its colour is, from below ("8.44%"), and how full each bar under it is, one per further charge ("40%").
     private const string SquaresScript = """
         panel => [...panel.querySelectorAll('[data-action=trigger-ability][data-energy-fill]')].map(square => ({
           name: square.getAttribute('aria-label').split(': ').slice(1).join(': '),
           fill: `${square.getAttribute('data-energy-fill')}%`,
+          chargeBars: [...(square.closest('[data-testid=ability-column]')?.querySelectorAll('[data-testid=charge-bar]') ?? [])]
+            .map(bar => `${bar.getAttribute('data-charge-fill')}%`),
         }))
         """;
 
@@ -319,5 +321,8 @@ public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);
 
-/// <summary>An ability's square in the step HUD, by its ability's name ("Skip Grenade"), and how full its colour is, from below ("8.44%", ADRs D48).</summary>
-public sealed record SquareFill(string Name, string Fill);
+/// <summary>
+/// An ability's square in the step HUD, by its ability's name ("Skip Grenade"), how full its colour is, from below ("8.44%",
+/// ADRs D48), and how full each bar under it is, from the left, one per charge beyond the first (Shinobu's Vow's second grenade).
+/// </summary>
+public sealed record SquareFill(string Name, string Fill, ImmutableArray<string> ChargeBars);

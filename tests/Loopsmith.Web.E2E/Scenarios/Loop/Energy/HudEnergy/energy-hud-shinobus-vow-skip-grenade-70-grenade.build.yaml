@@ -1,0 +1,7 @@
+# Shinobu's Vow with Skip Grenade at 70 Grenade: two grenade charges, and refunds at their value (no chunk scalar).
+name: "E2E - Shinobu's Vow with Skip Grenade at 70 Grenade, for its second charge's bar"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+exoticArmor: shinobus-vow
+stats: { grenade: 70 }

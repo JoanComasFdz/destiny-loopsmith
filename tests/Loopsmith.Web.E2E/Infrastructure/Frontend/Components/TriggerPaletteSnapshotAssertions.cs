@@ -195,4 +195,18 @@ public static class SquareFillAssertions
             $"The \"{ability.ToShownText()}\" square is filled to {shown?.Fill ?? "nothing (it shows no energy)"}, but {expected} was expected.");
         return that;
     }
+
+    /// <summary>
+    /// The bar under <paramref name="ability"/>'s square, its second charge, fills <paramref name="expected"/> of it from the
+    /// left ("100%": the charge is there; "0%": spent, its bar barely shows).
+    /// </summary>
+    public static AssertingThat<TriggerPaletteSnapshot> FillsSecondChargeBar(this AssertingThat<TriggerPaletteSnapshot> that, Ability ability, string expected)
+    {
+        var shown = that.InstanceToAssert.Squares.FirstOrDefault(square => square.Name == ability.ToShownText());
+        var bar = shown is null || shown.ChargeBars.IsEmpty ? null : shown.ChargeBars[0];
+        Assert.True(
+            bar == expected,
+            $"The bar under the \"{ability.ToShownText()}\" square is filled to {bar ?? "nothing (it has no bar)"}, but {expected} was expected.");
+        return that;
+    }
 }

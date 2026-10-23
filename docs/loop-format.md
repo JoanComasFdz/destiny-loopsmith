@@ -218,8 +218,10 @@ step whose ability had no full charge before it is still played, flagged **Not r
 (`Grenade may not be ready: ≥ 8.44% before #2`). Energy reads to two decimals at most, never rounded up to a full charge.
 The next pass starts with the energy the last one ended with. The **Next trigger** panel's grenade, melee and class
 ability squares show it too, after the loop's last step: the square is gray and its colour grows from below to the
-energy's sure share of all its charges, like a vertical bar — full colour when full, all gray when spent (its tooltip
-reads it: "Grenade: Skip Grenade · energy 8.44%").
+first charge's sure share, like a vertical bar — full colour when full, all gray when spent (its tooltip reads it:
+"Grenade: Skip Grenade · energy 8.44%"). Each further charge (Shinobu's Vow's second grenade) is a thin bar under the
+square, as the game's HUD draws it: full colour while the charge is there, its colour filling from the left as it comes
+back. Every use spends one charge, however many are full.
 
 **Armor Charge is counted** (ADRs D33). Its stacks are part of the state: the **sure** ones, from rules that always
 fire, and the **chance** ones, from chance rules and from what they set off (an orb only a chance rule dropped — a

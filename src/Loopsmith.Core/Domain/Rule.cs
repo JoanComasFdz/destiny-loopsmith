@@ -150,9 +150,10 @@ public partial record EnergyGrant
 /// <summary>
 /// Whether a grant's energy is scaled the way the game scales ability energy gains (ADRs D48): by the receiving ability's
 /// chunk scalar and its stat (Grenade, Melee, Class) — every grant unless its source says it isn't (Gambler's Dodge:
-/// "No Chunk or Stat Scalar").
+/// "No Chunk or Stat Scalar": <see cref="Unscaled"/>), or that it skips the chunk scalar only (Shinobu's Vow, per Clarity:
+/// <see cref="StatOnly"/>).
 /// </summary>
-public enum EnergyScaling { Scaled, Unscaled }
+public enum EnergyScaling { Scaled, Unscaled, StatOnly }
 
 /// <summary>How much a heal restores: a share of your health ("?" when the source gives none), or HP (Unrelenting's 65).</summary>
 [Union]

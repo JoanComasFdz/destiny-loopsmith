@@ -861,7 +861,8 @@ scaling 2026-10-22).** It replaces D5 and narrows D1:
   the loop as a blocked step does (D2); one that may not be ready is a caveat of its step.
 * **A refund fills the receiving ability, scaled the way the game scales it**: its value (narrowed to the copies
   equipped) times the receiving ability's chunk scalar (compendium Game Mechanics#12: unless the source says otherwise,
-  every %-based gain is scaled; Gambler's Dodge says "No Chunk or Stat Scalar", `unscaled: true`). The stat of the
+  every %-based gain is scaled; Gambler's Dodge says "No Chunk or Stat Scalar", `unscaled: true`; Shinobu's Vow's skips
+  the chunk scalar only, per Clarity, `chunkScalar: false`). The stat of the
   receiving ability (Grenade, Melee, Class) matters too: Bungie's Armor 3.0 preview says a chunk gain matches its listed
   value at 70, gives more above it and less below it, by amounts it doesn't publish. So a scaled gain is exactly its
   value times the chunk scalar at 70, at least that above 70, and unknown below 70 or while the build has no stat (the
@@ -881,7 +882,11 @@ scaling 2026-10-22).** It replaces D5 and narrows D1:
 * **The step card shows each ability's energy before and after the step** (ENERGY: "Grenade 100% → 0%"), to two
   decimals at most, never rounded up to a full charge; a step whose ability wasn't ready says so in its header and its
   note ("Grenade not ready: 0% before #2"). The trigger panel's ability squares show the energy after the last step:
-  gray, their colour growing from below to its sure share, like a vertical bar.
+  gray, their colour growing from below to the first charge's sure share, like a vertical bar; each further charge
+  (Shinobu's Vow's second grenade) is a thin bar under the square, as the game's HUD draws it, its colour filling from
+  the left as the charge comes back. Every use spends one charge, however many are full (the owner's in-game test of
+  Shinobu's Vow, 2026-10-23: the game's HUD hides the second charge for about 1.4 s after a throw at two, which only
+  looks like both spent).
 
 **Consequence.** Energy is the second count in the state, after a counted buff's stacks (D33): `CausalStateTests` allows
 it and nothing else. `StepPlaying.EnergyTracking` spends, scales and fills it; the loop's repeat check (`LoopPlaying`)

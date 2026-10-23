@@ -404,22 +404,35 @@
     };
 
     /// <summary>An ability's square (the Super's diamond), with the secondary uses the build's rules name below it.</summary>
+    /// <summary>
+    /// The ability's square, then a bar under it for each further charge (Shinobu's Vow's second grenade, as the game's HUD
+    /// shows it: full while the charge is there, filling from the left as it comes back), then its secondary uses.
+    /// </summary>
     private RenderFragment RenderAbility(HudAbility ability, string shape) => __builder =>
     {
-        @if (ability.Secondaries.IsEmpty)
+        var bars = ability.Gauge.Match(found => found.Value.ExtraCharges, _ => []);
+        @if (ability.Secondaries.IsEmpty && bars.IsEmpty)
         {
             @RenderSlot(ability.Slot, shape, Optional.None<string>(), ability.Gauge)
         }
         else
         {
-            <div class="trig-ability-col">
+            <div class="trig-ability-col" data-testid="ability-column">
                 @RenderSlot(ability.Slot, shape, Optional.None<string>(), ability.Gauge)
-                <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
-                    @foreach (var secondary in ability.Secondaries)
-                    {
-                        @RenderSecondary(secondary)
-                    }
-                </div>
+                @foreach (var bar in bars)
+                {
+                    <span class="trig-charge-bar aff-@ability.Slot.Affinity.ToString().ToLowerInvariant() @(bar.IsFull ? "full" : "")" data-testid="charge-bar"
+                          data-charge-fill="@bar.FillPercent" style="--fill: @(bar.FillPercent)%" aria-hidden="true"></span>
+                }
+                @if (!ability.Secondaries.IsEmpty)
+                {
+                    <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
+                        @foreach (var secondary in ability.Secondaries)
+                        {
+                            @RenderSecondary(secondary)
+                        }
+                    </div>
+                }
             </div>
         }
     };

@@ -18,25 +18,28 @@ elements:
       # Not expressible: "Skip Grenade hits" (a rule can't name one ability), so any grenade damage
       # counts. A seeker hits up to 3 times (2 impacts + 1 explosion, Arc#36), a fact in the
       # description: a grenade action hits each enemy once, and that hit sets off the same rules.
+      # Its energy, like shinobus-vow-2's and -3's, skips Skip Grenade's chunk scalar (Clarity's New
+      # Tricks entry, 3907299874: "NOT affected by Chunk Energy Scalars"; the Compendium row says the
+      # same) but not the Grenade stat (ADRs D48: its value at 70 Grenade).
       - id: shinobus-vow-1
         on: { damage: { via: grenade } }
         then:
           - { applyBuff: { status: bolt-charge, stacks: 1 } }
-          - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]" } }
+          - { grantEnergy: { to: grenade, amount: "4.2% [1.4%]", chunkScalar: false } }
         reason: "Every Skip Grenade hit gives you a Bolt Charge stack and a little grenade energy back."
       # The source gives it per stack gained ("?%" in both Compendium and Clarity): a fact shown on
       # every Bolt Charge gain.
       - id: shinobus-vow-2
         on: { buffGained: bolt-charge }
         then:
-          - { grantEnergy: { to: grenade, amount: "?" } }
+          - { grantEnergy: { to: grenade, amount: "?", chunkScalar: false } }
         reason: "Gaining Bolt Charge from any source feeds energy back into your Skip Grenade."
       # The Compendium writes "~40%" (Clarity "40?%"): approximate either way.
       - id: shinobus-vow-3
         on: { stacksMaxed: bolt-charge }
         then:
           - { applyBuff: new-tricks }
-          - { grantEnergy: { to: grenade, amount: "~40%" } }
+          - { grantEnergy: { to: grenade, amount: "~40%", chunkScalar: false } }
           - { restoreHealth: { amount: "?", allies: true } }
         reason: "Hitting 10 Bolt Charge refunds a big chunk of grenade energy, heals you and nearby allies, and readies an enhanced Skip Grenade (New Tricks)."
       - id: shinobus-vow-4
@@ -46,6 +49,11 @@ elements:
           - { removeBuff: new-tricks }
         reason: "Throwing the enhanced Skip Grenade spends New Tricks."
     passives:
+      # Every throw spends one charge, at two charges as at one, with New Tricks or without: the
+      # owner's in-game test (2026-10-23, clips at 60 fps). Datto's video
+      # (https://www.youtube.com/watch?v=Fbp4I3ULhl4, ~9:42) seems to show a throw at two charges
+      # emptying the meter, but the HUD hides the second charge for about 1.4 s after a throw at two;
+      # the charge is kept and shows again, full.
       - id: shinobus-vow-5
         effect: { extraCharges: { ability: grenade, extra: 1 } }
         reason: "Shinobu's Vow gives Skip Grenade a second charge."

@@ -75,16 +75,19 @@ public static class EnergyTracking
     /// <summary>
     /// A grant's energy as the receiving ability gets it (ADRs D48): its value, narrowed to the element's copies, times the
     /// ability's chunk scalar (compendium Game Mechanics#12) at the stat that matches the listed value (70), unless the
-    /// grant is unscaled (Gambler's Dodge). An unknown part — the value, a stat above 70, a chance rule — keeps the known
+    /// grant is unscaled (Gambler's Dodge), or by the stat only when it skips the chunk scalar (Shinobu's Vow). An unknown part — the value, a stat above 70, a chance rule — keeps the known
     /// part as a floor: at least that much, never 0 in its place; an unknown chunk scalar, or a stat below 70 or not
     /// given, leaves no floor ("?").
     /// </summary>
     public static EnergyGain ScaleGrant(ValidatedBuild build, AbilityKind ability, EnergyGrant grant, EnergyScaling scaling, CopyCount copies, Likelihood likelihood)
     {
         var value = ReadGrantValue(build, grant, copies);
-        var scaled = grant is EnergyGrant.Full || scaling == EnergyScaling.Unscaled
-            ? value
-            : ScaleGain(build, ability, value);
+        var scaled = (grant is EnergyGrant.Full, scaling) switch
+        {
+            (true, _) or (_, EnergyScaling.Unscaled) => value,
+            (_, EnergyScaling.StatOnly) => ScaleByStat(build, ability, value),
+            _ => ScaleGain(build, ability, value),
+        };
         return likelihood == Likelihood.Chance ? new EnergyGain(0m, EnergyCertainty.AtLeast) : scaled;
     }
 
@@ -134,6 +137,13 @@ public static class EnergyTracking
         var floor = gain.Floor * chunk.Floor * stat.Floor;
         var certainty = CombineCertainties(gain.Certainty, CombineCertainties(chunk.Certainty, stat.Certainty));
         return new EnergyGain(floor, certainty);
+    }
+
+    /// <summary>The gain times what the receiving ability's stat does, without its chunk scalar: no floor when the stat's share is unknown.</summary>
+    private static EnergyGain ScaleByStat(ValidatedBuild build, AbilityKind ability, EnergyGain gain)
+    {
+        var stat = ReadStatIncrease(build, ability);
+        return new EnergyGain(gain.Floor * stat.Floor, CombineCertainties(gain.Certainty, stat.Certainty));
     }
 
     /// <summary>The chunk scalar of the ability in its slot (Skip Grenade's 0.75); unknown ("?", or no ability there): a factor with no floor.</summary>

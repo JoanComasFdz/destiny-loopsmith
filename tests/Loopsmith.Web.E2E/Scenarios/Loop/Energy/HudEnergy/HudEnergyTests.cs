@@ -7,7 +7,7 @@ namespace Loopsmith.Web.E2E.Scenarios.Loop.Energy;
 
 /// <summary>
 /// The trigger panel's ability squares show their energy after the loop's last step (ADRs D48): gray when spent, their
-/// colour growing from below with the energy, like a vertical bar.
+/// colour growing from below with the energy, like a vertical bar; a second charge is a bar under the square, as in the game.
 /// </summary>
 public sealed class HudEnergyTests : BaseE2E
 {
@@ -80,5 +80,44 @@ public sealed class HudEnergyTests : BaseE2E
         // The Ionic Trace's 11.25% × Skip Grenade's 0.75 chunk scalar, at 70 Grenade.
         var refilled = await Frontend.Designer.TriggerPalette.ReadAsync();
         Asserting.That(refilled).FillsSquare(new Ability.SkipGrenade(), "8.44%");
+    }
+
+    [Theory, PlayInDesktop, PlayInMobile]
+    [TestDescription("""
+        @desktop @mobile
+        Scenario: The second grenade charge shows as a bar under the grenade's square and empties when a grenade is thrown
+          Given the build "energy-hud-shinobus-vow-skip-grenade-70-grenade" is imported, with no steps
+          Then the "Skip Grenade" square in the trigger panel is filled to 100%
+          And the bar under it is filled to 100%
+          When I tap "Skip Grenade" in the trigger panel
+          And I tap "💀 kill"
+          # The throw spends one charge: the square keeps the one left, and the bar fills with the 4.2% its hit gives back.
+          Then the "Skip Grenade" square in the trigger panel is filled to 100%
+          And the bar under it is filled to 4.2%
+        """)]
+    public async Task TheSecondGrenadeChargeShowsAsABarUnderTheGrenadesSquareAndEmptiesWhenAGrenadeIsThrown(Screen screen)
+    {
+        // Given
+        await Frontend.Home.ImportBuildAsync("energy-hud-shinobus-vow-skip-grenade-70-grenade.build.yaml");
+        await Frontend.Designer.WaitUntilShownAsync();
+
+        // Then
+        var fresh = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(fresh)
+            .FillsSquare(new Ability.SkipGrenade(), "100%")
+            .FillsSecondChargeBar(new Ability.SkipGrenade(), "100%");
+
+        // When
+        await Frontend.Designer.TriggerPalette.ClickAbilityAsync(new Ability.SkipGrenade());
+        await Frontend.Designer.TriggerPalette.WaitUntilRowShownAsync(new Ability.SkipGrenade());
+        await Frontend.Designer.TriggerPalette.ClickAsync(new StepTrigger.Kill());
+        await Frontend.Designer.Loop.WaitUntilStepShownAsync(1);
+
+        // Then
+        // The throw spends one charge: the square keeps the one left, and the bar fills with the 4.2% its hit gives back.
+        var thrown = await Frontend.Designer.TriggerPalette.ReadAsync();
+        Asserting.That(thrown)
+            .FillsSquare(new Ability.SkipGrenade(), "100%")
+            .FillsSecondChargeBar(new Ability.SkipGrenade(), "4.2%");
     }
 }

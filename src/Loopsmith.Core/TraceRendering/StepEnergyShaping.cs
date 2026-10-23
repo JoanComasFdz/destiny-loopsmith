@@ -17,11 +17,15 @@ public sealed record EnergyLine(AbilityKind Ability, string Name, string Before,
 public sealed record StepEnergy(ImmutableArray<EnergyLine> Lines, Optional<ReadinessFlag> Flag, Optional<string> Badge);
 
 /// <summary>
-/// An ability's energy as its HUD square fills (ADRs D48): the share of all its charges surely there (0 to 1: an "at
-/// least" fills to its floor, "?" to nothing), as a CSS percentage ("8.44"), whether it is empty (all gray), and how it
-/// reads ("62.5%", "≥ 8.44%", "1 charge + 25%").
+/// An ability's energy as its HUD square fills (ADRs D48): the share of its first charge surely there (0 to 1: an "at
+/// least" fills to its floor, "?" to nothing), as a CSS percentage ("8.44"), whether it is empty (all gray), how it reads
+/// ("62.5%", "≥ 8.44%", "1 charge + 25%"), and a bar under the square for each further charge, as the game's HUD shows
+/// Shinobu's Vow's second grenade.
 /// </summary>
-public sealed record EnergyGauge(decimal Fill, string FillPercent, bool IsEmpty, string Text);
+public sealed record EnergyGauge(decimal Fill, string FillPercent, bool IsEmpty, string Text, ImmutableArray<ChargeBar> ExtraCharges);
+
+/// <summary>A further charge's bar under its ability's square: how much of it is surely there, as a CSS percentage ("40"), and whether it is full.</summary>
+public sealed record ChargeBar(string FillPercent, bool IsFull);
 
 /// <summary>Pure: a step's resolution → its energy, in the designer's words.</summary>
 public static class StepEnergyShaping
@@ -36,13 +40,22 @@ public static class StepEnergyShaping
 
         var charges = build.CountCharges(ability);
         var energy = state.ReadEnergy(ability, charges);
-        var fill = Math.Min(energy.ReadTotal() / charges.Value, 1m);
+        var total = energy.ReadTotal();
+        var fill = ReadChargeFill(total, 0);
         return Optional.Some(new EnergyGauge(
             fill,
-            (fill * 100m).ToString("0.##", CultureInfo.InvariantCulture),
+            FormatPercent(fill),
             fill <= 0m,
-            DomainPhrasing.DescribeEnergy(energy, charges)));
+            DomainPhrasing.DescribeEnergy(energy, charges),
+            [.. Enumerable.Range(1, charges.Value - 1).Select(charge => ReadChargeFill(total, charge)).Select(bar => new ChargeBar(FormatPercent(bar), bar >= 1m))]));
     }
+
+    /// <summary>How much of the charge numbered <paramref name="charge"/> (0: the first) energy of <paramref name="total"/> charges fills: 0 to 1.</summary>
+    private static decimal ReadChargeFill(decimal total, int charge) =>
+        Math.Clamp(total - charge, 0m, 1m);
+
+    private static string FormatPercent(decimal share) =>
+        (share * 100m).ToString("0.##", CultureInfo.InvariantCulture);
 
     public static StepEnergy ShapeStepEnergy(ValidatedBuild build, Resolution resolution)
     {

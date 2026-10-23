@@ -778,6 +778,7 @@ sidearm is a fact in its description, as Spark of Momentum's is:
 | `{ grantEnergy: { to: grenade, amount: "15%" } }` / `amount: full` | `GrantEnergy(to, Fraction(v) \| Full)` |
 | `{ grantEnergy: { to: melee, perStat: { stat: melee, amount: "2%" } } }` — that much per point of the build's stat, in place of `amount` (Gambler's Dodge) | `GrantEnergy(to, PerStat(stat, v))` |
 | `unscaled: true` on a `grantEnergy` to an ability — neither its chunk scalar nor its stat scales it, where the source says so ("No Chunk or Stat Scalar") | `GrantEnergy(…, Unscaled)` |
+| `chunkScalar: false` on a `grantEnergy` to an ability — its chunk scalar doesn't scale it, its stat still does, where the source says so (Shinobu's Vow, per Clarity) | `GrantEnergy(…, StatOnly)` |
 | `{ grantEnergy: { to: leastCharged, amount: "10% \| 13% \| 15%" } }` — the ability with the least energy | `GrantLeastChargedEnergy(Fraction(v) \| Full)` |
 | `{ grantEnergy: { to: grenade, amount: "10%", byArchetype: { archetypes: [shotgun, glaive], amount: "20%" } } }` — another amount on a weapon of those archetypes (Demolitionist); `amount` is a fraction, not `full` | `GrantEnergy(to, ByArchetype(v, archetypes, w))` |
 | `{ convertStacksToEnergy: { consumed: armor-charge, to: grenade, perStack: "?" } }` | `ConvertStacksToEnergy(…, PerStack)` |
@@ -867,7 +868,9 @@ profile's `charges` plus every equipped `extraCharges`) and the share of a charg
   (compendium Game Mechanics#12), at the **stat that matches the listed value** — the glossary's `statGains`
   (`{ stat: grenade, matchesAt: 70 }`, Bungie's Armor 3.0 preview): exactly that at 70 in the receiving ability's stat
   (Grenade for a grenade, Melee, Class), at least that above 70, and unknown below 70 or while the build gives no
-  stat. `unscaled: true` takes neither, where the source says so (Gambler's Dodge: "No Chunk or Stat Scalar").
+  stat. `unscaled: true` takes neither, where the source says so (Gambler's Dodge: "No Chunk or Stat Scalar"), and
+  `chunkScalar: false` takes only the stat (Shinobu's Vow: "NOT affected by Chunk Energy Scalars", Clarity). A grant
+  to `leastCharged` takes both, as the ability it goes to.
 * `perStat: { stat: melee, amount: "2%" }` in place of `amount` gives that much per point of the build's stat (Gambler's
   Dodge's 2% per Melee point, Loopsmith taking every dodge as within 15 m of an enemy); without the stat it is unknown.
 * **Unknown is a floor, never 0**: a `"?"` value, an unknown chunk scalar or stat, or a chance rule's grant (it may not

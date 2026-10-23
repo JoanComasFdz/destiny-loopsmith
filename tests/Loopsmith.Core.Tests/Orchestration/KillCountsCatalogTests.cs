@@ -85,10 +85,11 @@ public sealed class KillCountsCatalogTests
 
         var grenade = LoopDesigning.ListTargetCountChoices(build, session.Current, new PlayerAction.CastAbility(OffensiveAbility.Grenade, HitOutcome.Kill, TargetCount.One));
 
-        // ADRs D48: at 70 a refund is its value times the receiving ability's chunk scalar. The throw spends one of
-        // Shinobu's Vow's two grenades, and the kills' refunds fill it back at 9; the melee and class ability were full.
+        // ADRs D48: at 70 a refund is its value times the receiving ability's chunk scalar (Shinobu's Vow's takes none).
+        // The throw spends one of Shinobu's Vow's two grenades, and the kills' refunds fill it back at 8; the melee and
+        // class ability were full.
         Assert.Equal(
-            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies", "7 enemies", "8 enemies", "9 enemies · grenade full"],
+            ["1 enemy", "2 in 4 s · Spark of Amplitude", "3 enemies", "4 enemies · Armor Charge x4, Bolt Charge x10", "5 enemies", "6 enemies", "7 enemies", "8 enemies · grenade full"],
             grenade.Select(choice => build.Catalog.Glossary.DescribeTargetCountChoice(choice)));
     }
 
