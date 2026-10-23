@@ -240,6 +240,8 @@ textarea { resize: vertical; }
 }
 .badge.new { background: var(--strand); border-color: var(--strand); color: #06140b; }
 .badge.blocked { background: rgba(255, 207, 90, .14); border-color: var(--warn); color: var(--warn); }
+.badge.not-ready { background: rgba(255, 207, 90, .14); border-color: var(--warn); color: var(--warn); }
+.badge.may-not-be-ready { border-color: var(--warn); color: var(--warn); }
 .badge.ok { background: rgba(78, 226, 138, .14); border-color: var(--ok); color: var(--ok); }
 .badge.warn { background: rgba(255, 207, 90, .12); border-color: var(--warn); color: var(--warn); }
 .badge.big { font-size: 12px; padding: 4px 10px; letter-spacing: .04em; }
@@ -706,6 +708,18 @@ textarea { resize: vertical; }
 .trig-unknown { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; font-size: 26px; font-weight: 700; color: var(--aff); }
 .trig-caption { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--aff); font-size: 10px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .trig-super.empty, .trig-ability.empty { border-style: dashed; background: transparent; }
+/* an ability's energy after the last step (ADRs D48): gray, its colour growing from below to the energy, like a vertical
+   bar — the icon gray under a coloured copy clipped to the same height, a faint bar of its colour behind them */
+.trig-ability.gauge { overflow: hidden; }
+.trig-ability.gauge-empty { border-color: var(--muted); }
+.trig-gauge-bar { position: absolute; left: 0; right: 0; bottom: 0; height: var(--fill); background: var(--aff); opacity: .25; pointer-events: none; }
+.trig-icon-spent { position: absolute; inset: 0; filter: grayscale(1) brightness(.55); }
+.trig-icon-filled { position: relative; clip-path: inset(calc(100% - var(--fill)) 0 0 0); }
+/* a further charge (Shinobu's Vow's second grenade) as the game's HUD shows it: a thin bar under the square, its colour
+   filling from the left as the charge comes back, faint until it is full */
+.trig-charge-bar { position: relative; display: block; width: 62px; height: 6px; border-radius: 1px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.trig-charge-bar::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--fill); background: var(--aff); opacity: .45; }
+.trig-charge-bar.full::after { opacity: 1; }
 .trig-ability.empty .trig-caption { padding: 0 2px; text-align: center; line-height: 1.15; }
 .trig-finisher { margin-left: 6px; border-style: dashed; }   /* no HUD square in the game: dashed */
 /* an ability's secondary uses (Tempest Strike's sliding melee, Ascension's air move) below its square: a different trigger */
@@ -784,6 +798,7 @@ textarea { resize: vertical; }
        screen less the page's and the panel's padding and the row's gaps (at most 58 px) */
     .trig-abilities { --sq: clamp(40px, calc((100vw - 112px) / 5), 58px); }
     .trig-super, .trig-ability { width: var(--sq); height: var(--sq); }
+    .trig-charge-bar { width: var(--sq); }
     .trig-super { width: calc(var(--sq) - 4px); height: calc(var(--sq) - 4px); }
 }
 
@@ -793,6 +808,11 @@ textarea { resize: vertical; }
 .hud-title { color: var(--dim); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
 .hud-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .hud-group { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.hud-energy { margin-bottom: 6px; }
+.hud-energy .chips { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.hud-energy-line { display: inline-flex; gap: 5px; align-items: baseline; white-space: nowrap; }
+.hud-energy-name { color: var(--muted); }
+.hud-energy-arrow { color: var(--muted); }
 .hud-group[data-group="weapons"], .hud-group[data-group="ground"] { align-items: center; text-align: center; }
 .hud-group[data-group="weapons"] .chips, .hud-group[data-group="ground"] .chips { justify-content: center; }
 .hud-group[data-group="debuffs"] { align-items: flex-end; text-align: right; }
