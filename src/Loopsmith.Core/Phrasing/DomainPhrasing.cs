@@ -167,6 +167,77 @@ public static class DomainPhrasing
             .OrderBy(group => group.Key)
             .Select(group => $"{group.Count()} {group.Key.DescribeLoadoutPart()}{(group.Count() == 1 ? "" : "s")}"));
 
+    /// <summary>
+    /// An ability's energy (ADRs D48), to two decimals at most: "100%", "8.44%", "2 charges", "1 charge + 8.44%"; part of it
+    /// unknown: "≥ 8.44%", and all of it ("?"); approximate: "~40%". Never 100% while a charge isn't full.
+    /// </summary>
+    public static string DescribeEnergy(AbilityEnergy energy, ChargeCount charges)
+    {
+        var total = charges.Value;
+        var full = energy.Charges.Value >= total;
+        var text = (total, full, energy.Charges.Value, energy.Progress.Value) switch
+        {
+            (1, true, _, _) => "100%",
+            (_, true, _, _) => $"{total} charges",
+            (_, false, 0, var progress) => FormatEnergyShare(progress),
+            (_, false, var count, 0m) => DescribeCharges(count),
+            (_, false, var count, var progress) => $"{DescribeCharges(count)} + {FormatEnergyShare(progress)}",
+        };
+        return (full, energy.Certainty, energy.ReadTotal()) switch
+        {
+            (true, _, _) => text,
+            (false, EnergyCertainty.AtLeast, 0m) => "?",
+            (false, EnergyCertainty.AtLeast, _) => $"≥ {text}",
+            (false, EnergyCertainty.Approximate, _) => $"~{text}",
+            _ => text,
+        };
+    }
+
+    /// <summary>
+    /// "Grenade not ready: 0% before #2", "Grenade may not be ready: ≥ 8.44% before #2" (ADRs D48); none when the step's
+    /// ability was ready.
+    /// </summary>
+    public static Optional<ReadinessFlag> DescribeReadiness(AbilityReadiness readiness, ChargeCount charges, int step) =>
+        readiness.Readiness switch
+        {
+            Readiness.NotReady => Optional.Some<ReadinessFlag>(new ReadinessFlag.NotReady($"{Capitalize(readiness.Ability.DescribeAbility())} not ready: {DescribeEnergy(readiness.Before, charges)} before #{step}")),
+            Readiness.MayNotBeReady => Optional.Some<ReadinessFlag>(new ReadinessFlag.MayNotBeReady($"{Capitalize(readiness.Ability.DescribeAbility())} may not be ready: {DescribeEnergy(readiness.Before, charges)} before #{step}")),
+            _ => Optional.None<ReadinessFlag>(),
+        };
+
+    /// <summary>The note of a step whose ability wasn't ready: "Grenade not ready: 0% before #2".</summary>
+    public static string ReadNote(this ReadinessFlag flag) =>
+        flag.Match(notReady => notReady.Note, mayNotBeReady => mayNotBeReady.Note);
+
+    /// <summary>The badge in the step's header: "Not ready", "May not be ready".</summary>
+    public static string DescribeReadinessBadge(this ReadinessFlag flag) =>
+        flag.Match(_ => "Not ready", _ => "May not be ready");
+
+    /// <summary>
+    /// Where a least-charged grant went (ADRs D48), as its caveat: "to your grenade"; "to your grenade or melee: which is
+    /// least charged is unknown"; "every ability is full: maybe to your Super".
+    /// </summary>
+    public static string DescribeLeastCharged(LeastCharged least) =>
+        least.Match(
+            sure => $"to your {sure.Ability.DescribeAbility()}",
+            _ => "every ability is full: maybe to your Super",
+            open => $"to your {string.Join(" or ", open.Candidates.Select(ability => ability.DescribeAbility()))}: which is least charged is unknown");
+
+    private static string DescribeCharges(int count) =>
+        count == 1 ? "1 charge" : $"{count} charges";
+
+    /// <summary>A share of one charge as a percentage, to two decimals at most, never rounded up to 100% (8.4375% → "8.44%").</summary>
+    public static string FormatEnergyShare(decimal share)
+    {
+        var rounded = Math.Round(share * 100m, 2, MidpointRounding.AwayFromZero);
+        var shown = rounded >= 100m && share < 1m ? 99.99m : rounded;
+        return $"{shown.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)}%";
+    }
+
+    /// <summary>A stat as the game names it: "Melee", "Class", "Weapons".</summary>
+    public static string DescribeStat(this StatKind stat) =>
+        stat.ToString();
+
     public static string DescribeAbility(this AbilityKind kind) =>
         kind switch
         {
@@ -617,7 +688,8 @@ public static class DomainPhrasing
                 fraction => $"+{fraction.Amount.FormatPercent()} {grant.To.DescribeAbility()} energy",
                 _ => $"refills {grant.To.DescribeAbility()}",
                 byArchetype => $"+{byArchetype.Otherwise.FormatPercent()} {grant.To.DescribeAbility()} energy "
-                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})"),
+                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})",
+                perStat => $"+{perStat.PerPoint.FormatPercent()} {grant.To.DescribeAbility()} energy per {perStat.Stat.DescribeStat()} point"),
             convert => $"spends {glossary.DescribeStatus(convert.Consumed)} → {DescribeStackEnergy(convert)}",
             apply => DescribeBuff(glossary, apply),
             remove => $"consumes {glossary.DescribeStatus(remove.Status)}",
@@ -638,7 +710,8 @@ public static class DomainPhrasing
                 fraction => $"+{fraction.Amount.FormatPercent()} energy to your least-charged ability",
                 _ => "refills your least-charged ability",
                 byArchetype => $"+{byArchetype.Otherwise.FormatPercent()} energy to your least-charged ability "
-                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})"),
+                    + $"({byArchetype.OnArchetypes.FormatPercent()} on {DescribeArchetypes(byArchetype.Archetypes)})",
+                perStat => $"+{perStat.PerPoint.FormatPercent()} energy per {perStat.Stat.DescribeStat()} point to your least-charged ability"),
             spend => $"spends x{spend.Count.Value} {glossary.DescribeStatus(spend.Status)}",
             weapon => $"{glossary.DescribeDamageSource(weapon.Weapon, superType)} strike"
                 + weapon.Type.Match(type => $", {type.Value} damage", _ => "")
@@ -1102,7 +1175,8 @@ public static class DomainPhrasing
             end => $"{build.Catalog.Glossary.DescribeStatus(end.Status)} ends",
             _ => "New pack",
             _ => CriticalHealth,
-            _ => HitAtCriticalHealth);
+            _ => HitAtCriticalHealth,
+            recharged => $"{Capitalize(recharged.Ability.DescribeAbility())} recharged");
 
     /// <summary>
     /// The status a declaration is about, beside whose name the designer shows its button: a <c>max:</c>'s or an
@@ -1114,7 +1188,8 @@ public static class DomainPhrasing
             end => Optional.Some(end.Status),
             _ => Optional.None<StatusId>(),
             _ => Optional.None<StatusId>(),
-            _ => Optional.Some(DeclaredStatuses.CriticalHealth));
+            _ => Optional.Some(DeclaredStatuses.CriticalHealth),
+            _ => Optional.None<StatusId>());
 
     /// <summary>
     /// A declaration's caption beside its status's name: its label without the name ("Bolt Charge at max (x10)" → "at max
@@ -1162,11 +1237,16 @@ public static class DomainPhrasing
                 end => $"end:{end.Status}",
                 _ => "pack:new",
                 _ => "health:critical",
-                _ => "health:hit"),
+                _ => "health:hit",
+                recharged => $"recharged:{ToAbilityWord(recharged.Ability)}"),
             finisher => "finisher" + ToRankSuffix(finisher.Rank),
             reload => reload.Slot.ToString().ToLowerInvariant() + ":reload",
             ammo => $"ammo:{ammo.Brick.ToString().ToLowerInvariant()}" + (ammo.Pickup == BrickPickup.Slide ? ":slide" : ""),
             ready => ready.Slot.ToString().ToLowerInvariant() + ":ready");
+
+    /// <summary>The ability's word in a token: <c>grenade</c>, <c>melee</c>, <c>class</c>, <c>super</c>.</summary>
+    public static string ToAbilityWord(AbilityKind ability) =>
+        ability == AbilityKind.ClassAbility ? "class" : ability.ToString().ToLowerInvariant();
 
     /// <summary>":elite", ":miniboss", ":champion", ":boss" for a kill of a stronger enemy than the pack's minors; nothing for a minor.</summary>
     private static string ToRankSuffix(EnemyTier rank) =>

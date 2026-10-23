@@ -40,4 +40,26 @@ public static class GameStateReading
 
     public static ImmutableArray<StatusId> ListTargetStatuses(this GameState state) =>
         state.Target.Debuffs;
+
+    /// <summary>The grenade, melee and class ability: the abilities whose energy a loop keeps (ADRs D48; not the Super).</summary>
+    public static readonly ImmutableArray<AbilityKind> EnergyAbilities = [AbilityKind.Grenade, AbilityKind.Melee, AbilityKind.ClassAbility];
+
+    /// <summary>
+    /// An ability's energy right then (ADRs D48): the state's entry, or — with none — its <paramref name="charges"/> all
+    /// full, exactly.
+    /// </summary>
+    public static AbilityEnergy ReadEnergy(this GameState state, AbilityKind ability, ChargeCount charges) =>
+        state.Energy
+            .Where(energy => energy.Ability == ability)
+            .Select(Optional.Some)
+            .FindFirstSome()
+            .UnwrapOr(new AbilityEnergy(ability, HeldCharges.From(charges.Value), ChargeShare.Nothing, EnergyCertainty.Exact));
+
+    /// <summary>The ability holds every charge the build gives it: no entry in the state.</summary>
+    public static bool IsFull(this GameState state, AbilityKind ability) =>
+        state.Energy.All(energy => energy.Ability != ability);
+
+    /// <summary>The energy as a number of charges: the held ones plus the share toward the next (1.25: one charge and a quarter).</summary>
+    public static decimal ReadTotal(this AbilityEnergy energy) =>
+        energy.Charges.Value + energy.Progress.Value;
 }

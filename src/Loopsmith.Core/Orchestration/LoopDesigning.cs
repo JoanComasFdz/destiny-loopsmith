@@ -1130,6 +1130,20 @@ public static class LoopDesigning
         StepStateShaping.ShapeStepState(session.Build, resolution.State, resolution.ActivePassives);
 
     /// <summary>
+    /// A step's energy (ADRs D48): the grenade's, melee's and class ability's before and after it, and whether the ability
+    /// it uses was ready (the designer flags one that wasn't).
+    /// </summary>
+    public static StepEnergy ShapeStepEnergy(DesignSession session, Resolution resolution) =>
+        StepEnergyShaping.ShapeStepEnergy(session.Build, resolution);
+
+    /// <summary>
+    /// The grenade's, melee's or class ability's energy in a state (the loop's after its last step), as the trigger
+    /// panel's square fills from below (ADRs D48); none for a Super.
+    /// </summary>
+    public static Optional<EnergyGauge> ShapeEnergyGauge(ValidatedBuild build, GameState state, AbilityKind ability) =>
+        StepEnergyShaping.ShapeGauge(build, state, ability);
+
+    /// <summary>
     /// What in this build interacts with a keyword, for its details, role by role: Armor Charge — Elemental Charge gives
     /// it, Grenade Kickstart uses it up; Amplified — Flow State gives it, and while Amplified Spark of Frequency's extra
     /// Bolt Charge (and Ionic Overclock, on which weapons).

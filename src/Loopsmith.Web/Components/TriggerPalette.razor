@@ -11,7 +11,7 @@
    (a build started from scratch, LoopDesigning.HasTriggerSource): then the panel is greyed out, nothing in it
    can be tapped, and a line says why. *@
 @{
-    var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, ranks, Build, Profile);
+    var hud = TriggerHudShaping.ShapeHud(Options, counts, optionsOn, ranks, Build, Profile, State);
     var disabled = !LoopDesigning.HasTriggerSource(Build);
     var picked = disabled ? Optional.None<HudSlot>() : FindPicked(hud);
 }
@@ -29,10 +29,10 @@
         <p class="palette-hint">@Hint</p>
     }
     <div class="trig-hud aff-@hud.Subclass.ToString().ToLowerInvariant()" data-testid="trigger-hud" inert="@disabled">
-        @if (!hud.OnYou.IsEmpty || !hud.CriticalHealth.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
+        @if (!hud.OnYou.IsEmpty || !hud.CriticalHealth.IsEmpty || !hud.Recharges.IsEmpty || !hud.OnWeapons.IsEmpty || !hud.OnPack.IsEmpty || !hud.NewPack.IsEmpty || !hud.Ground.IsEmpty)
         {
             <div class="trig-status" aria-label="States you declare, and what is on the ground">
-                @RenderStatuses("you", "On you", hud.OnYou, hud.CriticalHealth)
+                @RenderStatuses("you", "On you", hud.OnYou, [.. hud.CriticalHealth, .. hud.Recharges])
                 @RenderStatuses("weapons", "Your weapons", hud.OnWeapons, [])
                 @RenderStatuses("pack", "The pack", hud.OnPack, hud.NewPack)
                 @if (!hud.Ground.IsEmpty)
@@ -227,26 +227,37 @@
     public EventCallback<PlayerAction> OnPick { get; set; }
 
     /// <summary>The Super, an ability or a weapon: its square (the Super's a diamond), its icon (else its caption, else "?"), a dot when it is new.</summary>
-    private RenderFragment RenderSlot(HudSlot slot, string kind) => RenderSlot(slot, kind, Optional.None<string>());
+    private RenderFragment RenderSlot(HudSlot slot, string kind) => RenderSlot(slot, kind, Optional.None<string>(), Optional.None<EnergyGauge>());
 
-    private RenderFragment RenderSlot(HudSlot slot, string kind, Optional<string> caption) => __builder =>
+    private RenderFragment RenderSlot(HudSlot slot, string kind, Optional<string> caption) => RenderSlot(slot, kind, caption, Optional.None<EnergyGauge>());
+
+    /// <summary>
+    /// <paramref name="gauge"/>: the grenade's, melee's or class ability's energy after the last step (ADRs D48): its square
+    /// is gray, and its colour grows from below to the energy's sure share, like a vertical bar (full: all colour).
+    /// </summary>
+    private RenderFragment RenderSlot(HudSlot slot, string kind, Optional<string> caption, Optional<EnergyGauge> gauge) => __builder =>
     {
         var isPicked = pickedKey == Optional.Some(slot.Choice.Key);
         var affinity = slot.Affinity.ToString().ToLowerInvariant();
+        var fill = gauge.Match(found => found.Value.FillPercent, _ => "");
+        var gaugeClass = gauge.Match(found => found.Value.IsEmpty ? "gauge gauge-empty" : "gauge", _ => "");
+        var energy = gauge.Match(found => $" · energy {found.Value.Text}", _ => "");
         @if (slot.AtOnce is Optional<TriggerButton>.Some once)
         {
-            <button type="button" class="@kind trigger aff-@affinity @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
-                    aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}  ({once.Value.Token})")"
+            <button type="button" class="@kind trigger aff-@affinity @gaugeClass @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key" data-token="@once.Value.Token"
+                    data-energy-fill="@(gauge.IsSome() ? fill : null)" style="@(gauge.IsSome() ? $"--fill: {fill}%" : null)"
+                    aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}{energy}  ({once.Value.Token})")"
                     @onclick="() => PickTrigger(once.Value.Action)">
-                @RenderIcon(slot, caption)
+                @RenderIcon(slot, caption, gauge.IsSome())
             </button>
         }
         else
         {
-            <button type="button" class="@kind aff-@affinity @(isPicked ? "picked" : "") @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key"
-                    aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}")"
+            <button type="button" class="@kind aff-@affinity @gaugeClass @(isPicked ? "picked" : "") @(slot.Face is HudFace.EmptySlot ? "empty" : "")" data-action="trigger-ability" data-hud-slot="@slot.Choice.Key"
+                    data-energy-fill="@(gauge.IsSome() ? fill : null)" style="@(gauge.IsSome() ? $"--fill: {fill}%" : null)"
+                    aria-pressed="@(isPicked ? "true" : "false")" aria-label="@($"{slot.Kind}: {slot.Name}")" title="@($"{slot.Kind}: {slot.Name}{energy}")"
                     @onclick="() => Pick(slot)">
-                @RenderIcon(slot, caption)
+                @RenderIcon(slot, caption, gauge.IsSome())
             </button>
         }
     };
@@ -295,9 +306,20 @@
     };
 
     /// <summary>A slot's icon (else its caption — a finisher has no icon —, else its kind when it is empty, else "?"), and a dot when one of its actions is new.</summary>
-    private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption) => __builder =>
+    private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption) => RenderIcon(slot, caption, false);
+
+    /// <summary><paramref name="gauged"/>: under the icon a bar of the square's colour, its height the energy; the icon itself gray, with its coloured copy clipped to the same height.</summary>
+    private RenderFragment RenderIcon(HudSlot slot, Optional<string> caption, bool gauged) => __builder =>
     {
-        <span class="trig-icon">
+        @if (gauged)
+        {
+            <span class="trig-gauge-bar" aria-hidden="true"></span>
+            @if (slot.Face is HudFace.Pictured gaugedFace)
+            {
+                <span class="trig-icon trig-icon-spent" aria-hidden="true"><img src="@gaugedFace.Icon" alt="" loading="lazy" /></span>
+            }
+        }
+        <span class="trig-icon @(gauged && slot.Face is HudFace.Pictured ? "trig-icon-filled" : "")">
             @if (slot.Face is HudFace.Pictured face)
             {
                 <img src="@face.Icon" alt="" loading="lazy" />
@@ -382,22 +404,35 @@
     };
 
     /// <summary>An ability's square (the Super's diamond), with the secondary uses the build's rules name below it.</summary>
+    /// <summary>
+    /// The ability's square, then a bar under it for each further charge (Shinobu's Vow's second grenade, as the game's HUD
+    /// shows it: full while the charge is there, filling from the left as it comes back), then its secondary uses.
+    /// </summary>
     private RenderFragment RenderAbility(HudAbility ability, string shape) => __builder =>
     {
-        @if (ability.Secondaries.IsEmpty)
+        var bars = ability.Gauge.Match(found => found.Value.ExtraCharges, _ => []);
+        @if (ability.Secondaries.IsEmpty && bars.IsEmpty)
         {
-            @RenderSlot(ability.Slot, shape)
+            @RenderSlot(ability.Slot, shape, Optional.None<string>(), ability.Gauge)
         }
         else
         {
-            <div class="trig-ability-col">
-                @RenderSlot(ability.Slot, shape)
-                <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
-                    @foreach (var secondary in ability.Secondaries)
-                    {
-                        @RenderSecondary(secondary)
-                    }
-                </div>
+            <div class="trig-ability-col" data-testid="ability-column">
+                @RenderSlot(ability.Slot, shape, Optional.None<string>(), ability.Gauge)
+                @foreach (var bar in bars)
+                {
+                    <span class="trig-charge-bar aff-@ability.Slot.Affinity.ToString().ToLowerInvariant() @(bar.IsFull ? "full" : "")" data-testid="charge-bar"
+                          data-charge-fill="@bar.FillPercent" style="--fill: @(bar.FillPercent)%" aria-hidden="true"></span>
+                }
+                @if (!ability.Secondaries.IsEmpty)
+                {
+                    <div class="trig-secondaries" aria-label="@($"{ability.Slot.Kind}: secondary uses")">
+                        @foreach (var secondary in ability.Secondaries)
+                        {
+                            @RenderSecondary(secondary)
+                        }
+                    </div>
+                }
             </div>
         }
     };

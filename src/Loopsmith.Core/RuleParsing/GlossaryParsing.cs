@@ -12,12 +12,13 @@ internal static class GlossaryParsing
 {
     internal const string GlossaryPath = "glossary.yaml";
 
-    private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers"];
+    private static readonly ImmutableArray<string> GlossaryKeys = ["statuses", "pickups", "summons", "subclasses", "finishers", "statGains"];
     private static readonly ImmutableArray<string> StatusKeys = ["id", "name", "kind", "affinity", "maxStacks", "duration", "trait", "drawnIcon", "counted", "decay", "adjective", "endsWith"];
     private static readonly ImmutableArray<string> PickupKeys = ["id", "name", "affinity", "collectsAutomatically", "trait"];
     private static readonly ImmutableArray<string> SummonKeys = ["id", "name", "damageType", "trait"];
     private static readonly ImmutableArray<string> SubclassKeys = ["class", "subclass", "name", "hash"];
     private static readonly ImmutableArray<string> FinisherKeys = ["class", "name", "hash"];
+    private static readonly ImmutableArray<string> StatGainKeys = ["stat", "matchesAt"];
 
     internal static Result<KeywordGlossary, Errors> ReadGlossary(SourceText file) =>
         YamlReading.LoadDocument(file, "glossary")
@@ -45,7 +46,27 @@ internal static class GlossaryParsing
                 ImmutableDictionary<SummonId, SummonDefinition>.Empty),
             map.ReadOrDefault("subclasses", subclasses => subclasses.ReadEach("subclass", ReadSubclass).Bind(CheckSubclassHashes), []),
             map.ReadOrDefault("finishers", finishers => finishers.ReadEach("finisher", ReadFinisher).Bind(CheckFinisherClasses), []),
-            (_, statuses, pickups, summons, subclasses, finishers) => new KeywordGlossary(statuses, pickups, summons, subclasses, finishers));
+            map.ReadOrDefault("statGains", gains => gains.ReadEach("statGain", ReadStatGain).Bind(CheckStatGains), []),
+            (_, statuses, pickups, summons, subclasses, finishers, statGains) => new KeywordGlossary(statuses, pickups, summons, subclasses, finishers, statGains));
+
+    /// <summary><c>{ stat: grenade, matchesAt: 70 }</c>: the stat's points at which its ability's energy gains match their listed value (ADRs D48).</summary>
+    private static Result<Located<StatGain>, Errors> ReadStatGain(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(StatGainKeys),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("matchesAt", ReadStatValue),
+            (_, stat, matchesAt) => map.ToLocated(new StatGain(stat, matchesAt))));
+
+    /// <summary>A stat's gain is given once.</summary>
+    private static Result<ImmutableArray<StatGain>, Errors> CheckStatGains(ImmutableArray<Located<StatGain>> gains)
+    {
+        var errors = gains
+            .GroupBy(gain => gain.Value.Stat)
+            .Where(group => group.Count() > 1)
+            .Select(group => new ParseError(group.Last().Path, Optional.Some(group.Last().Line), $"the stat '{group.Key.ToString().ToLowerInvariant()}' has its gain given twice"))
+            .ToImmutableArray();
+        return errors.IsEmpty ? Succeed(gains.Select(gain => gain.Value).ToImmutableArray()) : Fail<ImmutableArray<StatGain>>(errors);
+    }
 
     private static Result<Located<StatusDefinition>, Errors> ReadStatus(YamlValue value) =>
         value.ToMap().Bind(map => Combine(

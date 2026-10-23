@@ -1,0 +1,7 @@
+# Skip Grenade with Spark of Shock and Spark of Ions at 70 Grenade, for its square: the Ionic Trace refills 8.44% of it.
+name: "E2E - Skip Grenade with Spark of Shock and Spark of Ions at 70 Grenade, for its square's energy"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock, spark-of-ions]
+stats: { grenade: 70 }

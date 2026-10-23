@@ -1,0 +1,5 @@
+# Skip Grenade and nothing else, for its square in the trigger panel: a throw empties it, nothing gives it back.
+name: "E2E - Skip Grenade alone, for its square's energy"
+class: hunter
+subclass: arc
+grenade: skip-grenade

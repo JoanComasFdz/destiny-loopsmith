@@ -29,9 +29,9 @@ public sealed class LoopDesigningTests
         var options = LoopDesigning.ListTriggerOptions(session);
 
         Assert.Equal(
-            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "energy:reload", "energy:ready", "ammo:special", "ammo:heavy", "pack:new"],
-            options.Select(option => option.Token));
-        Assert.All(options, option => Assert.False(option.IsNew));
+            ["grenade:kill", "grenade", "melee:kill", "melee", "class", "super:kill", "super", "finisher", "energy:kill", "energy", "energy:reload", "energy:ready", "ammo:special", "ammo:heavy", "pack:new", "recharged:grenade", "recharged:class"],
+            options.Select(option => option.Token));   // a used ability is still offered, and so is declaring it recharged (ADRs D48)
+        Assert.All(options.Where(option => !option.Token.StartsWith("recharged:", StringComparison.Ordinal)), option => Assert.False(option.IsNew));
         Assert.Equal(["energy:ready"], options.Where(option => !option.IsEnabled).Select(option => option.Token));   // no rule reacts to readying it
         Assert.Equal("Grenade (💀 kill)", options[0].Label);
     }

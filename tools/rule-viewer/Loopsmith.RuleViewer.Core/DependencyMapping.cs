@@ -300,7 +300,8 @@ internal static class DependencyMapping
         grant.Match(
             fraction => fraction.Amount.ToPercentText(),
             _ => "full",
-            byArchetype => $"{byArchetype.Otherwise.ToPercentText()} ({byArchetype.OnArchetypes.ToPercentText()} on {string.Join(", ", byArchetype.Archetypes)})");
+            byArchetype => $"{byArchetype.Otherwise.ToPercentText()} ({byArchetype.OnArchetypes.ToPercentText()} on {string.Join(", ", byArchetype.Archetypes)})",
+            perStat => $"{perStat.PerPoint.ToPercentText()} per {perStat.Stat} point");
 
     private static string DescribeStackEnergy(StackEnergy energy) =>
         energy.Match(

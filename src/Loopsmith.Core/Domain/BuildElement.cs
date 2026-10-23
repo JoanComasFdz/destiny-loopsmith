@@ -4,8 +4,9 @@ using Loopsmith.Functional;
 namespace Loopsmith.Core.Domain;
 
 /// <summary>
-/// Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x). Parsed and kept as
-/// data; the engine doesn't use it while ability energy isn't simulated (ADRs D5).
+/// Cost model of an ability, straight from the Compendium (e.g. Threaded Spike: 145.2 s · 0.8x). Its charges and chunk
+/// scalar fill the ability's energy in a loop (ADRs D48: a grant is scaled by the receiving ability's chunk scalar); its
+/// base cooldown is a fact: no time is modelled, so nothing regenerates by itself.
 /// </summary>
 public sealed record AbilityProfile(AbilityKind Kind, ChargeCount Charges, GameValue ChunkScalar, GameValue BaseCooldownSeconds);
 
@@ -79,7 +80,15 @@ public sealed record KeywordGlossary(
     ImmutableDictionary<PickupId, PickupDefinition> Pickups,
     ImmutableDictionary<SummonId, SummonDefinition> Summons,
     ImmutableArray<SubclassDefinition> Subclasses,
-    ImmutableArray<FinisherDefinition> Finishers);
+    ImmutableArray<FinisherDefinition> Finishers,
+    ImmutableArray<StatGain> StatGains);
+
+/// <summary>
+/// The points in an armor stat at which its ability's energy gains match their listed value (ADRs D48): the Grenade stat
+/// a grenade's, Melee a melee's, Class a class ability's. Bungie gives 70: more above it, less below it, by amounts it
+/// doesn't publish.
+/// </summary>
+public sealed record StatGain(StatKind Stat, StatValue MatchesAt);
 
 /// <summary>
 /// A subclass item of the manifest (Arcstrider: the Arc Hunter subclass), so a subclass is recognised by

@@ -4,6 +4,7 @@ using Loopsmith.Core.Domain;
 using Loopsmith.Functional;
 using Loopsmith.Core.Orchestration;
 using Loopsmith.Core.Phrasing;
+using Loopsmith.Core.TraceRendering;
 
 namespace Loopsmith.Web.Presentation;
 
@@ -28,8 +29,12 @@ public partial record HudFace
     partial record EmptySlot;
 }
 
-/// <summary>An ability's square and its secondary uses the build's rules name, shown below it (none: the press only).</summary>
-public sealed record HudAbility(HudSlot Slot, ImmutableArray<HudSecondary> Secondaries);
+/// <summary>
+/// An ability's square and its secondary uses the build's rules name, shown below it (none: the press only).
+/// <see cref="Gauge"/>: the grenade's, melee's or class ability's energy after the loop's last step, which the square
+/// fills from below (ADRs D48); none for the Super.
+/// </summary>
+public sealed record HudAbility(HudSlot Slot, ImmutableArray<HudSecondary> Secondaries, Optional<EnergyGauge> Gauge);
 
 /// <summary>
 /// A secondary use of an ability, below its square — a different trigger from the press (Tempest Strike's sliding melee,
@@ -65,6 +70,7 @@ public sealed record TriggerHud(
     Optional<HudSlot> AmmoBrick,
     ImmutableArray<HudStatus> OnYou,
     ImmutableArray<TriggerButton> CriticalHealth,
+    ImmutableArray<TriggerButton> Recharges,
     ImmutableArray<HudStatus> OnWeapons,
     ImmutableArray<HudStatus> OnPack,
     ImmutableArray<TriggerButton> NewPack,
@@ -83,7 +89,8 @@ public static class TriggerHudShaping
         ImmutableHashSet<string> optionsOn,
         ImmutableDictionary<string, EnemyTier> ranks,
         ValidatedBuild build,
-        Optional<BungieProfile> profile)
+        Optional<BungieProfile> profile,
+        GameState state)
     {
         var sections = TriggerPaletteShaping.ShapePalette(options, counts, optionsOn, ranks, build);
         var choices = sections.SelectMany(section => section.Choices).ToImmutableDictionary(choice => choice.Key);
@@ -94,13 +101,13 @@ public static class TriggerHudShaping
         var statuses = ShapeStatuses(build, declared);
         return new TriggerHud(
             subclass,
-            ShapeAbility(build, choices, AbilityKind.Super, "Super", abilities.Super, subclass),
+            ShapeAbility(build, state, choices, AbilityKind.Super, "Super", abilities.Super, subclass),
             [
                 .. new[]
                 {
-                    ShapeAbility(build, choices, AbilityKind.Grenade, "Grenade", abilities.Grenade, subclass),
-                    ShapeAbility(build, choices, AbilityKind.Melee, "Melee", abilities.Melee, subclass),
-                    ShapeAbility(build, choices, AbilityKind.ClassAbility, "Class ability", abilities.ClassAbility, subclass),
+                    ShapeAbility(build, state, choices, AbilityKind.Grenade, "Grenade", abilities.Grenade, subclass),
+                    ShapeAbility(build, state, choices, AbilityKind.Melee, "Melee", abilities.Melee, subclass),
+                    ShapeAbility(build, state, choices, AbilityKind.ClassAbility, "Class ability", abilities.ClassAbility, subclass),
                 }.SelectMany(slot => slot.Match(found => new[] { found.Value }, _ => [])),
             ],
             ShapeFinisher(choices, LoopDesigning.FindFinisher(build, profile)),
@@ -108,6 +115,7 @@ public static class TriggerHudShaping
             ShapeAmmoBrick(choices),
             ListStatuses(statuses, KeywordKind.Buff),
             [.. declared.Where(button => button.Action is PlayerAction.Declare { Declaration: StateDeclaration.CriticalHealth })],
+            [.. declared.Where(button => button.Action is PlayerAction.Declare { Declaration: StateDeclaration.Recharged })],
             ListStatuses(statuses, KeywordKind.WeaponBuff),
             ListStatuses(statuses, KeywordKind.Debuff),
             [.. declared.Where(button => button.Action is PlayerAction.Declare { Declaration: StateDeclaration.NewPack })],
@@ -116,7 +124,7 @@ public static class TriggerHudShaping
 
     /// <summary>The choice the ability's press names, when the palette offers it (none: the build has no such trigger), with its secondary uses.</summary>
     private static Optional<HudAbility> ShapeAbility(
-        ValidatedBuild build, ImmutableDictionary<string, TriggerChoice> choices, AbilityKind ability, string kind, AbilityPlug plug, Affinity subclass)
+        ValidatedBuild build, GameState state, ImmutableDictionary<string, TriggerChoice> choices, AbilityKind ability, string kind, AbilityPlug plug, Affinity subclass)
     {
         var equipped = plug.ToElement();
         var affinity = equipped.Bind(id => build.Catalog.Elements.TryGetValue(id, out var element) ? Optional.Some(element.Affinity) : Optional.None<Affinity>()).UnwrapOr(subclass);
@@ -130,7 +138,8 @@ public static class TriggerHudShaping
                     affinity,
                     FindAtOnce(choice),
                     choice.Buttons.Any(button => button.IsNew)),
-                [.. LoopDesigning.ListSecondaryUses(build, ability).SelectMany(use => ShapeSecondary(build, choices, use, kind, affinity).Match(found => new[] { found.Value }, _ => []))]))
+                [.. LoopDesigning.ListSecondaryUses(build, ability).SelectMany(use => ShapeSecondary(build, choices, use, kind, affinity).Match(found => new[] { found.Value }, _ => []))],
+                LoopDesigning.ShapeEnergyGauge(build, state, ability)))
             : Optional.None<HudAbility>();
     }
 

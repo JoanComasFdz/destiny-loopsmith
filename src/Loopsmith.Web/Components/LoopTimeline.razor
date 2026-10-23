@@ -1,6 +1,7 @@
 @* The designed loop: one card per step with what it fired, line by line (LoopDesigning.ShapeStepOutcomes — the trace's
-   wording), and what is present after it (StepStateHud: buffs, weapons, debuffs, ground); a name tapped shows its
-   details.
+   wording), and what is present after it (StepStateHud: the abilities' energy before and after it, buffs, weapons,
+   debuffs, ground); a name tapped shows its details. A step whose ability had no charge before it says "Not ready" (or
+   "May not be ready", part of its energy unknown) in its header (ADRs D48).
    Each step can be moved up or down, removed, or (with a mouse) dragged by its handle onto another step's place. *@
 @{
     var build = Session.Build;
@@ -32,6 +33,7 @@
         var step = steps[index];
         var resolution = Session.Resolutions[index];
         var blocked = resolution.Blocked.IsSome();
+        var energy = ShapeEnergy(resolution);
         <article class="step-card @(IsSelected(number) ? "selected" : "") @(blocked ? "blocked" : "") @(number == steps.Length ? "last" : "") @DescribeDropTarget(number) @(IsDragged(index) ? "dragged" : "")"
                  id="step-@number" data-testid="step" data-step="@number" tabindex="0"
                  @onclick="() => SelectStep(number)" @onkeydown="e => SelectStepByKey(e, number)"
@@ -52,6 +54,11 @@
                 {
                     <span class="badge blocked" title="@resolution.Blocked.UnwrapOr("")">Blocked</span>
                 }
+                @if (energy.Flag is Optional<ReadinessFlag>.Some flag)
+                {
+                    <span class="badge @(flag.Value is ReadinessFlag.NotReady ? "not-ready" : "may-not-be-ready")" data-testid="readiness-badge"
+                          title="@flag.Value.ReadNote()">@energy.Badge.UnwrapOr("")</span>
+                }
                 <span class="step-tools" @onclick:stopPropagation="true">
                     <button type="button" class="icon-btn" disabled="@(index == 0)" title="Move up" aria-label="@($"Move step {number} up")"
                             data-action="step-up" @onclick="() => MoveStepAsync(index, index - 1)">↑</button>
@@ -63,7 +70,7 @@
             </header>
             <div class="step-body">
                 <OutcomeTree Outcomes="@ShapeStep(resolution)" Build="build" OnShowDetails="ShowDetails" />
-                <StepStateHud State="@ShapeState(resolution)" Build="build" Number="number" OnShowDetails="ShowDetails" />
+                <StepStateHud State="@ShapeState(resolution)" Energy="energy" Build="build" Number="number" OnShowDetails="ShowDetails" />
             </div>
             <div class="step-note" @onclick:stopPropagation="true">
                 <input class="note-input" placeholder="Add a note…" aria-label="@($"Note for step {number}")"
@@ -93,6 +100,7 @@
 @code {
     private readonly Dictionary<object, StepOutcomes> renderedSteps = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<object, StepState> renderedStates = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<object, StepEnergy> renderedEnergy = new(ReferenceEqualityComparer.Instance);
     private Optional<ItemDetails> details = Optional.None<ItemDetails>();
     private TraceOptions renderedWith = new(false, false, false);
 
@@ -176,6 +184,18 @@
         {
             shaped = LoopDesigning.ShapeStepState(Session, resolution);
             renderedStates[resolution] = shaped;
+        }
+
+        return shaped;
+    }
+
+    /// <summary>The abilities' energy before and after the step, and whether its ability was ready (ADRs D48); cached per resolution.</summary>
+    private StepEnergy ShapeEnergy(Resolution resolution)
+    {
+        if (!renderedEnergy.TryGetValue(resolution, out var shaped))
+        {
+            shaped = LoopDesigning.ShapeStepEnergy(Session, resolution);
+            renderedEnergy[resolution] = shaped;
         }
 
         return shaped;

@@ -7,7 +7,8 @@ namespace Loopsmith.Core.StepPlaying;
 /// <summary>
 /// Plays a designed loop for its analysis (docs/loop-format.md, "Analysis"; ADRs D2). Pure: same build and steps ⇒ same
 /// passes. The loop is played from a fresh spawn, then again from where it ended until a pass starts the way an earlier
-/// pass started; the state is only what is present and declared (ADRs D1), so this settles within a few passes.
+/// pass started; the state is what is present and declared (ADRs D1), a counted buff's stacks (D33) and the abilities'
+/// energy (D48), which only fills to full, so this settles within a few passes.
 /// </summary>
 public static class LoopPlaying
 {
@@ -51,13 +52,15 @@ public static class LoopPlaying
     }
 
     /// <summary>
-    /// What is present and declared, with a counted buff's stacks and the pickups only chance dropped, in a stable order
-    /// (records holding arrays don't compare by content). A counted buff's changes are its history, not its state.
+    /// What is present and declared, with a counted buff's stacks, the pickups only chance dropped and the abilities'
+    /// energy (ADRs D48), in a stable order (records holding arrays don't compare by content). A counted buff's changes
+    /// are its history, not its state.
     /// </summary>
     private static string ToStateKey(GameState state) =>
         $"{JoinSorted(state.Buffs.Select(buff => buff.Status.Value + ToTallyKey(buff.Tally) + (buff.AtMax ? "*" : "")))};"
         + $"{JoinSorted(state.Target.Debuffs.Select(debuff => debuff.Value))};"
-        + $"{JoinSorted(state.Pickups.Select(ground => ground.Pickup.Value + (ground.Likelihood == Likelihood.Chance ? "?" : "")))};{state.Target.Tier}";
+        + $"{JoinSorted(state.Pickups.Select(ground => ground.Pickup.Value + (ground.Likelihood == Likelihood.Chance ? "?" : "")))};{state.Target.Tier};"
+        + JoinSorted(state.Energy.Select(energy => $"{energy.Ability}={energy.Charges}+{energy.Progress}{energy.Certainty}"));
 
     private static string ToTallyKey(Optional<StackTally> tally) =>
         tally.Match(some => $"={some.Value.Sure.Value}+{some.Value.Chance.Value}", _ => "");

@@ -79,6 +79,11 @@ public sealed class TriggerPalette(IPage page)
         OnYou.Locator(":scope > [data-action=trigger-at-once]")
             .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(state.ToShownText(), new() { Exact = true }) });
 
+    // An ability's "… recharged" button in the "On you" group, outside the status chips ("Grenade recharged").
+    private ILocator Recharged(AbilitySlot ability) =>
+        OnYou.Locator(":scope > [data-action=trigger-at-once]")
+            .Filter(new() { Has = page.Locator("[data-testid=trigger-caption]").GetByText(ability.ToRechargedText(), new() { Exact = true }) });
+
     // A pickup's chip in the panel's "On the ground" group reads "Pick up <its name>".
     private ILocator Pickup(Keyword pickup) =>
         Panel.Locator("[data-testid=trig-group][data-group=ground] [data-action=trigger-at-once]")
@@ -125,6 +130,9 @@ public sealed class TriggerPalette(IPage page)
 
     /// <summary>Clicks <paramref name="state"/> ("Critical health") under "On you", outside the status chips: the loop gets a step that declares it.</summary>
     public Task ClickStateAsync(Keyword state) => OnScreen.PressAsync(Panel, State(state));
+
+    /// <summary>Clicks "<paramref name="ability"/> recharged" under "On you" ("Grenade recharged"): the loop gets a step that declares it recharged.</summary>
+    public Task ClickRechargedAsync(AbilitySlot ability) => OnScreen.PressAsync(Panel, Recharged(ability));
 
     /// <summary>Clicks "Pick up <paramref name="pickup"/>" under "On the ground": the loop gets a step that picks it up.</summary>
     public Task ClickPickupAsync(Keyword pickup) => OnScreen.PressAsync(Panel, Pickup(pickup));
@@ -196,7 +204,22 @@ public sealed class TriggerPalette(IPage page)
             await Panel.GetAttributeAsync("aria-disabled") == "true",
             await DisabledNote.CountAsync() > 0 ? (await DisabledNote.InnerTextAsync()).Trim() : "",
             await ReadOnYouAsync(),
-            await ReadRankAsync());
+            await ReadRankAsync(),
+            [.. (await Panel.EvaluateAsync<JsonElement>(SquaresScript)).Deserialize<ShownSquare[]>(ShownJson.Options)!
+                .Select(square => new SquareFill(square.Name, square.Fill, [.. square.ChargeBars]))]);
+
+    private sealed record ShownSquare(string Name, string Fill, string[] ChargeBars);
+
+    // Each ability square that shows its energy (ADRs D48): its ability's name (its label after "Grenade: "), how full
+    // its colour is, from below ("8.44%"), and how full each bar under it is, one per further charge ("40%").
+    private const string SquaresScript = """
+        panel => [...panel.querySelectorAll('[data-action=trigger-ability][data-energy-fill]')].map(square => ({
+          name: square.getAttribute('aria-label').split(': ').slice(1).join(': '),
+          fill: `${square.getAttribute('data-energy-fill')}%`,
+          chargeBars: [...(square.closest('[data-testid=ability-column]')?.querySelectorAll('[data-testid=charge-bar]') ?? [])]
+            .map(bar => `${bar.getAttribute('data-charge-fill')}%`),
+        }))
+        """;
 
     private async Task<RankPickerShown?> ReadRankAsync() =>
         await RankPicker.CountAsync() == 0
@@ -258,7 +281,8 @@ public sealed class TriggerPalette(IPage page)
 /// disabled (no rule of the build reacts to them: a weapon's Ready step), and the boxes the player ticks (its options);
 /// whether the whole panel
 /// is greyed out (nothing in it can be tapped), and the line that says why (empty when it isn't); the chips of its
-/// "On you" group, in order; and the row's "Rank" picker (none when the row has no kill).
+/// "On you" group, in order; the row's "Rank" picker (none when the row has no kill); and how full each ability square's
+/// colour is with its energy (ADRs D48).
 /// </summary>
 public sealed record TriggerPaletteSnapshot(
     ImmutableArray<StepTrigger> WithTheCount,
@@ -270,7 +294,8 @@ public sealed record TriggerPaletteSnapshot(
     bool IsGreyedOut,
     string DisabledNote,
     ImmutableArray<OnYouChip> OnYou,
-    RankPickerShown? Rank);
+    RankPickerShown? Rank,
+    ImmutableArray<SquareFill> Squares);
 
 /// <summary>The picked row's "Rank" picker (ADRs D45): the rank it is at, and whether it can be changed (greyed out when no rule reacts to a rank).</summary>
 public sealed record RankPickerShown(EnemyRank Picked, bool IsEnabled);
@@ -295,3 +320,9 @@ public sealed record TriggerButtonBox(string Caption, ScreenBox Box);
 
 /// <summary>A box on the screen, in CSS pixels from the window's top left.</summary>
 public sealed record ScreenBox(double Left, double Top, double Right, double Bottom);
+
+/// <summary>
+/// An ability's square in the step HUD, by its ability's name ("Skip Grenade"), how full its colour is, from below ("8.44%",
+/// ADRs D48), and how full each bar under it is, from the left, one per charge beyond the first (Shinobu's Vow's second grenade).
+/// </summary>
+public sealed record SquareFill(string Name, string Fill, ImmutableArray<string> ChargeBars);

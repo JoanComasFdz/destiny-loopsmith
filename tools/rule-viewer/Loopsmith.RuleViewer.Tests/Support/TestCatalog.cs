@@ -29,6 +29,7 @@ public static class TestCatalog
         }.ToImmutableDictionary(p => p.Id),
         ImmutableDictionary<SummonId, SummonDefinition>.Empty,
         [],
+        [],
         []);
 
     public static Rule On(Trigger trigger, params Outcome[] then) =>

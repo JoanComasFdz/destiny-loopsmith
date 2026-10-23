@@ -1,0 +1,8 @@
+# Skip Grenade with Spark of Shock (it jolts) and Spark of Ions (a jolted kill drops an Ionic Trace), at 70 Grenade: the
+# trace's grenade energy is its value times Skip Grenade's chunk scalar, exactly.
+name: "E2E - Skip Grenade with Spark of Shock and Spark of Ions at 70 Grenade"
+class: hunter
+subclass: arc
+grenade: skip-grenade
+fragments: [spark-of-shock, spark-of-ions]
+stats: { grenade: 70 }

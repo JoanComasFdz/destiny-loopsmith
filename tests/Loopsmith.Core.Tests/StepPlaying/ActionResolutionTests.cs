@@ -284,7 +284,7 @@ public class ActionResolutionTests
 
         Assert.Equal([new StateDeclaration.NewPack()], ActionResolution.ListDeclarations(build, ActionResolution.CreateInitialState()));
         Assert.Equal(
-            ["pack:new", "max:bolt-charge", "end:bolt-charge", "end:amplified", "end:jolt"],
+            ["pack:new", "max:bolt-charge", "recharged:class", "end:bolt-charge", "end:amplified", "end:jolt"],   // the dodge spent the class ability (ADRs D48)
             ActionResolution.ListDeclarations(build, charged.State).Select(d => ((PlayerAction)new PlayerAction.Declare(d)).ToActionToken()));
         Assert.DoesNotContain(DeclareMax("bolt-charge"), declared.NowAvailable);
         Assert.Contains(DeclareEnd("bolt-charge"), declared.NowAvailable);
@@ -416,19 +416,21 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Energy_refunds_are_explained_with_their_amount_but_change_no_state()
+    public void Energy_refunds_fill_the_ability_and_a_reset_refills_it()
     {
         var refund = Element("refund", ElementKind.Fragment,
             [On(new Trigger.AbilityCast(AbilityKind.Grenade), Energy(AbilityKind.Grenade, new GameValue.Known(0.25m)), new Outcome.ResetCooldown(AbilityKind.Melee))]);
-        var build = ValidateBuild([refund]);
-        var initial = ActionResolution.CreateInitialState();
+        var grenade = Element("test-grenade", ElementKind.Grenade, [], ability: Optional.Some(Profile(AbilityKind.Grenade, chunkScalar: new GameValue.Known(1m))));
+        var build = ValidateBuild([refund], grenade: grenade, stats: Stats(grenade: 70));
+        var meleeSpent = ResolveOnce(build, new PlayerAction.CastAbility(OffensiveAbility.Melee, HitOutcome.Kill, TargetCount.One));
 
-        var resolution = ActionResolution.ResolveAction(build, initial, GrenadeKill);
+        var resolution = ActionResolution.ResolveAction(build, meleeSpent.State, GrenadeKill);
 
         var outcomes = resolution.Fired.Single().Outcomes;
         Assert.Equal([Certainty.Known, Certainty.Known], outcomes.Select(o => o.Certainty));
         Assert.All(outcomes, outcome => Assert.False(outcome.Caveat.IsSome()));
-        Assert.Equal(initial with { Step = 1, Casting = Optional.Some(AbilityKind.Grenade) }, resolution.State with { Target = initial.Target });
+        // ADRs D48: the throw spends the grenade, its refund fills a quarter of it back; the reset refills the melee.
+        Assert.Equal([EnergyOf(AbilityKind.Grenade, 0, 0.25m, EnergyCertainty.Exact)], resolution.State.Energy);
     }
 
     [Fact]
@@ -446,7 +448,7 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Refunds_resolve_for_the_copies_equipped_and_ignore_chunk_scalars()
+    public void Refunds_show_their_own_value_for_the_copies_equipped()
     {
         var grenade = Element("test-grenade", ElementKind.Grenade, [],
             ability: Optional.Some(Profile(AbilityKind.Grenade, chunkScalar: new GameValue.Known(0.5m))));
@@ -512,19 +514,21 @@ public class ActionResolutionTests
     }
 
     [Fact]
-    public void Abilities_can_always_be_used_there_is_no_energy_to_run_out_of()
+    public void An_ability_without_a_charge_is_still_played_and_says_it_was_not_ready()
     {
         var counter = Element("counter", ElementKind.Fragment, [On(new Trigger.AbilityCast(AbilityKind.Grenade), Buff("bolt-charge"))]);
         var build = ValidateBuild([counter]);
-        var actions = ImmutableArray.Create(GrenadeKill, GrenadeKill, GrenadeKill, new PlayerAction.UseClassAbility(), new PlayerAction.UseClassAbility());
+        var actions = ImmutableArray.Create(GrenadeKill, GrenadeKill, new PlayerAction.Declare(new StateDeclaration.Recharged(AbilityKind.Grenade)), GrenadeKill);
 
         var resolutions = ActionResolution.ResolveSequence(build, ActionResolution.CreateInitialState(), actions);
 
         Assert.All(resolutions, resolution => Assert.False(resolution.Blocked.IsSome()));
-        Assert.All(resolutions, resolution => Assert.Empty(resolution.Notes));
-        Assert.Contains(resolutions[^1].State.Buffs, b => b.Status == Status("bolt-charge"));
+        Assert.Equal(
+            [Readiness.Ready, Readiness.NotReady, Readiness.Ready],
+            resolutions.Where(resolution => resolution.Readiness.IsSome()).Select(resolution => Assert.IsType<Optional<AbilityReadiness>.Some>(resolution.Readiness).Value.Readiness));
+        Assert.Equal(["Grenade not ready: 0% before #2"], resolutions[1].Notes);   // still played: its rules fire
+        Assert.Contains(resolutions[1].Fired, fired => fired.Source.Value == "counter");
         Assert.Contains(GrenadeKill, resolutions[^1].NowAvailable);
-        Assert.Contains(new PlayerAction.UseClassAbility(), resolutions[^1].NowAvailable);
     }
 
     [Fact]

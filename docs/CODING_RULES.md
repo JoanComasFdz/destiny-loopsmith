@@ -159,9 +159,13 @@ itself, under `src/Loopsmith.Core/Domain/`.
   trace shows "?". Every element keeps its `Provenance` (its `source:`).
 - **State is causal** (ADRs D1). Game state says what is present (a buff, a
   debuff on the pack, a pickup on the ground) and what the player declared
-  ("Bolt Charge at max"); it holds no number but the step and a counted buff's
+  ("Bolt Charge at max"); it holds no number but the step, a counted buff's
   stacks (ADRs D33: Armor Charge's sure and chance stacks, which do decide what
-  fires — the one counter of the game state). A source's number
+  fires) and the grenade's, melee's and class ability's energy (ADRs D48: the
+  charges each holds and the share of a charge toward the next, how sure it is,
+  spent by a use, filled by a refund scaled by the receiving ability's chunk
+  scalar at 70 in its stat, and read to flag a step whose ability isn't ready).
+  A source's number
   (`+1 Bolt Charge`, `15s`, `+12% grenade energy`) is a fact shown with its
   outcome — never accumulated, and never compared to decide what happens.
   Four exceptions, none of them game state: the build's stat line (ADRs D28) —
@@ -174,8 +178,8 @@ itself, under `src/Loopsmith.Core/Domain/`.
   None of these three ever changes what a step fires. The fourth does: an ability's
   charges in the build (ADRs D36), its profile's `charges` plus every equipped
   `extraCharges` (Shinobu's Vow), compared with one to tell whether every use spends
-  the last charge (one charge) or only the use the player marks `:last` (more) — a
-  fact of the build, never counted down in a loop.
+  the last charge (one charge) or only the use the player marks `:last` (more); the
+  same charges are what an ability's energy in the state fills up to (ADRs D48).
 - **Add a named failure/`Severity` case only when the app branches on it** (to
   recover or take a different path), never merely to carry a message. IO whose only
   outcome is "show the user what went wrong" uses `Result<_, string>`; the acted-on

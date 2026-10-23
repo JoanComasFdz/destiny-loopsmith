@@ -236,3 +236,17 @@ finishers:
   - { class: hunter,  name: Blade Carnival,   hash: 4012203003 }
   - { class: titan,   name: The Focused Fist, hash: 2854370169 }
   - { class: warlock, name: Palm of Wen Jie,  hash: 254514436 }
+
+# ---------------------------------------------------------------- stat gains (ADRs D48)
+# The stat at which an ability's energy gains match their listed value: the Grenade stat a grenade's, Melee a melee's,
+# Class a class ability's. Bungie's Armor 3.0 preview (This Week in Destiny, 2025-06-05; patch 9.0.0.4, cited in
+# rules/hunter/arc/melees.yaml's Combination Blow): chunk gains scale with their stat, matching the listed value at 70,
+# more above it (up to 100) and less below it, by amounts Bungie doesn't publish. So a scaled gain is exactly its value
+# times the chunk scalar at 70, at least that above 70, and unknown ("?") below 70 or while the build has no stat.
+# The Compendium disagrees in part: compendium/2026-10-21/Game Mechanics#132 and #139 give the Grenade and Class stats
+# "211.5%" and "90% Increased ... Ability Gains at 100 points" (#126: Melee "?"), as if a stat only added to a gain;
+# its rows per 10 points are empty ("-x"). Bungie's word is followed (the owner's call, 2026-10-22).
+statGains:
+  - { stat: grenade, matchesAt: 70 }
+  - { stat: melee,   matchesAt: 70 }
+  - { stat: class,   matchesAt: 70 }

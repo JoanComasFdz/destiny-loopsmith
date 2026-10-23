@@ -1,0 +1,7 @@
+# Combination Blow and Gambler's Dodge at 60 Melee: a dodge gives back 2% melee energy per Melee point, a full charge.
+name: "E2E - Combination Blow and Gambler's Dodge at 60 Melee"
+class: hunter
+subclass: arc
+melee: combination-blow
+classAbility: gamblers-dodge
+stats: { melee: 60 }

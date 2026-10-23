@@ -8,7 +8,7 @@ step's damage resistance (D29), armor mods in their sockets (D30), the artifact 
 (D33), what a hit step stands for (D34), the raid and activity mods left out of the sockets (D35), what the player
 says about a step besides its hit and count — a broken shield, precision kills, the last charge (D36), a reload (D37), the web designer as the only host (D38), the
 developer tools as hosts too (D39), the rules grouped by class, subclass and area, each rule with its own id (D40), a
-slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), readying a weapon (D44), the rank of the enemy a kill kills (D45), the coding building blocks in a project of their own (D46) and the tools written in C# (D47). D1 is the
+slide over an ammo brick (D41), a refill that is no reload (D42), an ammo brick picked up, slid over or not (D43), readying a weapon (D44), the rank of the enemy a kill kills (D45), the coding building blocks in a project of their own (D46) the tools written in C# (D47) and the abilities' energy in the loop's state (D48). D1 is the
 founding one: every other decision follows from it.
 
 | # | Decision | Why |
@@ -17,7 +17,7 @@ founding one: every other decision follows from it.
 | D2 | The designed loop — an ordered list of triggers — is the product | A build is played as a loop; the order of its triggers is what the player designs, saves and shares |
 | D3 | The player declares thresholds and endings (`max:`, `end:`) | The engine can't know when Bolt Charge reaches x10 or a buff ends; the player can |
 | D4 | The player declares how many enemies an action hits | The engine can't know how many enemies a grenade catches; perks depend on it |
-| D5 | Abilities are always available; energy outcomes are facts | Energy is time; tracking it would be a simulation |
+| D5 | ~~Abilities are always available; energy outcomes are facts~~ Superseded by D48 | Energy is time; tracking it would be a simulation |
 | D6 | Rules that don't stack give way and show as wasted | Wasted potential is what the build crafter most needs to see |
 | D7 | One target: the pack in front of you, until the player declares a new one | Matches how add-clear builds are explained ("everything is jolted"); only play decides when the next group comes |
 | D8 | Chance rules always fire, marked *(chance)* | No probabilities without a simulation; the mark keeps the loop honest |
@@ -57,6 +57,7 @@ founding one: every other decision follows from it.
 | D45 | A kill step or a finisher says the rank of the enemy it kills (`energy:kill:elite`); a rule needs one rank or that rank and stronger (`tier: elite+`) | Ascendant Escape and Iron Sharpens Iron react to an Elite+ kill; the pack is minor (D7), and which enemy dies is play |
 | D46 | Optional, Result and Unit are a project of their own, `Loopsmith.Functional`; Core is the main app's domain and logic, and a tool references it only when it uses that | A development tool that needs only the coding building blocks builds in seconds instead of compiling Core (about 27 s on a clean CI runner) |
 | D47 | A developer tool is written in C#, following the coding rules; a shell script is only thin glue | C# is what the owner reads and reviews; the tools once in Python (the Compendium download, the manifest extractor, the e2e scripts' steps) were ported, and Python is no longer installed |
+| D48 | The grenade's, melee's and class ability's energy is part of the loop's state: a use spends a charge, a refund fills it scaled by the chunk scalar at 70 in its stat, the player declares a recharge, and a step without a charge is flagged | Whether an ability is back is a question of the loop's order, and a loop suggester needs it; most refunds are known steps of the loop, and an unknown one stays a floor, never 0 |
 
 ## What the product is
 
@@ -73,17 +74,19 @@ how many, how often, how long or when.
 
 * **Numbers are facts shown with their outcome** ("+12% grenade energy", "Amplified (15s)",
   "up to x10", "refills melee"). They are never added up or compared to
-  decide what happens.
+  decide what happens — but a counted buff's stacks (D33) and an ability's energy (D48).
 * **State is what is present**: a buff on you, a debuff on the pack, a pickup on the ground — and
-  what the player declared (D3). Nothing in it is counted: no stacks, energy or health — but a counted buff's
-  stacks (Armor Charge, D33).
+  what the player declared (D3). Nothing in it is counted: no stacks or health — but a counted buff's
+  stacks (Armor Charge, D33) and the grenade's, melee's and class ability's energy (D48), which are steps of the
+  loop's order, not of time.
 * **The player declares what only play can decide**: that a threshold is reached ("Bolt Charge at
   max", "Combination Blow at max"), that a buff has ended (D3), how many enemies one action hits (D4).
   The engine shows what the declared state sets off.
 * A loop is judged by its **order of triggers** (D2): whether each step gets what it needs from the
   steps before it, and whether the order can be repeated.
 
-**Consequence.** Abilities are always available (D5); a status ends when
+**Consequence.** A grenade, melee or class ability is used whenever a step uses it, and flagged when it had no charge
+(D48; D5 kept them always available); a status ends when
 a rule consumes or removes it, or when the player declares it ended. A source's "after 6 hits" or "for 10 s" is a fact in the
 description, never a mechanism. No damage or health model either: damage and healing outcomes are
 facts too. Movement (jumps, sprinting, slides) is outside the loop, but for picking up an ammo brick by sliding over it, a
@@ -151,6 +154,9 @@ a statement about one action, never a total. Strikes and summons hit one enemy. 
 every enemy (D8).
 
 ### D5 — Abilities are always available; energy outcomes are facts
+
+Superseded (2026-10-21) by D48: the grenade's, melee's and class ability's energy is part of the loop's state; a step
+without a charge is still played, and flagged. The Super's energy stays a fact.
 
 **Context.** Ability energy is mainly time: base cooldowns scaled by stats, with refunds on top.
 Tracking it is a simulation (D1). **Decision (product owner).** Grenade, melee, super and class
@@ -407,7 +413,7 @@ Superseded (2026-10-19): the DIM link, `LoadoutImporting` and the saved DIM shar
 point (twice that near an enemy), a Combination Blow kill refills the class ability in full only from 70 Class.
 A DIM link carries no stats, and the armor it names may sit in the player's vault: only the player's login
 lets an app read it (Bungie shows anyone only what a character wears). **Decision.** A build's `stats:` stay a
-fact of the build (the engine still simulates no energy, D1, D5), and the elements' `statChecks` say what a stat
+fact of the build (since D48 they also scale the abilities' energy gains in a loop), and the elements' `statChecks` say what a stat
 changes in the build check. The designer sets the stats by hand, or from the player's own armor after a Bungie
 login: a public OAuth client (no secret in a static site, D25), read-only, its token used for two reads and
 dropped. `StatLoading` (pure) reads Bungie's answers, matches the build's pieces with the player's copies (a pick
@@ -528,10 +534,10 @@ chance (the split of D31), and so are Spark of Amplitude's two kills within 4 s 
 (its counter, as Synergy's); the enemy-count selector says what each count is for ("2 in 3 s · Arc Siphon",
 "3 · Spark of Discharge") and goes up to the last count that still fills something — playing the step with one enemy
 more each time from the state it starts in, until no buff that stacks gains more below its cap and no ability's energy
-below a full charge ("5 enemies · Bolt Charge x10", "7 enemies · grenade full"). Those sums bound the choices only:
-never game state, never read to decide what fires (D1, D5).
-**Consequence.** The count is game state, the one number besides the step (`CausalStateTests` allows it and nothing
-else): it is a fact of the loop's order, not a simulation — time is still not modelled, so the decay (one stack every
+below a full charge ("5 enemies · Bolt Charge x10", "7 enemies · grenade full"; since D48 the energy is the state's
+after the step). Those sums bound the choices only: never read to decide what fires (D1).
+**Consequence.** The count is game state, with the step and the abilities' energy (D48) the only numbers in it
+(`CausalStateTests` allows them and nothing else): it is a fact of the loop's order, not a simulation — time is still not modelled, so the decay (one stack every
 10 s, slower with Time Dilation) is a fact shown with the count, never applied, and "sure" means "if the player
 doesn't wait". Other stacking statuses (Bolt Charge, Combination Blow, Slice) stay declared (D3) until they are marked
 counted. Kills of earlier steps still don't add up (D31).
@@ -581,8 +587,8 @@ Superseded (2026-10-19): the DIM link that kept such mods in `leftOut` is remove
 the Kickstarts (Grenade, Melee, Utility) spend it when the ability's energy is "fully expended", as Bungie's text says
 (the Compendium says "on use"). Neither could be said in a loop: no step broke a shield, so Shield Break Charge was
 inert, and the Kickstarts fired on every use, wrong for a build with two charges (Shinobu's Vow: only the second
-throw empties the grenade). Which enemy has a shield, and which charge a use spends, are play (D1): the engine counts
-neither a shield nor an ability's energy (D5).
+throw empties the grenade). Which enemy has a shield, and which charge a use spends, are play (D1): the engine counted
+neither a shield nor an ability's energy (D5; since D48 it keeps the energy, but the last charge stays the player's to mark).
 **Decision (product owner).** A step carries an option the player turns on, as it carries a target count (D4). A weapon
 step may **break a shield** (`kinetic:kill:shield`, "Festival Flight (💀 kill · 🛡 shield)"): it breaks one, with its
 first hit, raising `ShieldBroken` from that weapon, which the `shieldBroken` trigger matches (`via` as a hit's). The
@@ -833,3 +839,57 @@ or `gh`, and passes files along; any decision or parsing goes into the tool's C#
 installed anywhere, and an agent never writes a Python helper (the rule author reads a Compendium row from the tab's
 `.md`). Thin scripts may stay (`record.sh`, `push-gifs.sh`, `prepare-pages.sh`, the dev container's): turning them
 into C# too is left for later.
+
+### D48 — The grenade's, melee's and class ability's energy is part of the loop's state
+
+**Context.** D5 kept every ability always available and showed energy outcomes as facts, because energy is mainly time
+and tracking it looked like a simulation (D1). But a loop is judged by its order of triggers (D2), and whether a step's
+grenade is back is a question of that order: a Skip Grenade throw spends the grenade, an Ionic Trace gives some of it
+back, and Gambler's Dodge refills the melee the punch before it spent. A later "suggest the best loop" feature needs the
+loop to respect that. Most refunds are known steps of the loop the engine already plays; the rest are unknown ("?") or
+depend on a stat, and the time between steps only the player knows. **Decision (product owner, 2026-10-21; the stat
+scaling 2026-10-22).** It replaces D5 and narrows D1:
+
+* **The state holds the grenade's, melee's and class ability's energy** (`GameState.Energy`): the full charges each
+  holds and the share of a charge toward the next, with how sure it is: exact, approximate (a "~" value) or at least
+  that much. An ability at its build's full charges (its profile's `charges` plus every `extraCharges`, D36) has no
+  entry. A loop's first pass starts with every ability full; the next pass starts from what the last one ended with. The Super's
+  energy isn't kept: its grants stay facts.
+* **A use spends a charge.** A grenade, melee or class ability step spends one, before its refunds; a step whose ability
+  had no full charge before it is still played, so what it sets off shows, and is flagged **not ready** (surely: its
+  energy is known and below a charge) or **may not be ready** (part of its energy is unknown). A not-ready step breaks
+  the loop as a blocked step does (D2); one that may not be ready is a caveat of its step.
+* **A refund fills the receiving ability, scaled the way the game scales it**: its value (narrowed to the copies
+  equipped) times the receiving ability's chunk scalar (compendium Game Mechanics#12: unless the source says otherwise,
+  every %-based gain is scaled; Gambler's Dodge says "No Chunk or Stat Scalar", `unscaled: true`; Shinobu's Vow's skips
+  the chunk scalar only, per Clarity, `chunkScalar: false`). The stat of the
+  receiving ability (Grenade, Melee, Class) matters too: Bungie's Armor 3.0 preview says a chunk gain matches its listed
+  value at 70, gives more above it and less below it, by amounts it doesn't publish. So a scaled gain is exactly its
+  value times the chunk scalar at 70, at least that above 70, and unknown below 70 or while the build has no stat (the
+  build's `stats:`, typed in the designer or added up from the player's armor, D28). The Compendium's "211.5% / 90%
+  Increased … Gains at 100 points" for the Grenade and Class stats is recorded in the glossary's comment, not applied.
+  A grant per stat point (`perStat`: Gambler's Dodge's 2% per Melee point, which Loopsmith takes as within 15 m of an
+  enemy, always) is known from the build's stat. Energy never goes past the ability's full charges: the rest is wasted.
+* **Unknown is a lower bound, never 0** (D13): an unknown part — a "?" value, an unknown chunk scalar or stat, a chance
+  rule's refund (D8) — keeps the known part as a floor: "≥ 8.44%"; with no known part it reads "?". The floor carries
+  into later steps until something makes the energy known again: a spend of a one-charge ability (it is then at 0),
+  reaching full, or the player's recharge. A least-charged grant (Orbs of Restoration) goes to the ability surely least
+  charged of the three, scaled as its own; when an unknown part or a tie leaves that open, each candidate gains something
+  unknown; when all three are full, it may go to the Super.
+* **Recharging over time is a declaration** (D3): nothing regenerates by itself between steps. "On you" offers
+  "Grenade recharged" (`recharged:grenade`, `recharged:melee`, `recharged:class`) while the ability isn't surely full; it
+  fills every charge, and always holds.
+* **The step card shows each ability's energy before and after the step** (ENERGY: "Grenade 100% → 0%"), to two
+  decimals at most, never rounded up to a full charge; a step whose ability wasn't ready says so in its header and its
+  note ("Grenade not ready: 0% before #2"). The trigger panel's ability squares show the energy after the last step:
+  gray, their colour growing from below to the first charge's sure share, like a vertical bar; each further charge
+  (Shinobu's Vow's second grenade) is a thin bar under the square, as the game's HUD draws it, its colour filling from
+  the left as the charge comes back. Every use spends one charge, however many are full (the owner's in-game test of
+  Shinobu's Vow, 2026-10-23: the game's HUD hides the second charge for about 1.4 s after a throw at two, which only
+  looks like both spent).
+
+**Consequence.** Energy is the second count in the state, after a counted buff's stacks (D33): `CausalStateTests` allows
+it and nothing else. `StepPlaying.EnergyTracking` spends, scales and fills it; the loop's repeat check (`LoopPlaying`)
+reads it, so a loop repeats only when each pass ends with the energy the next one needs, or the player declares the
+recharge. The enemy-count selector's "grenade full" counts from the step's starting energy, scaled, its sure part only.
+The base cooldowns stay facts: no time is modelled. A use's last charge is still the player's to mark (`:last`, D36).

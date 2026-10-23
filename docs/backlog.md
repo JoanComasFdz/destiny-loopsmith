@@ -81,7 +81,8 @@ list is what the code doesn't do yet, what the format can't express yet, and wha
   spawned it; Amplified's other extras (+40 Handling: an "all weapons" archetype). One "described fact" value and passive would
   cover them. Amounts that scale with a stat are in "Stats, next".
   The ability profiles (`charges`, `chunkScalar`, `baseCooldown`) aren't shown in the build's explanation: show them there. `charges`
-  is read (an ability with more than one charge offers "spend fully", D36); the other two change nothing (D5). The
+  is read (an ability with more than one charge offers "spend fully", D36) and, with `chunkScalar`, fills its energy in a
+  loop (D48); `baseCooldown` changes nothing (no time is modelled). The
   designer's HUD could draw the charges too ("An ability's charges in the HUD", Web).
 - **Picking armor mods** (the designer's sockets and mod picker, [loop-format.md](loop-format.md#armor-mods), D30):
   a tuning mod (a Tier 5 copy's tuning socket) can't be picked, only kept; a stat mod the manifest excerpt's
@@ -293,7 +294,7 @@ the part is a fact in the description.
   action when the game fires it once. The next task (raised in #70):
   **Fire a rule with a cooldown at most once per action.** Within one step (one action's hits and kills), a rule whose
   source has a cooldown fires once, and the step says so ("once: 6 s cooldown"); later steps aren't limited, as time
-  isn't modelled (D1, D5). The sources: Photonic Flare (~6 s), Firepower (on `grenade:kill:3` it drops three orbs),
+  isn't modelled (D1, D48). The sources: Photonic Flare (~6 s), Firepower (on `grenade:kill:3` it drops three orbs),
   Heavy Handed, the 7 s energy mods, Spark of Ions (10 s between traces: it fires on every jolted kill), Spark of
   Amplitude (10 s after its orb, during which kills don't count), Impact Induction, and the elemental pickups — one
   Firesprite (Solar#5) or Void Breach (Void#7), 5 s each, and one Tangle (Strand#4, 12 s) per step instead of one per

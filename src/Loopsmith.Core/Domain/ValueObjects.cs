@@ -139,6 +139,27 @@ public readonly partial struct ChargeCount
         value >= 1 ? Validation.Ok : Validation.Invalid("A charge count is at least 1");
 }
 
+/// <summary>The full charges an ability's energy holds right then (ADRs D48): none or more, up to its build's charges.</summary>
+[ValueObject<int>]
+[Instance("None", 0)]
+public readonly partial struct HeldCharges
+{
+    private static Validation Validate(int value) =>
+        value >= 0 ? Validation.Ok : Validation.Invalid("Held charges must not be negative");
+}
+
+/// <summary>
+/// The share of one charge an ability's energy holds toward its next (ADRs D48): from 0 up to, but not reaching, 1 —
+/// a whole charge is a held charge.
+/// </summary>
+[ValueObject<decimal>]
+[Instance("Nothing", 0)]
+public readonly partial struct ChargeShare
+{
+    private static Validation Validate(decimal value) =>
+        value is >= 0m and < 1m ? Validation.Ok : Validation.Invalid("A share of a charge is from 0 up to, but not reaching, 1");
+}
+
 /// <summary>How many copies of an element a build equips (mods stack: two Grenade Kickstarts), at least one.</summary>
 [ValueObject<int>]
 [Instance("One", 1)]

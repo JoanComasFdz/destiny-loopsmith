@@ -1,0 +1,6 @@
+# Combination Blow and Gambler's Dodge with no stats: a dodge's melee energy goes by the Melee stat, so it is unknown.
+name: "E2E - Combination Blow and Gambler's Dodge"
+class: hunter
+subclass: arc
+melee: combination-blow
+classAbility: gamblers-dodge

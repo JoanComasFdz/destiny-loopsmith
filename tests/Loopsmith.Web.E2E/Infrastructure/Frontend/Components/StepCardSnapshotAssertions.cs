@@ -26,6 +26,47 @@ public static class StepCardSnapshotAssertions
         return that;
     }
 
+    /// <summary>
+    /// The card's ENERGY reads <paramref name="ability"/> at <paramref name="before"/> before the step and at
+    /// <paramref name="after"/> after it ("Grenade 100% → 0%").
+    /// </summary>
+    public static AssertingThat<StepCardSnapshot> ShowsEnergy(this AssertingThat<StepCardSnapshot> that, AbilitySlot ability, string before, string after)
+    {
+        var rows = that.InstanceToAssert.Energy;
+        var shown = rows.FirstOrDefault(row => row.Name == ability.ToShownText());
+        var expected = $"{ability.ToShownText()} {before} → {after}";
+        Assert.True(
+            shown is not null && shown.Before == before && shown.After == after,
+            $"The card's ENERGY reads {string.Join(", ", rows.Select(row => $"\"{row.Name} {row.Before} → {row.After}\""))}, but \"{expected}\" was expected.");
+        return that;
+    }
+
+    /// <summary>The card's header shows the badge <paramref name="expected"/> ("Not ready", "May not be ready").</summary>
+    public static AssertingThat<StepCardSnapshot> IsFlagged(this AssertingThat<StepCardSnapshot> that, string expected)
+    {
+        var shown = that.InstanceToAssert.Badge;
+        Assert.True(shown == expected, $"The card's header shows {(shown is null ? "no badge" : $"the badge \"{shown}\"")}, but \"{expected}\" was expected.");
+        return that;
+    }
+
+    /// <summary>The card's header shows no "Not ready" or "May not be ready" badge: its ability was ready.</summary>
+    public static AssertingThat<StepCardSnapshot> IsNotFlagged(this AssertingThat<StepCardSnapshot> that)
+    {
+        var shown = that.InstanceToAssert.Badge;
+        Assert.True(shown is null, $"The card's header shows the badge \"{shown}\", but none was expected.");
+        return that;
+    }
+
+    /// <summary>The card shows the note <paramref name="expected"/> ("Grenade not ready: 0% before #2").</summary>
+    public static AssertingThat<StepCardSnapshot> HasNote(this AssertingThat<StepCardSnapshot> that, string expected)
+    {
+        var notes = that.InstanceToAssert.Notes;
+        Assert.True(
+            notes.Contains(expected),
+            $"The card shows {(notes.IsEmpty ? "no note" : string.Join(", ", notes.Select(note => $"\"{note}\"")))}, but the note \"{expected}\" was expected.");
+        return that;
+    }
+
     /// <summary>The card reads "nothing triggers": no event and no line.</summary>
     public static AssertingThat<StepCardSnapshot> ReadsNothingTriggers(this AssertingThat<StepCardSnapshot> that)
     {

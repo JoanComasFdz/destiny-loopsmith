@@ -53,7 +53,8 @@ public static partial class LoopAnalysis
             inOrder,
             [.. setsOff.Where(element => !inOrder.Any(other => other.Source == element.Source))],
             ListWasted(resolution),
-            resolution.Blocked);
+            resolution.Blocked,
+            resolution.Readiness.Bind(ready => DomainPhrasing.DescribeReadiness(ready, build.CountCharges(ready.Ability), index + 1)));
     }
 
     /// <summary>
@@ -355,8 +356,12 @@ public static partial class LoopAnalysis
 
     private static Optional<BlockedStep> FindFirstBlocked(ImmutableArray<StepAnalysis> steps) =>
         steps
-            .Select(step => step.Blocked.Map(reason => new BlockedStep(step.StepIndex, step.Label, reason)))
+            .Select(step => (step.Blocked.IsSome() ? step.Blocked : ReadNotReady(step)).Map(reason => new BlockedStep(step.StepIndex, step.Label, reason)))
             .FindFirstSome();
+
+    /// <summary>The note of a step whose ability surely wasn't ready (ADRs D48: it breaks the loop); none for one that may not be.</summary>
+    private static Optional<string> ReadNotReady(StepAnalysis step) =>
+        step.Readiness.Bind(flag => flag is ReadinessFlag.NotReady notReady ? Optional.Some(notReady.Note) : Optional.None<string>());
 
     /// <summary>The steps that do something else on the first pass than in the repeating one.</summary>
     private static ImmutableArray<PassDifference> ListDifferences(ImmutableArray<StepAnalysis> firstPass, ImmutableArray<StepAnalysis> repeatingPass) =>

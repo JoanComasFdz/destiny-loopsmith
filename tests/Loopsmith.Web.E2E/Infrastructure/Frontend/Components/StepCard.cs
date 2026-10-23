@@ -9,7 +9,9 @@ namespace Loopsmith.Web.E2E.Infrastructure.Frontend.Components;
 /// <summary>
 /// One step's card in the loop (Components/LoopTimeline.razor): its heading, what it fired (Components/OutcomeTree.razor:
 /// each event, the elements that fired from it and their lines, with "(chance)"; the "why:" reasons when the "why"
-/// checkbox is ticked, the caveats when the "caveats" one is) and its "State after #N" (Components/StepStateHud.razor).
+/// checkbox is ticked, the caveats when the "caveats" one is), its notes ("! Grenade not ready: 0% before #2"), the
+/// "Not ready" or "May not be ready" badge in its header, and its "State after #N" (Components/StepStateHud.razor), whose
+/// ENERGY shows each ability's energy before the step and after it (ADRs D48).
 /// </summary>
 public sealed class StepCard(IPage page, int number)
 {
@@ -18,6 +20,8 @@ public sealed class StepCard(IPage page, int number)
     private ILocator Reasons => Card.Locator("[data-testid=outcome-reason]");
 
     private ILocator State => Card.Locator("[data-testid=step-state]");
+
+    private ILocator Energy => State.Locator("[data-testid=state-group][data-group=energy]");
 
     private ILocator Resistance => Card.Locator("[data-testid=resistance]");
 
@@ -55,6 +59,20 @@ public sealed class StepCard(IPage page, int number)
     /// <summary>Taps <paramref name="keyword"/>'s name in the card's line <paramref name="line"/> ("Stats for All" in "Stats for All (11s)"): its details open.</summary>
     public Task ClickKeywordAsync(Keyword keyword, string line) => OnScreen.PressAsync(Card, FindKeyword(keyword, line));
 
+    /// <summary>Where the card's ENERGY row is on the screen.</summary>
+    public Task<StepCardLayout> ReadLayoutAsync() => OnScreen.ReadAsync(Energy, ReadLayoutShownAsync);
+
+    private async Task<StepCardLayout> ReadLayoutShownAsync() =>
+        (await Energy.EvaluateAsync<JsonElement>(LayoutScript)).Deserialize<StepCardLayout>(ShownJson.Options)!;
+
+    // The ENERGY row's box, the screen's width and the page's (wider when it scrolls sideways).
+    private const string LayoutScript = """
+        row => {
+          const r = row.getBoundingClientRect();
+          return { row: { left: r.left, top: r.top, right: r.right, bottom: r.bottom }, screenWidth: window.innerWidth, pageWidth: document.documentElement.scrollWidth };
+        }
+        """;
+
     /// <summary>What the card shows now.</summary>
     public Task<StepCardSnapshot> ReadAsync() => OnScreen.ReadAsync(Card, ReadShownAsync);
 
@@ -71,7 +89,10 @@ public sealed class StepCard(IPage page, int number)
                 [.. shown.ResistanceSources.Select(source => new ResistanceSource(source.Name, source.Value))]),
             new DamageBonus(
                 [.. shown.Bonus.Select(row => new DamageBonusRow(row.Name, row.Value))],
-                [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]));
+                [.. shown.BonusSources.Select(source => new DamageBonusSource(source.Name, source.Value))]),
+            [.. shown.Energy.Select(line => new EnergyRow(line.Name, line.Before, line.After))],
+            shown.Badge,
+            [.. shown.Notes]);
     }
 
     // A keyword's name in the line that reads exactly as given (its data-line: the hover preview a name opens inside the line
@@ -124,6 +145,13 @@ public sealed class StepCard(IPage page, int number)
               })),
             })),
             nothingTriggers: card.querySelector('[data-testid=outcome-none]') !== null,
+            energy: [...card.querySelectorAll('[data-testid=step-state] [data-testid=energy-line]')].map(line => ({
+              name: text(line.querySelector('[data-testid=energy-name]')),
+              before: text(line.querySelector('[data-testid=energy-before]')),
+              after: text(line.querySelector('[data-testid=energy-after]')),
+            })),
+            badge: card.querySelector('[data-testid=readiness-badge]') ? text(card.querySelector('[data-testid=readiness-badge]')) : null,
+            notes: [...card.querySelectorAll('[data-testid=outcome-note]')].map(note => text(note).replace(/^! /, '')),
             buffs: chips('buffs'),
             weapons: chips('weapons'),
             debuffs: chips('debuffs'),
@@ -151,7 +179,10 @@ public sealed class StepCard(IPage page, int number)
 
     private sealed record ShownCard(
         string Heading, ShownEvent[] Events, bool NothingTriggers, ShownChip[] Buffs, ShownChip[] Weapons, ShownChip[] Debuffs, ShownChip[] Ground,
-        ShownResistanceRow[] Resistance, ShownResistanceSource[] ResistanceSources, ShownBonus[] Bonus, ShownBonus[] BonusSources);
+        ShownResistanceRow[] Resistance, ShownResistanceSource[] ResistanceSources, ShownBonus[] Bonus, ShownBonus[] BonusSources,
+        ShownEnergy[] Energy, string? Badge, string[] Notes);
+
+    private sealed record ShownEnergy(string Name, string Before, string After);
 
     private sealed record ShownBonus(string Name, string Value);
 
@@ -168,9 +199,19 @@ public sealed class StepCard(IPage page, int number)
 
 /// <summary>
 /// What a step card shows: its heading ("#1 Festival Flight (🥊 hit)"), the events it fired with what fired from each,
-/// whether it reads "nothing triggers", its "State after #N", its damage resistance and its damage bonus.
+/// whether it reads "nothing triggers", its "State after #N", its damage resistance and its damage bonus, each ability's
+/// energy before and after it, its "Not ready" or "May not be ready" badge (none: its ability was ready, or it used none)
+/// and its notes (without their "! ").
 /// </summary>
-public sealed record StepCardSnapshot(string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State, DamageResistance Resistance, DamageBonus Bonus);
+public sealed record StepCardSnapshot(
+    string Heading, ImmutableArray<FiredEvent> Events, bool NothingTriggers, StepState State, DamageResistance Resistance, DamageBonus Bonus,
+    ImmutableArray<EnergyRow> Energy, string? Badge, ImmutableArray<string> Notes);
+
+/// <summary>An ability's energy on the card's ENERGY: its name ("Grenade"), before the step ("100%") and after it ("≥ 8.44%").</summary>
+public sealed record EnergyRow(string Name, string Before, string After);
+
+/// <summary>Where a card's ENERGY row is on the screen, in CSS pixels, with the screen's width and the page's.</summary>
+public sealed record StepCardLayout(ScreenBox Row, double ScreenWidth, double PageWidth);
 
 /// <summary>An event the step fired ("Festival Flight 🥊 hit 1 enemy") and the elements that fired from it.</summary>
 public sealed record FiredEvent(string Text, ImmutableArray<FiredSource> Sources);

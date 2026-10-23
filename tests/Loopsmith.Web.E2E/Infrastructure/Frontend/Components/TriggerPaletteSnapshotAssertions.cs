@@ -84,6 +84,24 @@ public static class TriggerPaletteSnapshotAssertions
         return that;
     }
 
+    /// <summary>"On you" shows "<paramref name="ability"/> recharged" as a button of its own ("Grenade recharged").</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> OffersRecharged(this AssertingThat<TriggerPaletteSnapshot> that, AbilitySlot ability)
+    {
+        Assert.True(
+            that.InstanceToAssert.OnYou.Any(shown => shown.IsButton && shown.Name == ability.ToRechargedText()),
+            $"\"On you\" shows {DescribeOnYou(that.InstanceToAssert)}, but \"{ability.ToRechargedText()}\" was expected.");
+        return that;
+    }
+
+    /// <summary>"On you" shows no "<paramref name="ability"/> recharged" ("Grenade recharged"): the ability is full.</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> DoesNotOfferRecharged(this AssertingThat<TriggerPaletteSnapshot> that, AbilitySlot ability)
+    {
+        Assert.True(
+            !that.InstanceToAssert.OnYou.Any(shown => shown.IsButton && shown.Name == ability.ToRechargedText()),
+            $"\"On you\" shows {DescribeOnYou(that.InstanceToAssert)}, but no \"{ability.ToRechargedText()}\" was expected.");
+        return that;
+    }
+
     private static string DescribeOnYou(TriggerPaletteSnapshot shown) =>
         shown.OnYou.IsEmpty
             ? "nothing"
@@ -161,6 +179,34 @@ public static class TriggerPaletteSnapshotAssertions
     {
         var shown = that.InstanceToAssert.DisabledNote;
         Assert.True(shown == expected, $"The trigger panel reads \"{shown}\", but \"{expected}\" was expected.");
+        return that;
+    }
+}
+
+/// <summary>What a test checks on how full an ability's square in the step HUD is (ADRs D48).</summary>
+public static class SquareFillAssertions
+{
+    /// <summary><paramref name="ability"/>'s square's colour fills <paramref name="expected"/> of it from below ("8.44%", "0%": all gray).</summary>
+    public static AssertingThat<TriggerPaletteSnapshot> FillsSquare(this AssertingThat<TriggerPaletteSnapshot> that, Ability ability, string expected)
+    {
+        var shown = that.InstanceToAssert.Squares.FirstOrDefault(square => square.Name == ability.ToShownText());
+        Assert.True(
+            shown is not null && shown.Fill == expected,
+            $"The \"{ability.ToShownText()}\" square is filled to {shown?.Fill ?? "nothing (it shows no energy)"}, but {expected} was expected.");
+        return that;
+    }
+
+    /// <summary>
+    /// The bar under <paramref name="ability"/>'s square, its second charge, fills <paramref name="expected"/> of it from the
+    /// left ("100%": the charge is there; "0%": spent, its bar barely shows).
+    /// </summary>
+    public static AssertingThat<TriggerPaletteSnapshot> FillsSecondChargeBar(this AssertingThat<TriggerPaletteSnapshot> that, Ability ability, string expected)
+    {
+        var shown = that.InstanceToAssert.Squares.FirstOrDefault(square => square.Name == ability.ToShownText());
+        var bar = shown is null || shown.ChargeBars.IsEmpty ? null : shown.ChargeBars[0];
+        Assert.True(
+            bar == expected,
+            $"The bar under the \"{ability.ToShownText()}\" square is filled to {bar ?? "nothing (it has no bar)"}, but {expected} was expected.");
         return that;
     }
 }

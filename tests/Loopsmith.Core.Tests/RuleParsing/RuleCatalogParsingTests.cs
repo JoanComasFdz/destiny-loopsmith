@@ -2110,6 +2110,19 @@ public sealed class RuleCatalogParsingTests
     }
 
     [Fact]
+    public void Parses_how_an_energy_grant_is_scaled_and_refuses_it_on_a_least_charged_grant()
+    {
+        var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToProbeFile(
+            "{ id: probe-1, on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: grenade, amount: \"10%\" } }, { grantEnergy: { to: grenade, amount: \"10%\", chunkScalar: false } }, { grantEnergy: { to: grenade, amount: \"10%\", unscaled: true } } ] }")]));
+        var least = ParseInvalidCatalog(Glossary, ToProbeFile("{ id: probe-1, on: { pickUp: orb-of-power }, then: [ { grantEnergy: { to: leastCharged, amount: \"10%\", chunkScalar: false } } ] }"));
+
+        Assert.Equal(
+            [EnergyScaling.Scaled, EnergyScaling.StatOnly, EnergyScaling.Unscaled],
+            Assert.Single(catalog.Elements[ElementId.From("probe")].Rules).Then.OfType<Outcome.GrantEnergy>().Select(grant => grant.Scaling));
+        Assert.Contains("a grant to the least-charged ability is scaled as the ability it goes to: no unscaled or chunkScalar", least);
+    }
+
+    [Fact]
     public void Parses_a_stat_change_in_points_with_a_guard_and_refuses_a_percent()
     {
         var catalog = AssertOk(RuleCatalogParsing.ParseCatalog([Glossary, ToPassiveProbeFile(

@@ -442,16 +442,53 @@ internal static class RuleBodyParsing
     /// it). <c>byArchetype: { archetypes: [shotgun, glaive], amount: "20%" }</c> gives another amount on a weapon of those
     /// archetypes (Demolitionist): the weapon holding the element, its amount picked when the build is composed.
     /// </summary>
+    /// <c>perStat: { stat: melee, amount: "2%" }</c> in place of <c>amount</c> gives that much per point of the build's stat
+    /// (Gambler's Dodge), <c>unscaled: true</c> says the source doesn't scale it by the ability's chunk scalar or stat, and
+    /// <c>chunkScalar: false</c> by its chunk scalar only, the stat still applying (Shinobu's Vow) (ADRs D48).
     private static Result<Outcome, Errors> ReadGrantEnergy(YamlValue value) =>
         value.ToMap().Bind(map => Combine(
-                map.CheckKeys(["to", "amount", "byArchetype"]),
+                map.CheckKeys(["to", "amount", "perStat", "byArchetype", "unscaled", "chunkScalar"]),
                 map.ReadRequired("to", ReadEnergyRecipient),
-                map.ReadRequired("amount", ReadEnergyGrant),
+                map.ReadOptional("amount", ReadEnergyGrant),
+                map.ReadOptional("perStat", ReadStatAmount),
                 map.ReadOptional("byArchetype", ReadArchetypeAmount),
-                (_, to, amount, byArchetype) => (to, amount, byArchetype))
-            .Bind(read => ToArchetypeGrant(map, read.amount, read.byArchetype).Map(amount => read.to.Match<Outcome>(
-                ability => new Outcome.GrantEnergy(ability.Kind, amount),
-                _ => new Outcome.GrantLeastChargedEnergy(amount)))));
+                map.ReadOrDefault("unscaled", ReadBoolean, false),
+                map.ReadOrDefault("chunkScalar", ReadBoolean, true),
+                (_, to, amount, perStat, byArchetype, unscaled, chunkScalar) => (to, amount, perStat, byArchetype, Scaling: ToScaling(unscaled, chunkScalar)))
+            .Bind(read => ChooseGrantAmount(map, read.amount, read.perStat)
+                .Bind(amount => ToArchetypeGrant(map, amount, read.byArchetype))
+                .Bind(amount => read.to is EnergyRecipient.LeastCharged && read.Scaling != EnergyScaling.Scaled
+                    ? map.FailAtKey<EnergyGrant>("to", "a grant to the least-charged ability is scaled as the ability it goes to: no unscaled or chunkScalar")
+                    : Succeed(amount))
+                .Map(amount => read.to.Match<Outcome>(
+                    ability => new Outcome.GrantEnergy(ability.Kind, amount, read.Scaling),
+                    _ => new Outcome.GrantLeastChargedEnergy(amount)))));
+
+    private static EnergyScaling ToScaling(bool unscaled, bool chunkScalar) =>
+        (unscaled, chunkScalar) switch
+        {
+            (true, _) => EnergyScaling.Unscaled,
+            (false, false) => EnergyScaling.StatOnly,
+            _ => EnergyScaling.Scaled,
+        };
+
+    /// <summary>Exactly one of <c>amount</c> and <c>perStat</c>.</summary>
+    private static Result<EnergyGrant, Errors> ChooseGrantAmount(YamlMap map, Optional<EnergyGrant> amount, Optional<EnergyGrant> perStat) =>
+        (amount, perStat) switch
+        {
+            (Optional<EnergyGrant>.Some some, Optional<EnergyGrant>.None) => Succeed(some.Value),
+            (Optional<EnergyGrant>.None, Optional<EnergyGrant>.Some some) => Succeed(some.Value),
+            (Optional<EnergyGrant>.Some, _) => map.FailAtKey<EnergyGrant>("perStat", "a grant gives an amount or an amount per stat point (perStat), not both"),
+            _ => map.FailAtKey<EnergyGrant>("to", "a grant needs an amount, or an amount per stat point (perStat)"),
+        };
+
+    /// <summary><c>{ stat: melee, amount: "2%" }</c>: a fraction of one charge per point of the build's stat.</summary>
+    private static Result<EnergyGrant, Errors> ReadStatAmount(YamlValue value) =>
+        value.ToMap().Bind(map => Combine(
+            map.CheckKeys(["stat", "amount"]),
+            map.ReadRequired("stat", ReadVocabularyWord<StatKind>),
+            map.ReadRequired("amount", ReadGameValue),
+            (_, stat, amount) => (EnergyGrant)new EnergyGrant.PerStat(stat, amount)));
 
     /// <summary><c>{ archetypes: [fusion-rifle, shotgun], amount: "20%" }</c>: the amount on a weapon of one of those archetypes.</summary>
     private static Result<(ImmutableArray<string> Archetypes, GameValue Amount), Errors> ReadArchetypeAmount(YamlValue value) =>

@@ -432,7 +432,7 @@ public sealed class ArmorModMechanicsTests
     // ── Energy to the least-charged ability ──────────────────────────────────────────────
 
     [Fact]
-    public void Energy_to_the_least_charged_ability_is_a_fact_by_copies_that_changes_nothing()
+    public void Energy_to_the_least_charged_ability_goes_to_the_one_surely_least_charged()
     {
         var restoration = Mod("orbs-of-restoration",
             [On(new Trigger.AbilityCast(AbilityKind.ClassAbility), new Outcome.GrantLeastChargedEnergy(new EnergyGrant.Fraction(new GameValue.PerModCount([0.10m, 0.13m, 0.15m]))))]);
@@ -443,13 +443,16 @@ public sealed class ArmorModMechanicsTests
 
         var dodge = ResolveOnce(build, Dodge);
 
-        Assert.Equal(ActionResolution.CreateInitialState() with { Step = 1, Casting = Optional.Some(AbilityKind.ClassAbility) }, dodge.State);
+        // ADRs D48: the dodge spent the class ability, so it is the least charged; its chunk scalar is "?" here, so what it
+        // gets back is unknown: at least nothing.
+        Assert.Equal([EnergyOf(AbilityKind.ClassAbility, 0, 0m, EnergyCertainty.AtLeast)], dodge.State.Energy);
+        Assert.Equal(Optional.Some("to your class ability"), dodge.Fired[0].Outcomes[0].Caveat);
         Assert.Equal(
             "#1 Class ability\n  Class ability → +13% energy to your least-charged ability [Orbs Of Restoration] + +?% energy to your least-charged ability [Unknown Restoration]",
             DescribeTrace(build, dodge));
         var applied = dodge.Fired[1].Outcomes[0];
         Assert.Equal(Certainty.Unknown, applied.Certainty);
-        Assert.Equal(Optional.Some("amount unknown"), applied.Caveat);
+        Assert.Equal(Optional.Some("to your class ability; amount unknown"), applied.Caveat);
         Assert.Contains("Class ability -> +13% energy to your least-charged ability [Orbs Of Restoration]", DescribeExplanation(build));
     }
 
